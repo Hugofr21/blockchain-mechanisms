@@ -1,4 +1,4 @@
-package org.graph.infrastructure.network.provider;
+package org.graph.infrastructure.provider;
 
 import org.graph.domain.entities.p2p.Node;
 

@@ -1,4 +1,5 @@
-package org.graph.domain.application.utils;
+package org.graph.domain.utils;
 
 public class Crypto {
+
 }

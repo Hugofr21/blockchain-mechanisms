@@ -22,10 +22,12 @@ public class NodeId {
         return hash;
     }
 
-    public BigInteger distanceBetween(NodeId node2){
+    public BigInteger distanceBetween(NodeId node2) {
+        if (node2 == null || node2.nodeId == null) {
+            throw new IllegalArgumentException("[ERROR] NodeId invalid or null: " + node2);
+        }
         return this.nodeId.xor(node2.nodeId);
     }
-
 
     @Override
     public boolean equals(Object o) {

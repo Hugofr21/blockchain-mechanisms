@@ -1,4 +1,4 @@
-package org.graph.domain.application.utils;
+package org.graph.domain.utils;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;

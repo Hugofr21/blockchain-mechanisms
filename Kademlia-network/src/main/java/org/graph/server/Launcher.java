@@ -1,5 +1,20 @@
 package org.graph.server;
 
-public class Launcher {
+import org.graph.domain.entities.p2p.Node;
+import org.graph.infrastructure.p2p.Peer;
+import org.graph.server.utils.MenuUtils;
 
+public class Launcher {
+    private static String HOST = "localhost";
+
+    public static void main(String[] args) {
+        MenuUtils.printMenu(args);
+
+        int port = Integer.parseInt(args[0]);
+        Node my = new Node(HOST, port);
+        if (my != null) {
+            Peer peer = new Peer(my);
+            peer.startPeer();
+        }
+    }
 }

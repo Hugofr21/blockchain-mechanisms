@@ -1,7 +1,7 @@
 package org.graph.infrastructure.network.kademlia;
 
-import org.graph.infrastructure.network.provider.KademliaIController;
 import org.graph.domain.entities.p2p.Node;
+import org.graph.infrastructure.provider.KademliaIController;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -10,7 +10,6 @@ public class KademliaNetwork implements KademliaIController {
 
     @Override
     public List<Node> findNode(BigInteger nodeId) {
-        return List.of();
     }
 
     @Override
