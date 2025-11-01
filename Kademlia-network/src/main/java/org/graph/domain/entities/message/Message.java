@@ -1,10 +1,10 @@
-package org.graph.message;
+package org.graph.domain.entities.message;
 
 import java.io.Serializable;
-import java.rmi.server.UID;
 import java.util.UUID;
 
 public class Message implements Serializable, Comparable<Message> {
+    private static final long serialVersionUID = 1L;
     private MessageType type;
     private long timestamp;
     private String payload;
@@ -12,6 +12,7 @@ public class Message implements Serializable, Comparable<Message> {
     private String id;
 
     public Message(MessageType type, String payload, String header) {
+
         this.type = type;
         this.timestamp = System.currentTimeMillis();
         this.payload = payload;
@@ -41,7 +42,6 @@ public class Message implements Serializable, Comparable<Message> {
 
     @Override
     public int compareTo(Message o) {
-
         return 0;
     }
 }

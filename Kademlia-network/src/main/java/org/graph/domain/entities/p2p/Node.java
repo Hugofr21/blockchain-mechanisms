@@ -1,4 +1,4 @@
-package org.graph.p2p;
+package org.graph.domain.entities.p2p;
 
 import java.util.Objects;
 
@@ -24,6 +24,7 @@ public class Node {
     public NodeId getId() {
         return id;
     }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -36,9 +37,4 @@ public class Node {
     public int hashCode() {
         return Objects.hash(host, port);
     }
-
-
-
-
-
 }

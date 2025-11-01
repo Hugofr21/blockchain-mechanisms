@@ -1,6 +1,4 @@
-package org.graph.p2p;
-
-import org.graph.network.provider.RoutingTable;
+package org.graph.domain.entities.p2p;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -12,8 +10,8 @@ import java.util.logging.SimpleFormatter;
 public class Peer {
     private ServerSocket server;
     private Node myself;
-    private RoutingTable myroutingTable;
     private Logger mLogger;
+    private volatile boolean running;
 
     private void createdFileLog(Node myself){
         try {
@@ -29,8 +27,10 @@ public class Peer {
         }
     }
 
-    private void startPeer(){
+    public boolean getIsRunning() { return running; }
 
+    private void startPeer(){
+      running = true;
     }
 
     private void connectToPeer(){
@@ -41,6 +41,5 @@ public class Peer {
     private void stopPeer(){
 
     }
-
 
 }

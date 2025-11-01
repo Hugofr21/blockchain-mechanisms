@@ -1,4 +1,4 @@
-package org.graph.p2p;
+package org.graph.domain.entities.p2p;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;

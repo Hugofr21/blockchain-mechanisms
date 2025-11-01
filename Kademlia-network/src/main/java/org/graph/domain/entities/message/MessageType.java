@@ -1,4 +1,4 @@
-package org.graph.message;
+package org.graph.domain.entities.message;
 
 public enum MessageType {
     PING,

@@ -1,4 +1,4 @@
-package org.graph.utils;
+package org.graph.domain.application.utils;
 
 public class Constants {
     public static final int NODE_K = 20;
