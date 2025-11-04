@@ -7,7 +7,7 @@ import java.math.BigInteger;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class NeighboursConnections{
+public class NeighboursConnections {
     private final Map<BigInteger, Long> lastTimestamp;
     private final Map<BigInteger, Pair<Node, ConnectionHandler>> nodesActives;
     private final static long TIME_LIMIT_FAIL_CONNECTIONS = 45000L;
@@ -20,17 +20,9 @@ public class NeighboursConnections{
 
     private void verifyHeartbeat(long lastTimestamp) {
         long now = System.currentTimeMillis();
-        if ((lastTimestamp -now) > TIME_LIMIT_FAIL_CONNECTIONS) {
+        if ((lastTimestamp - now) > TIME_LIMIT_FAIL_CONNECTIONS) {
 
         }
     }
 
-
-    public void sendHeartbeats(Node node) {
-
-    }
-
-    public void receiveHeartbeats(Node node) {
-
-    }
 }
