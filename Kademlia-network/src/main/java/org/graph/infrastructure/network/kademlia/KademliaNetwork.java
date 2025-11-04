@@ -10,6 +10,7 @@ public class KademliaNetwork implements KademliaIController {
 
     @Override
     public List<Node> findNode(BigInteger nodeId) {
+        return null;
     }
 
     @Override

@@ -5,16 +5,14 @@ import org.graph.infrastructure.p2p.Peer;
 import org.graph.server.utils.MenuUtils;
 
 public class Launcher {
-    private static String HOST = "localhost";
-
     public static void main(String[] args) {
         MenuUtils.printMenu(args);
 
         int port = Integer.parseInt(args[0]);
-        Node my = new Node(HOST, port);
-        if (my != null) {
-            Peer peer = new Peer(my);
+        if (port >= 0) {
+            Peer peer = new Peer(port);
             peer.startPeer();
+            System.out.println("Peer started: " + peer.getMyself().toString());
         }
     }
 }

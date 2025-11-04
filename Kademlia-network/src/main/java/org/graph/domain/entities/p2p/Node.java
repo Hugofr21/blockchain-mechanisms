@@ -1,5 +1,7 @@
 package org.graph.domain.entities.p2p;
 
+import java.math.BigInteger;
+import java.security.PublicKey;
 import java.util.Objects;
 
 public class Node {
@@ -7,8 +9,8 @@ public class Node {
     private String host;
     private int port;
 
-    public Node(String host, int port) {
-        this.id = new NodeId();
+    public Node(String host, int port, PublicKey ownerPublicKey) {
+        this.id = new NodeId(ownerPublicKey);
         this.host = host;
         this.port = port;
     }
@@ -21,7 +23,7 @@ public class Node {
         return host;
     }
 
-    public NodeId getId() {
+    public NodeId getNodeId() {
         return id;
     }
 
@@ -33,8 +35,18 @@ public class Node {
         return port == that.port && Objects.equals(id, that.id);
     }
 
+
     @Override
     public int hashCode() {
         return Objects.hash(host, port);
+    }
+
+    @Override
+    public String toString() {
+        return "Node{" +
+                "id=" + id +
+                ", host='" + host + '\'' +
+                ", port=" + port +
+                '}';
     }
 }

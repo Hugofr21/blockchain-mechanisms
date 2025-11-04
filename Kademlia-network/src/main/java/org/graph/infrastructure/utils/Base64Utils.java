@@ -11,4 +11,8 @@ public class Base64Utils {
     public static String decode(String input) {
         return new String(Base64.getDecoder().decode(input));
     }
+
+    public static byte[] decodeString(String input) {
+        return Base64.getEncoder().encode(input.trim().getBytes());
+    }
 }

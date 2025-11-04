@@ -6,6 +6,7 @@ public class MenuUtils {
         System.out.println("\nMenu:");
         if (args.length == 0) {
             System.out.println("To initiate a peer relationship, it must contain: <port>");
+            return;
         }
 
     }

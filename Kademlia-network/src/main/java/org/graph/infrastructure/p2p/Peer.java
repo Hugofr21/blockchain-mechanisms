@@ -2,6 +2,7 @@ package org.graph.infrastructure.p2p;
 
 import org.graph.domain.application.ServerHandle;
 import org.graph.domain.entities.p2p.Node;
+import org.graph.infrastructure.crypt.KeysInfrastructure;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -11,13 +12,27 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 public class Peer {
+    private static String HOST = "localhost";
     private ServerSocket server;
     private Node myself;
     private Logger mLogger;
     private volatile boolean running;
+    private KeysInfrastructure keys;
 
-    public Peer(Node myself) {
-        this.myself = myself;
+    public Peer(int port){
+        this.keys = new KeysInfrastructure( this);
+        this.myself = new Node(HOST,port, keys.getOwnerPublicKey());
+        this.keys.getOwnerKeyPair().setPeerId(this.myself.getNodeId().getId());
+
+        try {
+            keys.setOwnPeerIdAndSave(this.myself.getNodeId().getId());
+            System.out.println("[DEBUG] Peer initialization:");
+            System.out.println("[DEBUG] - Fingerprint: " + keys.getOwnFingerprint());
+            System.out.println("[DEBUG] - PeerId: " + myself.getNodeId().getId());
+        } catch (Exception e) {
+            System.out.println("[ERROR] Save the keys in file: " + e.getMessage());
+        }
+
         createdFileLog(myself);
     }
 

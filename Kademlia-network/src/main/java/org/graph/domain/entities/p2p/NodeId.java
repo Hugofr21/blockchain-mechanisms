@@ -1,7 +1,9 @@
 package org.graph.domain.entities.p2p;
 
+import org.graph.domain.utils.HashUtils;
+
 import java.math.BigInteger;
-import java.security.SecureRandom;
+import java.security.PublicKey;
 import java.util.Objects;
 
 public class NodeId {
@@ -9,17 +11,15 @@ public class NodeId {
     private static final int DIFICULTY = 2;
     private BigInteger nodeId;
 
-    public NodeId(){
-        this.nodeId = generateId();
+    public NodeId(PublicKey ownerPublicKey){
+        this.nodeId = generateIdWithPKI(ownerPublicKey);
     }
 
-    private BigInteger generateId() {
-        SecureRandom random = new SecureRandom();
-        BigInteger hash;
-        byte[] b = new byte[DIFICULTY];
-        random.nextBytes(b);
-        hash = new BigInteger(1, b);
-        return hash;
+    public BigInteger getId() { return nodeId; }
+
+
+    private BigInteger generateIdWithPKI(PublicKey ownerPublicKey) {
+        return HashUtils.sha256(ownerPublicKey.getEncoded());
     }
 
     public BigInteger distanceBetween(NodeId node2) {

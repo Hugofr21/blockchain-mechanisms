@@ -1,0 +1,42 @@
+nov. 03, 2025 11:43:06 DA MANHÃ org.graph.infrastructure.p2p.Peer stopPeer
+INFO: Peer shutdown: localhost:9001
+nov. 03, 2025 11:43:06 DA MANHÃ org.graph.domain.application.ServerHandle run
+INFO: Server listening for connections...
+nov. 03, 2025 11:43:06 DA MANHÃ org.graph.domain.application.ServerHandle run
+INFO: Server stopped listening
+nov. 03, 2025 11:43:38 DA MANHÃ org.graph.infrastructure.p2p.Peer stopPeer
+INFO: Peer shutdown: localhost:9001
+nov. 03, 2025 11:43:38 DA MANHÃ org.graph.domain.application.ServerHandle run
+INFO: Server listening for connections...
+nov. 03, 2025 11:43:38 DA MANHÃ org.graph.domain.application.ServerHandle run
+INFO: Server stopped listening
+nov. 03, 2025 11:44:08 DA MANHÃ org.graph.infrastructure.p2p.Peer stopPeer
+INFO: Peer shutdown: localhost:9001
+nov. 03, 2025 11:44:08 DA MANHÃ org.graph.domain.application.ServerHandle run
+INFO: Server listening for connections...
+nov. 03, 2025 11:44:08 DA MANHÃ org.graph.domain.application.ServerHandle run
+INFO: Server stopped listening
+nov. 03, 2025 3:35:40 DA TARDE org.graph.infrastructure.p2p.Peer stopPeer
+INFO: Peer shutdown: localhost:9001
+nov. 03, 2025 3:35:40 DA TARDE org.graph.domain.application.ServerHandle run
+INFO: Server listening for connections...
+nov. 03, 2025 3:35:40 DA TARDE org.graph.domain.application.ServerHandle run
+INFO: Server stopped listening
+nov. 03, 2025 3:38:57 DA TARDE org.graph.domain.application.ServerHandle run
+INFO: Server listening for connections...
+nov. 03, 2025 3:38:57 DA TARDE org.graph.infrastructure.p2p.Peer stopPeer
+INFO: Peer shutdown: localhost:9001
+nov. 03, 2025 3:38:57 DA TARDE org.graph.domain.application.ServerHandle run
+INFO: Server stopped listening
+nov. 04, 2025 11:00:07 DA MANHÃ org.graph.infrastructure.p2p.Peer stopPeer
+INFO: Peer shutdown: localhost:9001
+nov. 04, 2025 11:00:07 DA MANHÃ org.graph.domain.application.ServerHandle run
+INFO: Server listening for connections...
+nov. 04, 2025 11:00:07 DA MANHÃ org.graph.domain.application.ServerHandle run
+INFO: Server stopped listening
+nov. 04, 2025 11:01:10 DA MANHÃ org.graph.domain.application.ServerHandle run
+INFO: Server listening for connections...
+nov. 04, 2025 11:01:10 DA MANHÃ org.graph.infrastructure.p2p.Peer stopPeer
+INFO: Peer shutdown: localhost:9001
+nov. 04, 2025 11:01:10 DA MANHÃ org.graph.domain.application.ServerHandle run
+INFO: Server stopped listening
