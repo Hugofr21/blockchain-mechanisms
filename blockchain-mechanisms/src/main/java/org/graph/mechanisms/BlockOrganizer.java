@@ -1,4 +1,4 @@
 package org.graph.mechanisms;
 
-public class Fork {
+public class BlockOrganizer {
 }

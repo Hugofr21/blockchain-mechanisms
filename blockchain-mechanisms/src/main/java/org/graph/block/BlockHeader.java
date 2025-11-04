@@ -1,47 +1,40 @@
 package org.graph.block;
 
 import org.graph.merkleTree.MerkleTree;
-import org.graph.pow.MinerResult;
+import org.graph.transaction.Transaction;
+
+import java.time.Instant;
+import java.util.List;
 
 public class BlockHeader {
     private int version;
-    private String currentBlockHash;
     private String previousBlockHash;
-    private MerkleTree tree;
-    private long timestamp;
-    private long nonce;
+    private MerkleTree merkleRoot;
 
-    public BlockHeader(String hashPrev) {
-
+    public BlockHeader(int version, String previousBlockHash, List<Transaction> transactions) {
+        this.version = version;
+        this.previousBlockHash = previousBlockHash;
+        try {
+            this.merkleRoot = new MerkleTree(transactions);
+        }catch (Exception e){
+            System.out.println("[ERROR] Merkle Tree: " + e.getMessage());
+        }
     }
 
     public int getVersion() {
         return version;
     }
 
-    public String getCurrentBlockHash() {
-        return currentBlockHash;
-    }
-
     public String getPreviousBlockHash() {
         return previousBlockHash;
     }
 
-    public MerkleTree getTree() {
-        return tree;
+    public String getMerkleRoot() {
+        return merkleRoot.getRootHash();
     }
 
-    public long getTimestamp() {
-        return timestamp;
+    public List<Transaction> getAllTransactions() {
+        return merkleRoot.getTransactions();
     }
-
-    public long getNonce() {
-        return nonce;
-    }
-
-    public MinerResult minerHashSystem(int numberThread){
-        return null;
-    }
-
 
 }
