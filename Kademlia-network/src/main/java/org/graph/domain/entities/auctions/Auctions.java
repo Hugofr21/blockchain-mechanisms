@@ -5,7 +5,7 @@ import org.graph.domain.utils.HashUtils;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+
 
 public class Auctions {
     private BigInteger auctionId;

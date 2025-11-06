@@ -107,7 +107,7 @@ public class Block {
      * // 2. The blockNumber must be sequential
      * // 3. The timestamp must be later than the parent's
      */
-    private boolean isValidBlock(Block parent){
+    public boolean isValidBlock(Block parent){
         if (parent == null) {
             return this.numberBlock == 0;
         }

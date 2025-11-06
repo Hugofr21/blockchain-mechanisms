@@ -1,5 +1,6 @@
-package org.graph.domain.application;
+package org.graph.domain.application.p2p;
 
+import org.graph.infrastructure.p2p.ConnectionHandler;
 import org.graph.domain.common.Pair;
 import org.graph.domain.entities.p2p.Node;
 

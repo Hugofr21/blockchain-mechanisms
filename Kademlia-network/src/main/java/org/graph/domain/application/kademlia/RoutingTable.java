@@ -36,7 +36,7 @@ public class RoutingTable {
         return Math.min(distance.bitLength() - 1, ID_BITS - 1);
     }
 
-    public synchronized List<Node> findClosestNodes(PublicKey publicKey, int count) {
+    public synchronized List<Node> findClosestNodes(Node targetNode, int count) {
         PriorityQueue<NodeDistance> closest = new PriorityQueue<>(
                 Comparator.comparing(NodeDistance::getDistance)
         );
@@ -44,7 +44,7 @@ public class RoutingTable {
         for (KBucket bucket : buckets) {
             for (Node node : bucket.getNodes()) {
                 BigInteger distance = node.getNodeId().distanceBetween(
-                        new NodeId(publicKey)
+                        targetNode.getNodeId()
                 );
                 closest.offer(new NodeDistance(node, distance));
             }

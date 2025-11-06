@@ -38,7 +38,7 @@ public class MinerThread implements Callable<MiningResult> {
             attempts++;
             String hash = HashUtils.calculateSha256(data + nonce);
 
-            if (hash.substring(0, difficulty).equals(target)) {
+            if (hash != null && hash.substring(0, difficulty).equals(target)) {
                 found.set(true);
                 return new MiningResult(nonce, hash, threadId, attempts);
             }

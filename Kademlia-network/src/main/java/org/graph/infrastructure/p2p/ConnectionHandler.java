@@ -1,6 +1,5 @@
-package org.graph.domain.application;
+package org.graph.infrastructure.p2p;
 
-import org.graph.infrastructure.p2p.Peer;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 

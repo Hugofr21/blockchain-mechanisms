@@ -1,6 +1,4 @@
-package org.graph.domain.application;
-
-import org.graph.infrastructure.p2p.Peer;
+package org.graph.infrastructure.p2p;
 
 import java.net.ServerSocket;
 import java.net.Socket;

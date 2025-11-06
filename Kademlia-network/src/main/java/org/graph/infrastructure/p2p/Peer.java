@@ -1,6 +1,6 @@
 package org.graph.infrastructure.p2p;
 
-import org.graph.domain.application.ServerHandle;
+import org.graph.domain.application.kademlia.RoutingTable;
 import org.graph.domain.entities.p2p.Node;
 import org.graph.infrastructure.crypt.KeysInfrastructure;
 
@@ -15,6 +15,7 @@ public class Peer {
     private static String HOST = "localhost";
     private ServerSocket server;
     private Node myself;
+    private RoutingTable routingTable;
     private Logger mLogger;
     private volatile boolean running;
     private KeysInfrastructure keys;
@@ -23,6 +24,7 @@ public class Peer {
         this.keys = new KeysInfrastructure( this);
         this.myself = new Node(HOST,port, keys.getOwnerPublicKey());
         this.keys.getOwnerKeyPair().setPeerId(this.myself.getNodeId().getId());
+        this.routingTable = new RoutingTable(myself);
 
         try {
             keys.setOwnPeerIdAndSave(this.myself.getNodeId().getId());
@@ -35,6 +37,8 @@ public class Peer {
 
         createdFileLog(myself);
     }
+
+    public RoutingTable getRoutingTable() { return routingTable; }
 
     private void createdFileLog(Node myself){
         try {
