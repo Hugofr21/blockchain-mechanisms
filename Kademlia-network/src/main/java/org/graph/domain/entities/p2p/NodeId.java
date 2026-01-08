@@ -15,6 +15,10 @@ public class NodeId {
         this.nodeId = generateIdWithPKI(ownerPublicKey);
     }
 
+    public NodeId(BigInteger nodeId){
+        this.nodeId = nodeId;
+    }
+
     public BigInteger getId() { return nodeId; }
 
 
@@ -22,7 +26,7 @@ public class NodeId {
         return HashUtils.sha256(ownerPublicKey.getEncoded());
     }
 
-    public BigInteger distanceBetween(NodeId node2) {
+    public BigInteger distanceBetweenNode(NodeId node2) {
         if (node2 == null || node2.nodeId == null) {
             throw new IllegalArgumentException("[ERROR] NodeId invalid or null: " + node2);
         }

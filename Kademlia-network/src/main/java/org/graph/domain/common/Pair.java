@@ -1,5 +1,7 @@
 package org.graph.domain.common;
 
+import java.util.Objects;
+
 public class Pair<K,V> {
     private final K key;
     private final V value;
@@ -31,9 +33,8 @@ public class Pair<K,V> {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Pair)) return false;
-        Pair<?, ?> other = (Pair<?, ?>) obj;
-        return (key == null ? other.key == null : key.equals(other.key))
-                && (value == null ? other.value == null : value.equals(other.value));
+        if (!(obj instanceof Pair<?, ?> other)) return false;
+        return (Objects.equals(key, other.key))
+                && (Objects.equals(value, other.value));
     }
 }

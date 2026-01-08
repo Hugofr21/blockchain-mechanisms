@@ -32,9 +32,44 @@ public class RoutingTable {
     }
 
     private int getBucketIndex(Node node) {
-        BigInteger distance = localNode.getNodeId().distanceBetween(node.getNodeId());
+        BigInteger distance = localNode.getNodeId().distanceBetweenNode(node.getNodeId());
         return Math.min(distance.bitLength() - 1, ID_BITS - 1);
     }
+
+    public synchronized Node getByNodeIdNode(BigInteger nodeId){
+       for (KBucket bucket : buckets) {
+           List<Node>  list = bucket.getNodes();
+           for (Node node : list) {
+               if (nodeId.equals(node.getNodeId())) {
+                   return node;
+               }
+           }
+       }
+       return null;
+    }
+
+    public synchronized List<Node> findClosestNodesProximity(NodeId targetNode, int count) {
+        PriorityQueue<NodeDistance> closest = new PriorityQueue<>(
+                Comparator.comparing(NodeDistance::getDistance)
+        );
+
+        for (KBucket bucket : buckets) {
+            for (Node node : bucket.getNodes()) {
+                BigInteger distance = node.getNodeId().distanceBetweenNode(
+                        targetNode
+                );
+                closest.offer(new NodeDistance(node, distance));
+            }
+        }
+
+        List<Node> result = new ArrayList<>();
+        for (int i = 0; i < count && !closest.isEmpty(); i++) {
+            result.add(closest.poll().getNode());
+        }
+
+        return result;
+    }
+
 
     public synchronized List<Node> findClosestNodes(Node targetNode, int count) {
         PriorityQueue<NodeDistance> closest = new PriorityQueue<>(
@@ -43,7 +78,7 @@ public class RoutingTable {
 
         for (KBucket bucket : buckets) {
             for (Node node : bucket.getNodes()) {
-                BigInteger distance = node.getNodeId().distanceBetween(
+                BigInteger distance = node.getNodeId().distanceBetweenNode(
                         targetNode.getNodeId()
                 );
                 closest.offer(new NodeDistance(node, distance));
