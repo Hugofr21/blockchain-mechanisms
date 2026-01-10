@@ -1,6 +1,8 @@
 package org.graph.infrastructure.p2p;
 
 import org.graph.domain.application.kademlia.RoutingTable;
+import org.graph.domain.application.p2p.NeighboursConnections;
+import org.graph.domain.application.pow.MiningResult;
 import org.graph.domain.entities.p2p.Node;
 import org.graph.infrastructure.crypt.KeysInfrastructure;
 
@@ -19,23 +21,54 @@ public class Peer {
     private Logger mLogger;
     private volatile boolean running;
     private KeysInfrastructure keys;
+    private NeighboursConnections neighboursManager;
+
+
 
     public Peer(int port){
         this.keys = new KeysInfrastructure( this);
-        this.myself = new Node(HOST,port, keys.getOwnerPublicKey());
-        this.keys.getOwnerKeyPair().setPeerId(this.myself.getNodeId().getId());
-        this.routingTable = new RoutingTable(myself);
 
+        MiningResult proofOfWork = null;
         try {
-            keys.setOwnPeerIdAndSave(this.myself.getNodeId().getId());
+            // 3. BLOQUEANTE: Executa mineração para obter identidade válida (S/Kademlia)
+            // O Peer não existe até provar trabalho.
+            System.out.println("[INFO] Starting initialization PoW...");
+            // O invokeAny agora garantirá que, se retornar, será um objeto válido ou lançará exceção
+            proofOfWork = MinerOrchestrator.executeMining(keys.getOwnerPublicKey());
+
+            // Verificação Defensiva: Jamais confie cegamente no retorno de operações complexas
+            if (proofOfWork == null) {
+                throw new IllegalStateException("MiningOrchestrator returned null illegally.");
+            }
+
+            // Agora é seguro acessar o getNonce()
+            System.out.println("[DEBUG] PoW Solved! Nonce: " + proofOfWork.getNonce() +
+                    " | Hash: " + proofOfWork.getNodeId().toString(16));
+
+
+        } catch (Exception e) {
+            throw new RuntimeException("[CRITICAL] Failed to initialize Peer identity via Mining.", e);
+        }
+
+        this.myself = new Node(HOST, port, keys.getOwnerPublicKey(), proofOfWork);
+
+        this.keys.getOwnerKeyPair().setPeerId(this.myself.getNodeId().getValue());
+        this.routingTable = new RoutingTable(myself);
+        this.neighboursManager = new NeighboursConnections(this);
+        try {
+            keys.setOwnPeerIdAndSave(this.myself.getNodeId().getValue());
             System.out.println("[DEBUG] Peer initialization:");
             System.out.println("[DEBUG] - Fingerprint: " + keys.getOwnFingerprint());
-            System.out.println("[DEBUG] - PeerId: " + myself.getNodeId().getId());
+            System.out.println("[DEBUG] - PeerId: " + myself.getNodeId().getValue());
         } catch (Exception e) {
             System.out.println("[ERROR] Save the keys in file: " + e.getMessage());
         }
 
         createdFileLog(myself);
+    }
+
+    public NeighboursConnections getNeighboursManager() {
+        return neighboursManager;
     }
 
     public RoutingTable getRoutingTable() { return routingTable; }

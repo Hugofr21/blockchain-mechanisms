@@ -99,7 +99,7 @@ public class KeysInfrastructure {
 
 
     public void addNeighborPublicKey(BigInteger peerId, String publicKeyBase64) throws Exception {
-        byte[] keyBytes = Base64Utils.decodeString(publicKeyBase64);
+        byte[] keyBytes = Base64Utils.decodeToBytes(publicKeyBase64);
         KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_INSTANCE, "BC");
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
         java.security.PublicKey pubKey = keyFactory.generatePublic(keySpec);

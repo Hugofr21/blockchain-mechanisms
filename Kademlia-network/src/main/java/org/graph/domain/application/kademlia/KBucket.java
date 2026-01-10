@@ -17,7 +17,7 @@ public class KBucket { ;
     }
 
     public synchronized boolean addNode(Node node) {
-        BigInteger nodeId = node.getNodeId().getId();
+        BigInteger nodeId = node.getNodeId().getValue();
 
         if (nodes.containsKey(nodeId)) {
             nodes.remove(nodeId);
@@ -38,7 +38,7 @@ public class KBucket { ;
     }
 
     public synchronized boolean removeNode(Node node) {
-        return nodes.remove(node.getNodeId().getId()) != null;
+        return nodes.remove(node.getNodeId().getValue()) != null;
     }
 
     public synchronized List<Node> getNodes() {

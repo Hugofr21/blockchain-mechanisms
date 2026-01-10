@@ -3,6 +3,7 @@ package org.graph.infrastructure.utils;
 import org.graph.domain.crypto.PublicKeyPeer;
 
 public class Constants {
+    public static final int MAX_ALPHA = 3;
     public static final int NODE_K = 20;
     public static final int ID_BITS = 256;
     public static final int MAX_PER_IP = 3;

@@ -6,8 +6,8 @@ import java.math.BigInteger;
 import java.util.List;
 
 public interface KademliaIController {
-    Node findNode(BigInteger nodeId);
-    Object findValue(BigInteger hash);
-    boolean ping(Node node);
-    void storage(BigInteger nodeId, Object value);
+    public  List<Node>  findNode(BigInteger nodeId);
+    public Object findValue(BigInteger hash);
+    public boolean ping(Node node);
+    public void storage(BigInteger nodeId, Object value);
 }

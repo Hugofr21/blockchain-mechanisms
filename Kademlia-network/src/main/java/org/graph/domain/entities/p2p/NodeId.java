@@ -3,34 +3,54 @@ package org.graph.domain.entities.p2p;
 import org.graph.domain.utils.HashUtils;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.util.Objects;
 
+
 public class NodeId {
-    private static final int MAX_LENGTH = 256;
-    private static final int DIFICULTY = 2;
-    private BigInteger nodeId;
+    public static final int ID_LENGTH_BITS = 256;
+    private final BigInteger value;
 
-    public NodeId(PublicKey ownerPublicKey){
-        this.nodeId = generateIdWithPKI(ownerPublicKey);
+    private NodeId(BigInteger value) {
+        this.value = value;
     }
 
-    public NodeId(BigInteger nodeId){
-        this.nodeId = nodeId;
-    }
+    public static NodeId createFromProof(PublicKey publicKey, long nonce, int difficulty) {
+        BigInteger generatedId = calculateId(publicKey, nonce);
 
-    public BigInteger getId() { return nodeId; }
-
-
-    private BigInteger generateIdWithPKI(PublicKey ownerPublicKey) {
-        return HashUtils.sha256(ownerPublicKey.getEncoded());
-    }
-
-    public BigInteger distanceBetweenNode(NodeId node2) {
-        if (node2 == null || node2.nodeId == null) {
-            throw new IllegalArgumentException("[ERROR] NodeId invalid or null: " + node2);
+        // Validação Matemática: ID < 2^(256 - dificuldade)
+        BigInteger target = BigInteger.ONE.shiftLeft(ID_LENGTH_BITS - difficulty);
+        if (generatedId.compareTo(target) >= 0) {
+            throw new SecurityException("Invalid PoW: NodeId does not meet difficulty target of " + difficulty);
         }
-        return this.nodeId.xor(node2.nodeId);
+
+        return new NodeId(generatedId);
+    }
+
+    // Lógica central de cálculo do ID: SHA256(PublicKey + Nonce)
+    private static BigInteger calculateId(PublicKey publicKey, long nonce) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] keyBytes = publicKey.getEncoded();
+            ByteBuffer buffer = ByteBuffer.allocate(keyBytes.length + Long.BYTES);
+            buffer.put(keyBytes);
+            buffer.putLong(nonce);
+            byte[] hash = digest.digest(buffer.array());
+            return new BigInteger(1, hash); // 1 garante que seja positivo
+        } catch (Exception e) {
+            throw new RuntimeException("Crypto failure", e);
+        }
+    }
+
+    // Para fins de comparação de distância (XOR Metric do Kademlia)
+    public BigInteger distanceBetweenNode(BigInteger other) {
+        return this.value.xor(other);
+    }
+
+    public BigInteger getValue() {
+        return value;
     }
 
     @Override
@@ -38,20 +58,16 @@ public class NodeId {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         NodeId nodeId = (NodeId) o;
-        return Objects.equals(nodeId, nodeId.nodeId);
+        return Objects.equals(value, nodeId.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(nodeId);
+        return Objects.hash(value);
     }
 
     @Override
     public String toString() {
-        return nodeId.toString(16);
+        return value.toString(16);
     }
-
-
-
-
 }
