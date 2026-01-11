@@ -1,4 +1,4 @@
-package org.graph.domain.application.pow;
+package org.graph.domain.application.mechanism.pow;
 
 import java.math.BigInteger;
 
