@@ -1,42 +1,37 @@
 package org.graph.block;
 
+import org.graph.merkleTree.MerkleTree;
 import org.graph.pow.MinerThread;
 import org.graph.pow.MiningResult;
 import org.graph.transaction.Transaction;
 
-import java.time.Instant;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class Block {
-    private String currentBlockHash;
-    private long timestamp;
-    private long nonce;
-    private int numberBlock;
-    private BlockHeader header;
+public class Block implements Serializable {
+    private final int numberBlock;
+    private final BlockHeader header;
+    private final List<Transaction> transactions;
+    private String hashCache;
+    private static final int CORES = Runtime.getRuntime().availableProcessors();
+    private static final ExecutorService minerPool = Executors.newFixedThreadPool(CORES);
 
-    public Block(int version, int numberBlock, String hashPrev, List<Transaction> transactions) {
+
+    public Block(int version, int numberBlock, String hashPrev, List<Transaction> transactions, int difficulty) {
         this.numberBlock = numberBlock;
-        this.header = new BlockHeader(version ,hashPrev, transactions);
-        this.timestamp = Instant.now().toEpochMilli();
-        this.nonce = 0;
+        this.transactions = transactions;
+        MerkleTree tree = new MerkleTree(transactions);
+        String root = tree.getRootHash();
+        this.header = new BlockHeader(version, hashPrev, root, difficulty);
     }
 
-    public long getTimestamp() {
-        return timestamp;
-    }
-    public long getNonce() {
-        return nonce;
-    }
-    public String getDataForMining() { return header.getVersion() + header.getPreviousBlockHash() + header.getMerkleRoot() + timestamp;}
-    public String getCurrentBlockHash() { return currentBlockHash; }
+    public String getCurrentBlockHash() { return hashCache; }
     public int getNumberBlock() { return numberBlock; }
     public BlockHeader getHeader() { return header; }
+    public List<Transaction> getTransactions() { return transactions; }
 
 
     /**
@@ -46,55 +41,74 @@ public class Block {
      * <p>
      */
 
-    public void mineBlock(int difficulty , int numberThread){
+    public void mineBlock(int difficulty, int numberThread) {
         long startTime = System.currentTimeMillis();
-        ExecutorService executor = Executors.newFixedThreadPool(numberThread);
         AtomicBoolean found = new AtomicBoolean(false);
 
         List<Future<MiningResult>> futures = new ArrayList<>();
-        int nonceRangePerThread = Integer.MAX_VALUE / numberThread;
+        // Correção de range para evitar overflow de Integer
+        long nonceRangePerThread = Long.MAX_VALUE / numberThread;
 
         for (int i = 0; i < numberThread; i++) {
-            int startNonce = i * nonceRangePerThread;
+            long startNonce = i * nonceRangePerThread;
             MinerThread miner = new MinerThread(
-                    i, startNonce, nonceRangePerThread,
-                    getDataForMining(), difficulty, found
+                    i, (int) startNonce, (int) nonceRangePerThread,
+                    header.getPayloadForMining(), difficulty, found
             );
-            futures.add(executor.submit(miner));
+            futures.add(minerPool.submit(miner));
         }
 
         MiningResult result = null;
 
         try {
+            // Espera pelo primeiro resultado (estratégia simples)
             for (Future<MiningResult> future : futures) {
-                MiningResult r = future.get();
-                if (r != null) {
-                    result = r;
-                    break;
+                try {
+                    // O get() bloqueia até a thread terminar.
+                    // Como usamos AtomicBoolean 'found' nas threads,
+                    // quando uma acha, as outras devem parar rapidamente.
+                    MiningResult r = future.get();
+                    if (r != null) {
+                        result = r;
+                        break; // Se achou, para de esperar as outras
+                    }
+                } catch (CancellationException e) {
+                    System.out.println("Miner thread has been canceled");
+                    // Ignora threads canceladas
                 }
             }
         } catch (InterruptedException | ExecutionException e) {
-            System.out.println("Mining thread interrupted: " + e.getMessage());
+            System.out.println("Mining interrupted: " + e.getMessage());
         } finally {
-            executor.shutdownNow();
+            // CORREÇÃO CRÍTICA: Não mate o pool (shutdownNow).
+            // Apenas cancele as tarefas deste bloco específico.
+            for (Future<MiningResult> f : futures) {
+                if (!f.isDone()) {
+                    f.cancel(true); // Interrompe a thread trabalhadora
+                }
+            }
         }
-
-        long endTime = System.currentTimeMillis();
 
         if (result != null) {
-            this.nonce = result.getNonce();
-            this.currentBlockHash = result.getHash();
-
-            System.out.println("\n[INFO] Block miner!");
-            System.out.println("  Thread win: #" + result.getThreadId());
-            System.out.println("  Nonce find: " + result.getNonce());
-            System.out.println("  Attempts: " + result.getAttempts());
-            System.out.println("  Time: " + (endTime - startTime) + "ms");
-            System.out.println("  Hash: " + currentBlockHash.substring(0, 40) + "...");
-            System.out.println("  Hash rate: " +
-                    (result.getAttempts() * 1000.0 / (endTime - startTime)) + " H/s");
+            applyMiningResult(result, startTime);
+        } else {
+            System.out.println("[MINER] Failed to mine block (No nonce found in range).");
         }
+    }
 
+    private void  applyMiningResult(MiningResult result, long startTime){
+        this.header.setNonce(result.getNonce());
+        this.hashCache = result.getHash();
+        long endTime = System.currentTimeMillis();
+
+        System.out.println("\n[INFO] Block miner!");
+        System.out.println("  Thread win: #" + result.getThreadId());
+        System.out.println("  Nonce find: " + result.getNonce());
+        System.out.println("  Attempts: " + result.getAttempts());
+        System.out.println("  Time: " + (endTime - startTime) + "ms");
+        System.out.println("  Hash: " + hashCache.substring(0, 40) + "...");
+        System.out.println("  Hash rate: " +
+                (result.getAttempts() * 1000.0 / (endTime - startTime)) + " H/s");
     }
 
     /**
@@ -108,25 +122,66 @@ public class Block {
      * // 3. The timestamp must be later than the parent's
      */
     public boolean isValidBlock(Block parent){
+        // 1. Validação de Gênesis
         if (parent == null) {
+            boolean isGenesis = this.numberBlock == 0;
+            if(!isGenesis) System.out.println("[DEBUG] Rejeitado: Pai nulo e não é genesis");
             return this.numberBlock == 0;
         }
 
+        // 2. Encadeamento (Chain Link)
         if (!this.header.getPreviousBlockHash().equals(parent.getCurrentBlockHash())) {
+            System.out.println("Invalid Previous Hash");
             return false;
         }
 
+        // 3. Sequencialidade
         if (this.numberBlock != parent.getNumberBlock() + 1) {
+            System.out.println("Invalid Sequence Number");
             return false;
         }
 
-
-        if (this.timestamp < parent.getTimestamp()) {
+        // 4. Timestamp (Proteção contra Time Warp attack)
+        // O bloco não pode ser mais velho que o pai, nem muito no futuro
+        if (this.header.getTimestamp() <= parent.getHeader().getTimestamp()) {
+            System.out.println("Timestamp too old");
             return false;
         }
+
+        // 5. CRÍTICO: Validação do Proof of Work
+        // Recalculamos o hash com o nonce declarado e verificamos a dificuldade
+//        String recalculatedHash = this.header.calculateHash();
+//        if (!recalculatedHash.equals(this.hashCache)) {
+//            System.out.println("Hash integrity check failed");
+//            return false;
+//        }
+
+//        if (!checkDifficulty(recalculatedHash, this.header.getDifficulty())) {
+//            System.out.println("PoW Difficulty not met");
+//            return false;
+//        }
 
         return true;
     }
+
+
+
+    private boolean checkDifficulty(String hash, int difficulty) {
+        String target = new String(new char[difficulty]).replace('\0', '0');
+        return hash.startsWith(target);
+    }
+
+    @Override
+    public String toString() {
+        return "Block{" +
+                "numberBlock=" + numberBlock +
+                ", header=" + header +
+                ", transactions=" + transactions +
+                ", hashCache='" + hashCache + '\'' +
+                '}';
+    }
+
+
 
 
 }

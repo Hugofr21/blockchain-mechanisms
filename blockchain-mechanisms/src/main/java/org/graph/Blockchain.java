@@ -6,7 +6,6 @@ import org.graph.mechanisms.TransactionOrganizer;
 import org.graph.transaction.Transaction;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 public class Blockchain {
@@ -35,45 +34,90 @@ public class Blockchain {
 
 
     public void createGenesisBlock() {
+        if (mBlockOrganizer.getChainHeight() >= 0) {
+            System.out.println("[INIT] Blockchain já inicializada. Genesis ignorado.");
+            return;
+        }
+
         List<Transaction> genesisTx = new ArrayList<>();
-        genesisTx.add(new Transaction("System", "Genesis", 0));
-        Block genesis = new Block(1 ,0, "0", genesisTx);
+        genesisTx.add(new Transaction("SYSTEM", "GENESIS_NODE", 0));
+        Block genesis = new Block(1, 0, "0", genesisTx, currentDifficulty);
         genesis.mineBlock(currentDifficulty, numThreads);
+
         mBlockOrganizer.addLocalBlock(genesis);
     }
 
     public void addTransaction(Transaction tx) {
+        // TODO: verify Signature
+        if (tx == null) {
+            System.err.println("[SEC] Transação inválida rejeitada.");
+            return;
+        }
+
         mTransactionOrganizer.addTransaction(tx);
 
         if (mTransactionOrganizer.shouldCreateBlock()) {
-            System.out.println("\n[BLOCKCHAIN] Limite de transações atingido! Criando bloco...");
+            System.out.println("\n[MINER] Mempool cheio. Iniciando mineração...");
             createNewBlock();
         }
     }
 
-    public Block createNewBlock() {
+    public void createNewBlock() {
         List<Transaction> transactions = mTransactionOrganizer.getTransactionsForBlock();
 
         if (transactions == null || transactions.isEmpty()) {
             System.out.println("[INFO] Sem transações pendentes");
-            return null;
+            return;
         }
 
-        int newBlockNumber = mBlockOrganizer.getChainHeight() + 1;
-        String previousHash = "0";
+        // CORREÇÃO CRÍTICA: Não use getChainHeight() + 1 cegamente.
+        // Pegue o objeto do último bloco para garantir o hash correto.
+        Block lastBlock = mBlockOrganizer.getLastBlock();
 
-        if (newBlockNumber > 0) {
-            Block lastBlock = mBlockOrganizer.getBlockByNumber(newBlockNumber - 1);
-            if (lastBlock != null) {
-                previousHash = lastBlock.getCurrentBlockHash();
-            }
+        String previousHash;
+        int newBlockNumber;
+
+        if (lastBlock != null) {
+            previousHash = lastBlock.getCurrentBlockHash();
+            newBlockNumber = lastBlock.getNumberBlock() + 1;
+        } else {
+            // Se não tem lastBlock, assume-se que é o Genesis (ou erro de inicialização)
+            previousHash = "0";
+            newBlockNumber = 0;
         }
 
-        Block newBlock = new Block(1, newBlockNumber , previousHash, transactions);
+        // Debug para garantir que estamos apontando para o pai certo
+        System.out.println("[MINER] Criando Bloco #" + newBlockNumber + " apontando para " + previousHash);
+
+        Block newBlock = new Block(1, newBlockNumber, previousHash, transactions, currentDifficulty);
         newBlock.mineBlock(currentDifficulty, numThreads);
 
-        mBlockOrganizer.addLocalBlock(newBlock);
+        // Se falhar aqui, newBlock será válido estruturalmente, mas rejeitado logicamente
+        boolean added = mBlockOrganizer.addLocalBlock(newBlock);
 
+        if (!added) {
+            System.err.println("[MINER] Falha crítica: Bloco minerado foi rejeitado pelo organizador local!");
+        }
+
+    }
+
+    private Block getBlock(List<Transaction> transactions) {
+        Block parentBlock = mBlockOrganizer.getLastBlock();
+
+        String previousHash;
+        int newHeight;
+
+
+        if (parentBlock != null) {
+            previousHash = parentBlock.getCurrentBlockHash();
+            newHeight = parentBlock.getNumberBlock() + 1;
+        } else {
+            previousHash = "0";
+            newHeight = 0;
+        }
+
+        Block newBlock = new Block(1, newHeight , previousHash, transactions, currentDifficulty);
+        newBlock.mineBlock(currentDifficulty, numThreads);
         return newBlock;
     }
 
@@ -96,7 +140,10 @@ public class Blockchain {
         return true;
     }
 
-    public void receiveBlockFromPeer(Block block) {
+    public void receiveBlockFromPeer(Block block) throws InterruptedException {
+        System.out.println("\n[BLOCKCHAIN] Recieving block from peer...");
+        System.out.println("Current Block: " + block);
+        Thread.sleep(100);
         mBlockOrganizer.receiveBlock(block);
     }
 
@@ -111,9 +158,9 @@ public class Blockchain {
             System.out.println("Hash: " + block.getCurrentBlockHash());
             System.out.println("Hash Anterior: " + block.getHeader().getPreviousBlockHash());
             System.out.println("Merkle Root: " + block.getHeader().getMerkleRoot().substring(0, 32) + "...");
-            System.out.println("Nonce: " + block.getNonce());
+            System.out.println("Nonce: " + block.getHeader().getNonce());
             System.out.println("Transaction Hash: ");
-            for (Transaction tx : block.getHeader().getAllTransactions()) {
+            for (Transaction tx : block.getTransactions()) {
                 System.out.println("  - " + tx);
             }
         }

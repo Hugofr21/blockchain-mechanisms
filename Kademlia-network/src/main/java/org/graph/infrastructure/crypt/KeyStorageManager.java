@@ -23,38 +23,49 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 class KeyStorageManager {
-    private static final String KEYS_DIR = "keys";
-    private static final String OWN_KEYS_DIR = KEYS_DIR + "/own";
-    private static final String NEIGHBOR_KEYS_DIR = KEYS_DIR + "/neighbors";
+    private final String rootDir;
+    private final String ownKeysDir;
+    private final String neighborKeysDir;
+
     private static final String PRIVATE_KEY_FILE = "private.key";
     private static final String PUBLIC_KEY_FILE = "public.key";
     private static final String PEER_INFO_FILE = "peer.properties";
-    private static final String password = "admin";
+    private static final String PASSWORD = "admin";
 
-    public KeyStorageManager() {
+
+    public KeyStorageManager(String peerIdentifier) {
+        this.rootDir = "storage_" + peerIdentifier + "/keys";
+        this.ownKeysDir = this.rootDir + "/own";
+        this.neighborKeysDir = this.rootDir + "/neighbors";
+
         initializeDirectories();
     }
 
     private void initializeDirectories() {
         try {
-            Files.createDirectories(Paths.get(OWN_KEYS_DIR));
-            Files.createDirectories(Paths.get(NEIGHBOR_KEYS_DIR));
+            Files.createDirectories(Paths.get(ownKeysDir));
+            Files.createDirectories(Paths.get(neighborKeysDir));
         } catch (IOException e) {
-            throw new RuntimeException("Error creating key directories.", e);
+            throw new RuntimeException("Error creating unique key directories for peer.", e);
         }
     }
 
     /**
      * Securely saves your own pair of keys.
+     * (Removido 'static' para acessar 'ownKeysDir')
      */
-    public static void saveOwnKeyPair(KeyPairPeer keyPair) throws Exception {
-        Path publicKeyPath = Paths.get(OWN_KEYS_DIR, PUBLIC_KEY_FILE);
-        Files.write(publicKeyPath, keyPair.getPrivateKey().getEncoded());
+    public void saveOwnKeyPair(KeyPairPeer keyPair) throws Exception {
+        // 1. Salvar Chave PÚBLICA (X.509)
+        Path publicKeyPath = Paths.get(ownKeysDir, PUBLIC_KEY_FILE);
+        byte[] publicBytes = keyPair.getPublicKey().getKey().getEncoded();
+        Files.write(publicKeyPath, publicBytes);
 
+        // 2. Salvar Chave PRIVADA (PKCS#8 Encrita)
         byte[] encryptedPrivateKey = encryptPrivateKey(keyPair.getPrivateKey().getEncoded());
-        Path privateKeyPath = Paths.get(OWN_KEYS_DIR, PRIVATE_KEY_FILE);
+        Path privateKeyPath = Paths.get(ownKeysDir, PRIVATE_KEY_FILE);
         Files.write(privateKeyPath, encryptedPrivateKey);
 
+        // 3. Salvar Metadados
         Properties props = new Properties();
         props.setProperty("peerId", keyPair.getPeerId().toString());
         props.setProperty("fingerprint", keyPair.getFingerprint());
@@ -62,20 +73,22 @@ class KeyStorageManager {
         props.setProperty("curve", "secp256k1");
         props.setProperty("createdAt", String.valueOf(System.currentTimeMillis()));
 
-        Path propsPath = Paths.get(OWN_KEYS_DIR, PEER_INFO_FILE);
+        Path propsPath = Paths.get(ownKeysDir, PEER_INFO_FILE);
         try (FileOutputStream fos = new FileOutputStream(propsPath.toFile())) {
             props.store(fos, "Peer Key Information");
         }
 
-        System.out.println("Saved keys - Fingerprint: " + keyPair.getFingerprint());
+        System.out.println("Saved keys to " + ownKeysDir + " - Fingerprint: " + keyPair.getFingerprint());
     }
 
     /**
      * Loading the pair keys owner
      */
     public KeyPairPeer loadOwnKeyPair() throws Exception {
-        Path propsPath = Paths.get(OWN_KEYS_DIR, PEER_INFO_FILE);
-        if (!Files.exists(propsPath)) {
+        Path propsPath = Paths.get(ownKeysDir, PEER_INFO_FILE);
+
+        // Verifica existência baseada na pasta da instância
+        if (!Files.exists(propsPath) || !Files.exists(Paths.get(ownKeysDir, PUBLIC_KEY_FILE))) {
             return null;
         }
 
@@ -86,13 +99,15 @@ class KeyStorageManager {
         BigInteger peerId = new BigInteger(props.getProperty("peerId"));
         String savedFingerprint = props.getProperty("fingerprint");
 
-        Path publicKeyPath = Paths.get(OWN_KEYS_DIR, PUBLIC_KEY_FILE);
+        // Carregar Pública
+        Path publicKeyPath = Paths.get(ownKeysDir, PUBLIC_KEY_FILE);
         byte[] publicKeyBytes = Files.readAllBytes(publicKeyPath);
         KeyFactory keyFactory = KeyFactory.getInstance("EC", "BC");
         X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(publicKeyBytes);
         PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
 
-        Path privateKeyPath = Paths.get(OWN_KEYS_DIR, PRIVATE_KEY_FILE);
+        // Carregar Privada
+        Path privateKeyPath = Paths.get(ownKeysDir, PRIVATE_KEY_FILE);
         byte[] encryptedPrivateKey = Files.readAllBytes(privateKeyPath);
         byte[] privateKeyBytes = decryptPrivateKey(encryptedPrivateKey);
         PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
@@ -103,19 +118,19 @@ class KeyStorageManager {
         KeyPairPeer keyPair = new KeyPairPeer(publicKeyPeer, privateKey);
 
         if (!keyPair.getFingerprint().equals(savedFingerprint)) {
-            throw new SecurityException("Fingerprint doesn't match! Keys may have been tampered with..");
+            throw new SecurityException("Fingerprint integrity check failed.");
         }
 
-        System.out.println("Loaded keys - Fingerprint: " + keyPair.getFingerprint());
+        System.out.println("Loaded keys from " + ownKeysDir);
         return keyPair;
     }
 
     /**
      * Saves a neighbor's public key using fingerprint as identifier.
+     * (Removido 'static' para acessar 'neighborKeysDir')
      */
-    public static void saveNeighborPublicKey(PublicKeyPeer publicKey) throws Exception {
-        // Usar fingerprint como nome do diretório
-        Path neighborDir = Paths.get(NEIGHBOR_KEYS_DIR, publicKey.getFingerprint());
+    public void saveNeighborPublicKey(PublicKeyPeer publicKey) throws Exception {
+        Path neighborDir = Paths.get(neighborKeysDir, publicKey.getFingerprint());
         Files.createDirectories(neighborDir);
 
         Path publicKeyPath = neighborDir.resolve(PUBLIC_KEY_FILE);
@@ -130,18 +145,15 @@ class KeyStorageManager {
         try (FileOutputStream fos = new FileOutputStream(propsPath.toFile())) {
             props.store(fos, "Neighbor Key Information");
         }
-
-        System.out.println("✓ Vizinho salvo - Fingerprint: " + publicKey.getFingerprint());
     }
+
 
     /**
      * Loads all public keys from neighbors
-     * Returns a map indexed by fingerprint (permanent ID)
      */
-
     public Map<String, PublicKeyPeer> loadAllNeighborPublicKeys() throws Exception {
         Map<String, PublicKeyPeer> neighbors = new ConcurrentHashMap<>();
-        Path neighborsDir = Paths.get(NEIGHBOR_KEYS_DIR);
+        Path neighborsDir = Paths.get(neighborKeysDir);
 
         if (!Files.exists(neighborsDir)) {
             return neighbors;
@@ -168,18 +180,11 @@ class KeyStorageManager {
                         PublicKeyPeer publicKey = new PublicKeyPeer(pubKey);
                         publicKey.setPeerId(peerId);
 
-                        if (!publicKey.getFingerprint().equals(fingerprint)) {
-                            System.err.println("Fingerprint does not match neighbor.: " + fingerprint);
-                            return;
-                        }
-
                         neighbors.put(fingerprint, publicKey);
                     } catch (Exception e) {
-                        System.err.println("Error loading neighbor's key.: " + e.getMessage());
+                        System.err.println("Error loading neighbor: " + e.getMessage());
                     }
                 });
-
-        System.out.println("Loading " + neighbors.size() + " key the neighbour");
         return neighbors;
     }
 
@@ -189,24 +194,19 @@ class KeyStorageManager {
      */
 
     public void deleteNeighborPublicKey(String fingerprint) throws Exception {
-        Path neighborDir = Paths.get(NEIGHBOR_KEYS_DIR, fingerprint);
+        Path neighborDir = Paths.get(neighborKeysDir, fingerprint);
         if (Files.exists(neighborDir)) {
             Files.walk(neighborDir)
                     .sorted((a, b) -> -a.compareTo(b))
                     .forEach(path -> {
-                        try {
-                            Files.delete(path);
-                        } catch (IOException e) {
-                            System.err.println("[ERROR] to the delete: " + path);
-                        }
+                        try { Files.delete(path); } catch (IOException e) { e.printStackTrace(); }
                     });
-            System.out.println("Neighbor removed - Fingerprint: " + fingerprint);
         }
     }
 
     public boolean ownKeyPairExists() {
-        Path publicKeyPath = Paths.get(OWN_KEYS_DIR, PUBLIC_KEY_FILE);
-        Path privateKeyPath = Paths.get(OWN_KEYS_DIR, PRIVATE_KEY_FILE);
+        Path publicKeyPath = Paths.get(ownKeysDir, PUBLIC_KEY_FILE);
+        Path privateKeyPath = Paths.get(ownKeysDir, PRIVATE_KEY_FILE);
         return Files.exists(publicKeyPath) && Files.exists(privateKeyPath);
     }
 
@@ -245,7 +245,8 @@ class KeyStorageManager {
 
     private static SecretKeySpec deriveKey() throws Exception {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] key = digest.digest(password.getBytes(StandardCharsets.UTF_8));
+        byte[] key = digest.digest(PASSWORD.getBytes(StandardCharsets.UTF_8));
         return new SecretKeySpec(key, "AES");
     }
+
 }

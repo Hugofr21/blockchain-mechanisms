@@ -2,7 +2,7 @@ package org.graph.infrastructure.p2p;
 
 import org.graph.domain.application.kademlia.RoutingTable;
 import org.graph.domain.application.p2p.NeighboursConnections;
-import org.graph.domain.application.pow.MiningResult;
+import org.graph.domain.application.mechanism.pow.MiningResult;
 import org.graph.domain.entities.p2p.Node;
 import org.graph.infrastructure.crypt.KeysInfrastructure;
 
@@ -26,7 +26,7 @@ public class Peer {
 
 
     public Peer(int port){
-        this.keys = new KeysInfrastructure( this);
+        this.keys = new KeysInfrastructure( this, port);
 
         MiningResult proofOfWork = null;
         try {
@@ -42,8 +42,8 @@ public class Peer {
             }
 
             // Agora é seguro acessar o getNonce()
-            System.out.println("[DEBUG] PoW Solved! Nonce: " + proofOfWork.getNonce() +
-                    " | Hash: " + proofOfWork.getNodeId().toString(16));
+            System.out.println("[DEBUG] PoW Solved! Nonce: " + proofOfWork.nonce() +
+                    " | Hash: " + proofOfWork.nodeId().toString(16));
 
 
         } catch (Exception e) {
@@ -93,21 +93,23 @@ public class Peer {
     public void startPeer(){
       running = true;
       try {
+
           server = new ServerSocket(myself.getPort());
           System.out.println("[INFO] Peer initialization at " + myself.getHost() + ":" + myself.getPort());
           Thread serverThread = new Thread(new ServerHandle(server, mLogger, this));
           serverThread.start();
       }catch (Exception e){
           System.out.println("[ERROR] in startPeer: " + e.getMessage());
-      }finally {
           server = null;
+          running = false;
           stopPeer();
       }
-
     }
 
 
     private void stopPeer(){
+        if (!running) return;
+
         running = false;
         try {
             if (server != null && !server.isClosed()) {

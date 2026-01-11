@@ -1,39 +1,30 @@
 package org.graph.domain.crypto;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.PrivateKey;
-import java.security.PublicKey;
 
-public class KeyPairPeer {
+
+public class KeyPairPeer implements Serializable {
+    private static final long serialVersionUID = 1L;
     private PublicKeyPeer publicKey;
-    private final PrivateKey privateKey;
+    private PrivateKey privateKey;
+    private BigInteger peerId;
 
     public KeyPairPeer(PublicKeyPeer publicKey, PrivateKey privateKey) {
         this.publicKey = publicKey;
         this.privateKey = privateKey;
     }
 
-    public PublicKey getPublicKey() {
-        return publicKey.getKey();
-    }
-
-    public java.security.PrivateKey getPrivateKey() {
-        return privateKey;
-    }
-
-    public String getPublicKeyBase64() {
-        return publicKey.toBase64();
-    }
-
-    public BigInteger getPeerId() {
-        return publicKey.getPeerId();
-    }
-
-    public String getFingerprint() {
-        return publicKey.getFingerprint();
-    }
-
     public void setPeerId(BigInteger peerId) {
-        publicKey.setPeerId(peerId);
+        this.peerId = peerId;
+        if (this.publicKey != null) {
+            this.publicKey.setPeerId(peerId);
+        }
     }
+
+    public BigInteger getPeerId() { return peerId; }
+    public PublicKeyPeer getPublicKey() { return publicKey; }
+    public PrivateKey getPrivateKey() { return privateKey; }
+    public String getFingerprint() {return publicKey != null ? publicKey.getFingerprint() : "null";}
 }

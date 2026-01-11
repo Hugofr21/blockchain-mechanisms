@@ -3,7 +3,7 @@ package org.graph.infrastructure.p2p;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.p2p.Node;
-import org.graph.domain.entities.p2p.NodeId;
+import org.graph.infrastructure.network.message.HandshakePayload;
 import org.graph.infrastructure.utils.Base64Utils;
 import org.graph.infrastructure.utils.SerializationUtils;
 
@@ -11,7 +11,6 @@ import java.io.*;
 import java.math.BigInteger;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -174,5 +173,13 @@ public class ConnectionHandler implements Runnable {
         } catch (IOException e) {
             logger.severe("Error closing connection: " + e.getMessage());
         }
+    }
+
+    public boolean performHandshake() {
+        return true;
+    }
+
+    private boolean validateIdentity(Node node, HandshakePayload proof) {
+        return true;
     }
 }

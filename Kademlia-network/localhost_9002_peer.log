@@ -1,6 +1,6 @@
-jan. 10, 2026 12:30:46 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+jan. 11, 2026 7:32:42 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
 INFO: Server listening for connections...
-jan. 10, 2026 12:30:46 DA TARDE org.graph.infrastructure.p2p.Peer stopPeer
-INFO: Peer shutdown: localhost:9002
-jan. 10, 2026 12:30:46 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
-INFO: Server stopped listening
+jan. 11, 2026 7:43:35 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 11, 2026 7:43:59 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...

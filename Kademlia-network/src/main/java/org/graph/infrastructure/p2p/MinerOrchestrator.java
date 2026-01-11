@@ -1,7 +1,7 @@
 package org.graph.infrastructure.p2p;
 
-import org.graph.domain.application.pow.MinerThread;
-import org.graph.domain.application.pow.MiningResult;
+import org.graph.domain.application.mechanism.pow.MinerThread;
+import org.graph.domain.application.mechanism.pow.MiningResult;
 
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -29,7 +29,7 @@ public class MinerOrchestrator {
 
         for (int i = 0; i < cores; i++) {
             long startNonce = i * rangePerThread;
-            tasks.add(new MinerThread(i, startNonce, rangePerThread, publicKey, DIFFICULTY, found));
+            tasks.add(new MinerThread(i, startNonce, rangePerThread, publicKey.getEncoded(), DIFFICULTY, found));
         }
 
         try {

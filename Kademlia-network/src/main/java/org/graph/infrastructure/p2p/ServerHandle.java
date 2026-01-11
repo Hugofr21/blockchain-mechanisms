@@ -29,18 +29,16 @@ public class ServerHandle implements Runnable {
                 Socket socket = server.accept();
                 mLogger.info("New connection from: " + socket.getRemoteSocketAddress());
 
-//                ConnectionHandler handler = new ConnectionHandler(socket, myPeer, mLogger);
-//                new Thread(handler).start();
                 connectionPool.execute(() -> {
                     try {
                         ConnectionHandler handler = new ConnectionHandler(socket, myPeer, mLogger);
                         // O handshake inicial deve ocorrer dentro do handler.
                         // Apenas após validar o ID e o Nonce o nó deve ser adicionado ao manager.
-//                        if (handler.performHandshake()) {
-//                            myPeer.getNeighboursManager().addConnection(handler);
-//                        } else {
-//                            socket.close();
-//                        }
+                        if (handler.performHandshake()) {
+                            myPeer.getNeighboursManager().addConnection(myPeer.getMyself(),handler);
+                        } else {
+                            socket.close();
+                        }
                     } catch (Exception e) {
                         mLogger.log(Level.WARNING, "Error handling connection", e);
                     }

@@ -3,8 +3,6 @@ package org.graph.infrastructure.network.kademlia;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.p2p.Node;
-import org.graph.domain.entities.p2p.NodeId;
-import org.graph.infrastructure.p2p.ConnectionHandler;
 import org.graph.infrastructure.p2p.Peer;
 import org.graph.infrastructure.provider.KademliaIController;
 import org.graph.infrastructure.storage.StorageDHT;
@@ -13,11 +11,9 @@ import org.graph.infrastructure.utils.SerializationUtils;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.stream.Collectors;
 

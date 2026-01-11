@@ -1,10 +1,8 @@
 package org.graph.domain.entities.p2p;
 
 import org.graph.domain.application.mechanism.ProofOfReputation;
-import org.graph.domain.application.p2p.NeighboursConnections;
-import org.graph.domain.application.pow.MiningResult;
+import org.graph.domain.application.mechanism.pow.MiningResult;
 
-import java.math.BigInteger;
 import java.security.PublicKey;
 import java.util.Objects;
 
@@ -18,10 +16,10 @@ public class Node {
 
 
     public Node(String host, int port, PublicKey ownerPublicKey, MiningResult miningResult) {
-        this.id = NodeId.createFromProof(ownerPublicKey, miningResult.getNonce(), NETWORK_DIFFICULTY);
+        this.id = NodeId.createFromProof(ownerPublicKey, miningResult.nonce(), NETWORK_DIFFICULTY);
         this.host = host;
         this.port = port;
-        this.nonce = miningResult.getNonce();
+        this.nonce = miningResult.nonce();
         this.myProofOfReputation = new ProofOfReputation();
     }
 

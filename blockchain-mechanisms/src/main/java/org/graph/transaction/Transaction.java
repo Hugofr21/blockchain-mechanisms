@@ -2,10 +2,11 @@ package org.graph.transaction;
 
 import org.graph.utils.HashUtils;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Objects;
 
-public class Transaction {
+public class Transaction implements Serializable {
     private String id;
     private String from;
     private String to;

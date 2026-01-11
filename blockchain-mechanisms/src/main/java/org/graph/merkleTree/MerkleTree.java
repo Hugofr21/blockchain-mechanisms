@@ -9,148 +9,126 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class MerkleTree {
-    private NodeElement root;
-    private List<NodeElement> leaves;
+    private MerkleNode root;
+    private final List<MerkleNode> leaves;
 
-    public MerkleTree(List<Transaction> transactions) throws NoSuchAlgorithmException {
+    public MerkleTree(List<Transaction> transactions) {
         this.leaves = new ArrayList<>();
-        buildTree(transactions);
+        if (transactions != null && !transactions.isEmpty()) {
+            buildTree(transactions);
+        }
     }
+
 
     public String getRootHash() {
-        return root.hash;
-    }
-
-    public List<Transaction> getTransactions() {
-        List<Transaction> transactions = new ArrayList<>();
-        for (NodeElement leaf : leaves) {
-            if (leaf.transaction != null) {
-                transactions.add(leaf.transaction);
-            }
-        }
-        return transactions;
+        return root == null ? "" : root.getHash();
     }
 
     private void buildTree(List<Transaction> transactions) {
-        if (transactions.isEmpty()) {
-            System.out.println("No transactions found!");
-            return;
-        }
-
-        List<NodeElement> nodes = new ArrayList<>();
+        List<MerkleNode> nodes = new ArrayList<>();
         for (Transaction tx : transactions) {
-            String hash = HashUtils.calculateSha256(tx.toHashString());
-            NodeElement leaf = new NodeElement(hash, tx);
-            leaves.add(leaf);
+            String txHash = HashUtils.calculateSha256(tx.toHashString());
+            MerkleNode leaf = new MerkleNode(txHash);
             nodes.add(leaf);
-        }
-
-        if (nodes.size() % 2 != 0) {
-            nodes.add(nodes.getLast());
+            leaves.add(leaf);
         }
 
         while (nodes.size() > 1) {
-            List<NodeElement> parentNodes = new ArrayList<>();
+            List<MerkleNode> nextLevel = new ArrayList<>();
 
             for (int i = 0; i < nodes.size(); i += 2) {
-                NodeElement left = nodes.get(i);
-                NodeElement right = nodes.get(i + 1);
+                MerkleNode left = nodes.get(i);
+                MerkleNode right = (i + 1 < nodes.size()) ? nodes.get(i + 1) : left;
 
-                String combinedHash = HashUtils.calculateSha256(left.hash + right.hash);
-                NodeElement parent = new NodeElement(combinedHash);
-                parent.parentLeaf = left;
-                parent.parentRight = right;
-
-                parentNodes.add(parent);
+                MerkleNode parent = new MerkleNode(left, right);
+                nextLevel.add(parent);
             }
-
-            if (parentNodes.size() % 2 != 0 && parentNodes.size() > 1) {
-                parentNodes.add(parentNodes.getLast());
-            }
-
-            nodes = parentNodes;
+            nodes = nextLevel;
         }
 
         this.root = nodes.getFirst();
     }
 
 
-    public List<String> proofFindNodeLeave(List<NodeElement> nodes, int targetIndex) {
+    /**
+     * Gera a Prova de Merkle (Merkle Path) para uma transação específica.
+     * Complexidade: O(log N) - Muito mais rápido que reconstruir a árvore.
+     */
+    public List<String> getProof(String targetTxHash) {
         List<String> proof = new ArrayList<>();
-        List<NodeElement> currentNodes = new LinkedList<>(nodes);
 
-        int index = targetIndex;
-
-        while (currentNodes.size() > 1) {
-
-            if (currentNodes.size() % 2 != 0) {
-                currentNodes.add(currentNodes.getLast());
+        // 1. Encontrar a folha (O(N) linear scan na lista de folhas ou O(1) se usar Map)
+        MerkleNode current = null;
+        for (MerkleNode leaf : leaves) {
+            if (leaf.getHash().equals(targetTxHash)) {
+                current = leaf;
+                break;
             }
-
-            int siblingIndex = (index % 2 == 0) ? index + 1 : index - 1;
-
-            proof.add(currentNodes.get(siblingIndex).getHash());
-
-            List<NodeElement> newLeaves = new ArrayList<>();
-            for (int i = 0; i < currentNodes.size(); i+= 2) {
-                NodeElement left = currentNodes.get(i);
-                NodeElement right = currentNodes.get(i + 1) ;
-
-                System.out.print("left: " + left.hash + " Right:" + right.hash);
-
-                String combined = left.hash + right.hash;
-
-                NodeElement merged = new NodeElement(combined);
-
-                merged.parentLeaf = left;
-                merged.parentLeaf = right;
-
-                newLeaves.add(merged);
-
-            }
-            index = index / 2;
-            currentNodes = newLeaves;
-
         }
+
+        if (current == null) return proof; // Transação não existe neste bloco
+
+        // 2. Navegar para cima coletando os irmãos
+        while (current != this.root && current.getParent() != null) {
+            MerkleNode parent = current.getParent();
+            MerkleNode left = parent.getLeft();
+            MerkleNode right = parent.getRight();
+
+            // Se eu sou a esquerda, preciso do hash da direita para provar
+            if (current == left) {
+                proof.add(right.getHash());
+            } else {
+                // Se eu sou a direita, preciso do hash da esquerda
+                proof.add(left.getHash());
+            }
+
+            current = parent; // Sobe um nível
+        }
+
         return proof;
     }
 
-    public NodeElement findClosetNode(NodeElement search, String target){
-        if (target != null && search != null) {
+    /**
+     * MÉTODO ESTÁTICO DE VALIDAÇÃO (Client Side)
+     * Isso roda no cliente leve ou outro peer para validar a prova sem ter o bloco todo.
+     * * @param rootHash O hash da raiz do bloco (Block Header)
+     * @param txHash O hash da transação que queremos verificar
+     * @param proof A lista de hashes irmãos fornecida pela rede
+     * @param index O índice da transação no bloco (necessário para saber a ordem de concatenação)
+     */
+    public static boolean verifyProof(String rootHash, String txHash, List<String> proof, int index) {
+        String computedHash = txHash;
 
-            if (search.hash.equals(target)) {
-                return search;
+        for (String siblingHash : proof) {
+            if (index % 2 == 0) {
+                // Eu sou par (esquerda), então irmão é direita: Hash(Eu + Irmão)
+                computedHash = HashUtils.calculateSha256(computedHash + siblingHash);
+            } else {
+                // Eu sou ímpar (direita), então irmão é esquerda: Hash(Irmão + Eu)
+                computedHash = HashUtils.calculateSha256(siblingHash + computedHash);
             }
-
-            NodeElement left = findClosetNode(search.parentLeaf, target);
-            if (left != null) {
-                return left;
-            }
-
-            NodeElement right = findClosetNode(search.parentRight, target);
-            if (right != null) {
-                return right;
-            }
-            return null;
+            index /= 2; // Sobe para o próximo nível
         }
-        return null;
+
+        return computedHash.equals(rootHash);
     }
 
-    public int depthMerkle(NodeElement node) {
+
+    public int depthMerkle(MerkleNode node) {
         if (node == null) {
             return 0;
         }
-        return Math.max(depthMerkle(node.parentLeaf), depthMerkle(node.parentRight)) + 1 ;
+        return Math.max(depthMerkle(node.getLeft()), depthMerkle(node.getRight())) + 1 ;
     }
 
-    public void display(NodeElement node, String prefix, boolean isLeft) {
+    public void display(MerkleNode node, String prefix, boolean isLeft) {
         if (node != null) {
             if (isLeft) {
-                display(node.parentLeaf, prefix + "|    ", false);
+                display(node.getLeft(), prefix + "|    ", false);
             }
 
-            System.out.println(prefix + (isLeft ? "└────────── " : "┌──────────── ") + node.hash);
-            display(node.parentRight, prefix + (isLeft ? "    " : "│   "), true);
+            System.out.println(prefix + (isLeft ? "└────────── " : "┌──────────── ") + node.getHash());
+            display(node.getRight(), prefix + (isLeft ? "    " : "│   "), true);
 
         }
 

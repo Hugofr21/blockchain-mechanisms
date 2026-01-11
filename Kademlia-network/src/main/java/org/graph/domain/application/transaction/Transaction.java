@@ -1,4 +1,4 @@
-package org.graph.domain.application;
+package org.graph.domain.application.transaction;
 
 public class Transaction {
 }

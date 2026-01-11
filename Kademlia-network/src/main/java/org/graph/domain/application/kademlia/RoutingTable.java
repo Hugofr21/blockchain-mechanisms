@@ -3,7 +3,9 @@ package org.graph.domain.application.kademlia;
 import org.graph.domain.entities.p2p.Node;
 import org.graph.domain.entities.p2p.NodeId;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.MathContext;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -15,6 +17,11 @@ import static org.graph.infrastructure.utils.Constants.ID_BITS;
 public class RoutingTable {
     private List<KBucket> buckets;
     private Node localNode;
+
+    private static final double BALANCE_FACTOR = 0.65;
+
+    // Constante para normalizar a distância XOR (2^256) para o intervalo [0, 1]
+    private static final BigDecimal MAX_DISTANCE = new BigDecimal(BigInteger.ONE.shiftLeft(ID_BITS));
 
     public RoutingTable(Node localNode) {
         this.localNode = localNode;
@@ -48,17 +55,24 @@ public class RoutingTable {
        return null;
     }
 
+
     public synchronized List<Node> findClosestNodesProximity(BigInteger targetNode, int count) {
-        PriorityQueue<NodeDistance> closest = new PriorityQueue<>(
-                Comparator.comparing(NodeDistance::getDistance)
+        PriorityQueue<NodeMetric> closest = new PriorityQueue<>(
+                Comparator.comparing(NodeMetric::getNewDistance)
         );
 
         for (KBucket bucket : buckets) {
             for (Node node : bucket.getNodes()) {
-                BigInteger distance = node.getNodeId().distanceBetweenNode(
-                        targetNode
-                );
-                closest.offer(new NodeDistance(node, distance));
+                // 1. Calcula Old Distance (OD) - XOR
+                BigInteger xorDist = node.getNodeId().distanceBetweenNode(targetNode);
+
+                // 2. Calcula Trust (t)
+                double trust = node.getMyProofOfReputation().getTrustFactor();
+
+                // 3. Calcula New Distance (ND) conforme Eq. (1) do artigo [cite: 370]
+                double nd = calculateSKademliaMetric(xorDist, trust);
+
+                closest.offer(new NodeMetric(node, nd));
             }
         }
 
@@ -66,44 +80,34 @@ public class RoutingTable {
         for (int i = 0; i < count && !closest.isEmpty(); i++) {
             result.add(closest.poll().getNode());
         }
-
         return result;
     }
 
+    // nd = od * b + (1-b) * 1/t
+    // Onde:od (Old Distance): Distância XOR.
+    // b (Balancing Factor): Fator de peso (0.65 sugerido para routing)
+    // t (Trust): Fator de confiança.
+    private double  calculateSKademliaMetric(BigInteger xorDistance, double trust ){
+        BigDecimal distance = new BigDecimal(xorDistance);
+        double normalizedDistance = distance.divide(MAX_DISTANCE, MathContext.DECIMAL64).doubleValue();
 
-    public synchronized List<Node> findClosestNodes(BigInteger targetNode, int count) {
-        PriorityQueue<NodeDistance> closest = new PriorityQueue<>(
-                Comparator.comparing(NodeDistance::getDistance)
-        );
+        double safeTrust = Math.max(0.0001, trust);
 
-        for (KBucket bucket : buckets) {
-            for (Node node : bucket.getNodes()) {
-                BigInteger distance = node.getNodeId().distanceBetweenNode(
-                        targetNode
-                );
-                closest.offer(new NodeDistance(node, distance));
-            }
-        }
+        return (normalizedDistance * BALANCE_FACTOR) + ((1.0 - BALANCE_FACTOR) * (1.0 / safeTrust));
 
-        List<Node> result = new ArrayList<>();
-        for (int i = 0; i < count && !closest.isEmpty(); i++) {
-            result.add(closest.poll().getNode());
-        }
-
-        return result;
     }
 
-    private static class NodeDistance {
-        private Node node;
-        private BigInteger distance;
+    private static class NodeMetric {
+        private final Node node;
+        private final double newDistance;
 
-        public NodeDistance(Node node, BigInteger distance) {
+        public NodeMetric(Node node, double newDistance) {
             this.node = node;
-            this.distance = distance;
+            this.newDistance = newDistance;
         }
 
         public Node getNode() { return node; }
-        public BigInteger getDistance() { return distance; }
+        public double getNewDistance() { return newDistance; }
     }
 
 }

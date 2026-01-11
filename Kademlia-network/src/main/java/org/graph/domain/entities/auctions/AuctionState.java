@@ -46,19 +46,17 @@ public class AuctionState {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("AuctionState{");
-        sb.append("auctionId='").append(auctionId).append('\'');
-        sb.append(", ownerId=").append(ownerId);
-        sb.append(", minPrice=").append(minPrice);
-        sb.append(", endTimestamp=").append(endTimestamp);
-        sb.append(", currentHighestBid=").append(currentHighestBid);
-        sb.append(", currentWinnerId=").append(currentWinnerId);
-        sb.append(", isOpen=").append(isOpen);
-        sb.append(", currentWinner=").append(currentWinnerId);
-        sb.append(", currentHighestBid=").append(currentHighestBid);
-        sb.append(", isOpen=").append(isOpen);
-        sb.append("}");
-        return sb.toString();
+        return "AuctionState{" +
+                "auctionId='" + auctionId + '\'' +
+                ", ownerId=" + ownerId +
+                ", minPrice=" + minPrice +
+                ", endTimestamp=" + endTimestamp +
+                ", currentHighestBid=" + currentHighestBid +
+                ", currentWinnerId=" + currentWinnerId +
+                ", isOpen=" + isOpen +
+                ", currentWinner=" + currentWinnerId +
+                ", currentHighestBid=" + currentHighestBid +
+                ", isOpen=" + isOpen +
+                "}";
     }
 }

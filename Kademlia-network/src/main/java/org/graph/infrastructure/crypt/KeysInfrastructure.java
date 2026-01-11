@@ -1,5 +1,6 @@
 package org.graph.infrastructure.crypt;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.graph.domain.crypto.KeyPairPeer;
 import org.graph.domain.crypto.PublicKeyPeer;
 import org.graph.infrastructure.p2p.Peer;
@@ -22,38 +23,78 @@ public class KeysInfrastructure {
     private KeyStorageManager keyStorageManager;
     private Peer ownPeer;
 
-    public KeysInfrastructure(Peer ownPeer) {
-        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+    public KeysInfrastructure(Peer ownPeer, int port) {
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+            Security.addProvider(new BouncyCastleProvider());
+        }
         this.ownPeer = ownPeer;
         this.neighborPublicKeys = new ConcurrentHashMap<>();
         this.fingerprintToPeerId = new ConcurrentHashMap<>();
-        this.keyStorageManager = new KeyStorageManager();
+        this.keyStorageManager = new KeyStorageManager("peer_" + port);
 
         try {
             initializeKeys();
+            if (this.ownKeyPair == null) {
+                throw new IllegalStateException("FATAL: KeyPair is null after initialization.");
+            }
         }catch (Exception e) {
             System.out.println("KeyStorageManager failed to initialize: " + e.getMessage());
         }
     }
 
 
-    public PublicKey getOwnerPublicKey() { return ownKeyPair.getPublicKey(); }
-    public KeyPairPeer getOwnerKeyPair() { return ownKeyPair;}
+    public PublicKey getOwnerPublicKey() {
+        ensureKeysInitialized();
+        return ownKeyPair.getPublicKey().getKey();
+    }
 
+    public KeyPairPeer getOwnerKeyPair() {
+        ensureKeysInitialized();
+        return ownKeyPair;
+    }
+
+    private void ensureKeysInitialized() {
+        if (ownKeyPair == null) {
+            throw new IllegalStateException("Security Breach: Attempt to access keys before initialization.");
+        }
+    }
 
     private void initializeKeys() throws Exception {
+        boolean loaded = false;
+
+        // 1. Tenta carregar se o arquivo existir
         if (keyStorageManager.ownKeyPairExists()) {
-            this.ownKeyPair = keyStorageManager.loadOwnKeyPair();
-            System.out.println("[DEBUG] Loaded keys - Fingerprint: " + ownKeyPair.getFingerprint());
-        } else {
-            createKeysInfrastructure();
+            try {
+                this.ownKeyPair = keyStorageManager.loadOwnKeyPair();
+                if (this.ownKeyPair != null && this.ownKeyPair.getPublicKey() != null) {
+                    System.out.println("[INFO] Keys loaded successfully. Fingerprint: " + ownKeyPair.getFingerprint());
+                    loaded = true;
+                }
+            } catch (Exception e) {
+                System.err.println("[WARN] Key file corrupted or incompatible. Generating new keys. Error: " + e.getMessage());
+                // Se falhar carregar, não pare. Deixe cair no bloco de criação abaixo.
+            }
         }
 
+        // 2. Se não existia ou se falhou ao carregar, cria novas
+        if (!loaded) {
+            System.out.println("[INFO] Generating new KeyPair infrastructure...");
+            createKeysInfrastructure();
+            // Nota: Não salvamos imediatamente aqui, o Peer fará isso após minerar o ID.
+            // Isso evita salvar chaves sem ID associado.
+        }
 
-        this.neighborPublicKeys.putAll(keyStorageManager.loadAllNeighborPublicKeys());
-        neighborPublicKeys.forEach((fingerprint, key) ->
-                fingerprintToPeerId.put(fingerprint, key.getPeerId())
-        );
+        // 3. Carrega vizinhos (opcional, não deve impedir o boot se falhar)
+        try {
+            this.neighborPublicKeys.putAll(keyStorageManager.loadAllNeighborPublicKeys());
+            neighborPublicKeys.forEach((fingerprint, key) -> {
+                if (key.getPeerId() != null) {
+                    fingerprintToPeerId.put(fingerprint, key.getPeerId());
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("[WARN] Failed to load neighbors: " + e.getMessage());
+        }
     }
 
     private void createKeysInfrastructure(){
@@ -79,7 +120,7 @@ public class KeysInfrastructure {
         }
 
         ownKeyPair.setPeerId(peerId);
-        KeyStorageManager.saveOwnKeyPair(ownKeyPair);
+        keyStorageManager.saveOwnKeyPair(ownKeyPair);
 
         System.out.println("Node save: " + peerId);
     }
@@ -92,7 +133,7 @@ public class KeysInfrastructure {
         if (!ownKeyPair.getPeerId().equals(newPeerId)) {
             System.out.println("Node change to " + ownKeyPair.getPeerId() + " from " + newPeerId);
             ownKeyPair.setPeerId(newPeerId);
-            KeyStorageManager.saveOwnKeyPair(ownKeyPair);
+            keyStorageManager.saveOwnKeyPair(ownKeyPair);
         }
     }
 
@@ -124,7 +165,7 @@ public class KeysInfrastructure {
         neighborPublicKeys.put(fingerprint, neighborKey);
         fingerprintToPeerId.put(fingerprint, peerId);
 
-        KeyStorageManager.saveNeighborPublicKey(neighborKey);
+        keyStorageManager.saveNeighborPublicKey(neighborKey);
         System.out.println("✓ Vizinho adicionado - Fingerprint: " + fingerprint + ", PeerId: " + peerId);
     }
 
@@ -225,7 +266,7 @@ public class KeysInfrastructure {
         if (ownKeyPair == null) {
             throw new IllegalStateException("Par the keys not initialization.");
         }
-        return ownKeyPair.getPublicKeyBase64();
+        return ownKeyPair.getPublicKey().toBase64();
     }
 
     public BigInteger getOwnPeerId() {

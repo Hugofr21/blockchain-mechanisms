@@ -1,6 +1,6 @@
 package org.graph.server;
 
-import org.graph.domain.entities.p2p.Node;
+
 import org.graph.infrastructure.p2p.Peer;
 import org.graph.server.utils.MenuUtils;
 

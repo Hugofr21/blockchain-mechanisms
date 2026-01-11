@@ -24,61 +24,54 @@ public class BlockOrganizer {
     public synchronized boolean addLocalBlock(Block block) {
         String currentHash = block.getCurrentBlockHash();
 
-        System.out.println("\n[INFO] → Adicionando bloco local #" + block.getNumberBlock() +
-                " (hash: " + currentHash.substring(0, 12) + "...)");
+        if (blockMap.containsKey(currentHash)) return false;
 
-        if (blockMap.containsKey(currentHash)) {
-            System.out.println("[LOCAL] Bloco já existe na cadeia");
-            return false;
-        }
 
-        // Adiciona ao mapa
-        blockMap.put(currentHash, block);
-
-        // Para bloco local, sempre temos o pai na cadeia
         String prevHash = block.getHeader().getPreviousBlockHash();
         Block parent = blockMap.get(prevHash);
 
+        if (parent == null && block.getNumberBlock() != 0) {
+            System.err.println("[ERRO CRÍTICO] Tentativa de adicionar bloco local órfão #" + block.getNumberBlock());
+            return false;
+        }
+
         if (validateAndAddToChain(block, parent)) {
-            System.out.println("[LOCAL] ✓ Bloco #" + block.getNumberBlock() + " adicionado à cadeia");
+            blockMap.put(currentHash, block);
+            System.out.println("[LOCAL] ✓ Block #" + block.getNumberBlock() + " added the chain");
+            mBlockchain.getTransactionOrganizer().markTransactionsAsProcessed(block.getTransactions());
+            mBlockchain.getTransactionOrganizer().cleanPool(block.getTransactions());
 
-            // Marca transações como processadas
-            mBlockchain.getTransactionOrganizer().markTransactionsAsProcessed(block.getHeader().getAllTransactions());
-
-            // Processa órfãos que podem depender deste bloco
             processOrphans(currentHash);
+
             return true;
         }
 
         return false;
     }
 
-    public synchronized boolean receiveBlock(Block block) {
-         String currentBlock = block.getCurrentBlockHash();
 
-         if (blockMap.containsKey(currentBlock)) {
-             System.out.println("Block " + currentBlock + " already exists");
-             return false;
-         }
+    public synchronized void receiveBlock(Block block) {
+        if (block == null) return;
 
-        blockMap.put(currentBlock, block);
+        String currentHash = block.getCurrentBlockHash();
+        if (blockMap.containsKey(currentHash)) return;
 
         String prevHash = block.getHeader().getPreviousBlockHash();
         Block parent = blockMap.get(prevHash);
 
-        if (parent == null || block.getNumberBlock() == 0) {
+        boolean isGenesis = (block.getNumberBlock() == 0);
+        boolean hasParent = (parent != null);
+
+        if (hasParent || isGenesis) {
             if (validateAndAddToChain(block, parent)) {
-                System.out.println("Added block " + block.getNumberBlock() + " to chain");
-                processOrphans(currentBlock);
+                blockMap.put(currentHash, block);
+                processOrphans(currentHash);
             }
-        }else {
+        } else {
             orphanBlocks.computeIfAbsent(prevHash, k -> new ArrayList<>()).add(block);
         }
 
-        return false;
     }
-
-
 
     private boolean validateAndAddToChain(Block block, Block parent){
         if (!block.isValidBlock(parent)) {
@@ -124,5 +117,11 @@ public class BlockOrganizer {
 
     public Block getBlockByNumber(int number) {
         return organizedChain.get(number);
+    }
+
+    public Block getLastBlock() {
+        if (organizedChain.isEmpty()) return null;
+        Integer maxId = Collections.max(organizedChain.keySet());
+        return organizedChain.get(maxId);
     }
 }

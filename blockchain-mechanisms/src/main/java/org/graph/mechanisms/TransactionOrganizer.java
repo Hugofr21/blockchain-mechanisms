@@ -45,27 +45,19 @@ public class TransactionOrganizer {
 
     public List<Transaction> getTransactionsForBlock() {
         synchronized (lock) {
-            if (pendingTransactions.isEmpty()) {
-                return null;
-            }
+            if (pendingTransactions.isEmpty()) return null;
 
-            List<Transaction> transactions = new ArrayList<>();
+            List<Transaction> candidateTxs = new ArrayList<>();
             Iterator<Transaction> iterator = pendingTransactions.iterator();
-
             int count = 0;
+
             while (iterator.hasNext() && count < maxTransactionsPending) {
                 Transaction tx = iterator.next();
-                transactions.add(tx);
-                iterator.remove();
-                completedTransactions.add(tx.getId());
+                candidateTxs.add(tx);
+                // NÃO REMOVA de 'pending' ainda, apenas selecione.
                 count++;
             }
-
-            System.out.println("[INFO] " + transactions.size() +
-                    " transactions selections for new block");
-            System.out.println("[INFO] Pendents restates: " + pendingTransactions.size());
-
-            return transactions;
+            return candidateTxs;
         }
     }
 
@@ -84,5 +76,15 @@ public class TransactionOrganizer {
         }
     }
 
+    public void cleanPool(List<Transaction> minedTxs) {
+        synchronized (lock) {
+            for (Transaction tx : minedTxs) {
+                // Agora sim removemos, pois estão na blockchain
+                pendingTransactions.remove(tx);
+                completedTransactions.add(tx.getId());
+            }
+            System.out.println("[POOL] Limpeza concluída. Pendentes restantes: " + pendingTransactions.size());
+        }
+    }
 
 }
