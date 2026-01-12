@@ -3,7 +3,6 @@ package org.graph.domain.application.p2p;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.infrastructure.p2p.ConnectionHandler;
-import org.graph.domain.common.Pair;
 import org.graph.domain.entities.p2p.Node;
 import org.graph.infrastructure.p2p.Peer;
 
@@ -62,7 +61,7 @@ public class NeighboursConnections {
      * Deve ser chamado quando um handshake TCP é completado.
      */
     public void addConnection(Node node, ConnectionHandler handler) {
-        BigInteger id = node.getNodeId().getValue();
+        BigInteger id = node.getNodeId().value();
         nodesActives.put(id, new ConnectionEntry(node, handler));
         updateTimestamp(id);
         System.out.println("[HEARTBEAT] Nó registado para monitorização: " + id);

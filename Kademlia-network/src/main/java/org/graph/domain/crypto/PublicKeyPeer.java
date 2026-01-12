@@ -1,5 +1,6 @@
 package org.graph.domain.crypto;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -7,6 +8,7 @@ import java.util.Base64;
 import  java.security.PublicKey;
 
 public class PublicKeyPeer implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     private PublicKey key;
     private BigInteger peerId;

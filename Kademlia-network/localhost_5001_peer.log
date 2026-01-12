@@ -1,0 +1,156 @@
+jan. 12, 2026 3:55:33 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 3:55:37 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:36220
+jan. 12, 2026 3:55:37 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Enviando Handshake S/Kademlia...
+jan. 12, 2026 3:55:37 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+SEVERE: Erro Handshake: org.graph.domain.entities.p2p.Node
+jan. 12, 2026 3:56:46 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 3:56:49 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:31181
+jan. 12, 2026 3:56:49 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Enviando Handshake S/Kademlia...
+jan. 12, 2026 3:56:49 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+SEVERE: Erro Handshake: org.graph.domain.entities.p2p.Node
+jan. 12, 2026 3:58:37 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 3:58:40 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:31333
+jan. 12, 2026 3:58:40 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Enviando Handshake S/Kademlia...
+jan. 12, 2026 3:58:40 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+SEVERE: Erro Handshake: org.graph.domain.entities.p2p.Node
+jan. 12, 2026 4:02:09 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 4:02:12 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:53757
+jan. 12, 2026 4:02:12 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Enviando Handshake S/Kademlia...
+jan. 12, 2026 4:02:12 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+SEVERE: Erro Handshake: org.graph.domain.entities.p2p.Node
+jan. 12, 2026 4:03:40 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 4:03:43 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:51228
+jan. 12, 2026 4:03:43 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Enviando Handshake S/Kademlia...
+jan. 12, 2026 4:03:43 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+SEVERE: Erro Handshake: org.graph.domain.entities.p2p.Node
+jan. 12, 2026 4:05:11 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 4:05:15 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:46830
+jan. 12, 2026 4:05:15 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Enviando Handshake S/Kademlia...
+jan. 12, 2026 4:05:15 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+SEVERE: Erro Handshake: org.graph.domain.entities.p2p.Node
+jan. 12, 2026 4:07:30 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 4:07:34 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:47288
+jan. 12, 2026 4:07:35 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Sending Handshake...
+jan. 12, 2026 4:07:35 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+SEVERE: Handshake Error: org.graph.domain.entities.p2p.Node
+jan. 12, 2026 4:09:17 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 4:09:20 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:47422
+jan. 12, 2026 4:09:20 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Sending Handshake...
+jan. 12, 2026 4:09:20 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+SEVERE: Handshake Error: org.graph.domain.entities.p2p.NodeId
+jan. 12, 2026 4:09:53 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 4:09:58 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:4309
+jan. 12, 2026 4:09:58 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Sending Handshake...
+jan. 12, 2026 4:09:58 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+SEVERE: Handshake Error: org.graph.domain.application.mechanism.ProofOfReputation
+jan. 12, 2026 4:10:23 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 4:10:26 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:4374
+jan. 12, 2026 4:10:26 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Sending Handshake...
+jan. 12, 2026 4:12:41 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 4:12:44 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:4621
+jan. 12, 2026 4:12:44 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Sending Handshake...
+jan. 12, 2026 4:14:39 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 4:14:42 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:14198
+jan. 12, 2026 4:14:42 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Sending Handshake...
+jan. 12, 2026 4:14:43 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+WARNING: Could not save neighbor key: class org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey cannot be cast to class org.graph.domain.crypto.PublicKeyPeer (org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey and org.graph.domain.crypto.PublicKeyPeer are in unnamed module of loader 'app')
+jan. 12, 2026 5:06:05 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 5:06:13 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:57422
+jan. 12, 2026 5:06:13 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Sending Handshake...
+jan. 12, 2026 5:06:13 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+SEVERE: Handshake Error: Illegal base64 character 3f
+jan. 12, 2026 5:10:10 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 5:10:15 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:64204
+jan. 12, 2026 5:10:15 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Sending Handshake...
+jan. 12, 2026 5:10:15 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+SEVERE: Handshake Error: class [B cannot be cast to class org.graph.infrastructure.network.message.HandshakePayload ([B is in module java.base of loader 'bootstrap'; org.graph.infrastructure.network.message.HandshakePayload is in unnamed module of loader 'app')
+jan. 12, 2026 5:20:25 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 5:20:29 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:36038
+jan. 12, 2026 5:20:29 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Sending Handshake...
+jan. 12, 2026 5:20:29 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+SEVERE: Handshake Error: class [B cannot be cast to class org.graph.infrastructure.network.message.HandshakePayload ([B is in module java.base of loader 'bootstrap'; org.graph.infrastructure.network.message.HandshakePayload is in unnamed module of loader 'app')
+jan. 12, 2026 5:23:28 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 5:23:38 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:36551
+jan. 12, 2026 5:23:38 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Sending Handshake...
+jan. 12, 2026 5:23:38 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+SEVERE: Handshake Error: class [B cannot be cast to class org.graph.infrastructure.network.message.HandshakePayload ([B is in module java.base of loader 'bootstrap'; org.graph.infrastructure.network.message.HandshakePayload is in unnamed module of loader 'app')
+jan. 12, 2026 5:25:38 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 5:25:42 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:33989
+jan. 12, 2026 5:25:42 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Sending Handshake...
+jan. 12, 2026 5:25:42 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+SEVERE: Handshake Error: class [B cannot be cast to class org.graph.infrastructure.network.message.HandshakePayload ([B is in module java.base of loader 'bootstrap'; org.graph.infrastructure.network.message.HandshakePayload is in unnamed module of loader 'app')
+jan. 12, 2026 5:26:28 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 5:26:31 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:34194
+jan. 12, 2026 5:26:31 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Sending Handshake...
+jan. 12, 2026 5:26:31 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+SEVERE: Handshake Error: class [B cannot be cast to class org.graph.infrastructure.network.message.HandshakePayload ([B is in module java.base of loader 'bootstrap'; org.graph.infrastructure.network.message.HandshakePayload is in unnamed module of loader 'app')
+jan. 12, 2026 5:28:10 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 5:28:13 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:34395
+jan. 12, 2026 5:28:13 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Sending Handshake...
+jan. 12, 2026 5:28:13 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Detectado payload em bytes (Legacy). Desserializando...
+jan. 12, 2026 5:32:53 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 12, 2026 5:32:57 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: New connection from: /127.0.0.1:33291
+jan. 12, 2026 5:32:57 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Sending Handshake...
+jan. 12, 2026 5:32:57 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler performHandshake
+INFO: Detectado payload em bytes (Legacy). Desserializando...

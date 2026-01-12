@@ -11,10 +11,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class MinerOrchestrator {
+import static org.graph.infrastructure.utils.Constants.NETWORK_DIFFICULTY;
 
-    // Configuração de dificuldade (em produção, isso viria de um arquivo de config ou da rede)
-    private static final int DIFFICULTY = 2;
+public class MinerOrchestrator {
 
     public static MiningResult executeMining(PublicKey publicKey) throws Exception {
         int cores = Runtime.getRuntime().availableProcessors();
@@ -22,30 +21,21 @@ public class MinerOrchestrator {
         AtomicBoolean found = new AtomicBoolean(false);
         List<MinerThread> tasks = new ArrayList<>();
 
-        // Espaço de busca: Long.MAX_VALUE distribuído entre as threads
         long rangePerThread = Long.MAX_VALUE / cores;
 
-        System.out.println("[INFO] Starting Mining process with difficulty " + DIFFICULTY + " on " + cores + " cores.");
+        System.out.println("[INFO] Starting Mining process with difficulty " + NETWORK_DIFFICULTY + " on " + cores + " cores.");
 
         for (int i = 0; i < cores; i++) {
             long startNonce = i * rangePerThread;
-            tasks.add(new MinerThread(i, startNonce, rangePerThread, publicKey.getEncoded(), DIFFICULTY, found));
+            tasks.add(new MinerThread(i, startNonce, rangePerThread, publicKey.getEncoded(), NETWORK_DIFFICULTY, found));
         }
 
         try {
-            // invokeAny bloqueia até que UMA das tarefas retorne com sucesso (sem lançar exceção).
-            // Automaticamente cancela as outras tarefas pendentes quando a primeira termina.
-            MiningResult result = executor.invokeAny(tasks);
-            return result;
+            return executor.invokeAny(tasks);
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException("Failed to generate valid NodeId via PoW", e);
         } finally {
-            // Garante que o pool de threads seja destruído para não impedir o encerramento da JVM
             executor.shutdownNow();
         }
-    }
-
-    public static int getDifficulty() {
-        return DIFFICULTY;
     }
 }

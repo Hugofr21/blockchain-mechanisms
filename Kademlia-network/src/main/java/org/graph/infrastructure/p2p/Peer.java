@@ -13,8 +13,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
+import static org.graph.infrastructure.utils.Constants.HOST;
+import static org.graph.infrastructure.utils.Constants.NETWORK_DIFFICULTY;
+
+
 public class Peer {
-    private static String HOST = "localhost";
     private ServerSocket server;
     private Node myself;
     private RoutingTable routingTable;
@@ -50,16 +53,16 @@ public class Peer {
             throw new RuntimeException("[CRITICAL] Failed to initialize Peer identity via Mining.", e);
         }
 
-        this.myself = new Node(HOST, port, keys.getOwnerPublicKey(), proofOfWork);
+        this.myself = new Node(HOST, port, keys.getOwnerPublicKey(), proofOfWork.nonce(), NETWORK_DIFFICULTY);
 
-        this.keys.getOwnerKeyPair().setPeerId(this.myself.getNodeId().getValue());
+        this.keys.getOwnerKeyPair().setPeerId(this.myself.getNodeId().value());
         this.routingTable = new RoutingTable(myself);
         this.neighboursManager = new NeighboursConnections(this);
         try {
-            keys.setOwnPeerIdAndSave(this.myself.getNodeId().getValue());
+            keys.setOwnPeerIdAndSave(this.myself.getNodeId().value());
             System.out.println("[DEBUG] Peer initialization:");
             System.out.println("[DEBUG] - Fingerprint: " + keys.getOwnFingerprint());
-            System.out.println("[DEBUG] - PeerId: " + myself.getNodeId().getValue());
+            System.out.println("[DEBUG] - PeerId: " + myself.getNodeId().value());
         } catch (Exception e) {
             System.out.println("[ERROR] Save the keys in file: " + e.getMessage());
         }
@@ -70,7 +73,7 @@ public class Peer {
     public NeighboursConnections getNeighboursManager() {
         return neighboursManager;
     }
-
+    public Logger getLogger() {return mLogger;}
     public RoutingTable getRoutingTable() { return routingTable; }
 
     private void createdFileLog(Node myself){
@@ -89,6 +92,7 @@ public class Peer {
 
     public Node getMyself() { return myself;}
     public boolean getIsRunning() { return running; }
+    public KeysInfrastructure getIsKeysInfrastructure() { return keys; }
 
     public void startPeer(){
       running = true;

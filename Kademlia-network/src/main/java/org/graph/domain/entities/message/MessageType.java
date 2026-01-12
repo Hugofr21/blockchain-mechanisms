@@ -10,7 +10,8 @@ public enum MessageType {
     BLOCK((byte) 0x10),
     CHUNK((byte) 0x11),
     REQUEST((byte) 0x12),
-    ACK((byte) 0x13);
+    ACK((byte) 0x13),
+    HELLO((byte) 0x14);
 
     private final byte code;
 

@@ -1,12 +1,10 @@
 package org.graph.domain.application.kademlia;
 
 import org.graph.domain.entities.p2p.Node;
-import org.graph.domain.entities.p2p.NodeId;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
-import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -39,7 +37,7 @@ public class RoutingTable {
     }
 
     private int getBucketIndex(Node node) {
-        BigInteger distance = localNode.getNodeId().distanceBetweenNode(node.getNodeId().getValue());
+        BigInteger distance = localNode.getNodeId().distanceBetweenNode(node.getNodeId().value());
         return Math.min(distance.bitLength() - 1, ID_BITS - 1);
     }
 

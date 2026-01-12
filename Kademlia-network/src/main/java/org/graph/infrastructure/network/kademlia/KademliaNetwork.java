@@ -30,54 +30,12 @@ public class KademliaNetwork implements KademliaIController {
         this.myself = myself;
     }
 
-    private Object sendRPC(Node target, Message request) {
-        // Não enviar para si mesmo via rede
-        if (target.getNodeId().equals(myself.getMyself().getNodeId())) {
-            return null;
-        }
-
-        // Try-with-resources garante que o Socket FECHA no final do bloco
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(target.getHost(), target.getPort()), TIMEOUT_MS);
-            socket.setSoTimeout(TIMEOUT_MS);
-
-            try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                 DataInputStream in = new DataInputStream(socket.getInputStream())) {
-
-                // 1. Preparar Payload: Object -> Bytes -> Base64
-                // Nota: Assumimos que request.getPayload() já devolve bytes serializados ou string
-                // Se Message suportar Object, serializamos aqui:
-                byte[] rawBytes = SerializationUtils.serialize(request); // Serializa a mensagem toda
-                String base64Message = Base64Utils.encode(rawBytes);     // Converte para Base64
-
-                // 2. Enviar Protocolo: [Tamanho (Int)] + [Base64 String (UTF-8)]
-                byte[] dataToSend = base64Message.getBytes("UTF-8");
-                out.writeInt(dataToSend.length);
-                out.write(dataToSend);
-                out.flush();
-
-                // 3. Ler Resposta
-                int length = in.readInt();
-                byte[] receivedBytes = new byte[length];
-                in.readFully(receivedBytes);
-
-                // 4. Descodificar: UTF-8 -> Base64 String -> Bytes -> Objeto
-                String receivedBase64 = new String(receivedBytes, "UTF-8");
-                byte[] objectBytes = Base64Utils.decodeToBytes(receivedBase64);
-
-                return SerializationUtils.deserialize(objectBytes);
-            }
-        } catch (Exception e) {
-            // Log de erro: Nó indisponível
-            return null;
-        }
-    }
 
 
     @Override
     public List<Node> findNode(BigInteger targetId) {
         // 1. Verificação Local (Otimização)
-        if (myself.getMyself().getNodeId().getValue().equals(targetId)) {
+        if (myself.getMyself().getNodeId().value().equals(targetId)) {
             return Collections.singletonList(myself.getMyself());
         }
 
@@ -98,7 +56,7 @@ public class KademliaNetwork implements KademliaIController {
         shortlist.addAll(localClosest);
 
         Set<BigInteger> queried = new HashSet<>();
-        queried.add(myself.getMyself().getNodeId().getValue());
+        queried.add(myself.getMyself().getNodeId().value());
 
         boolean madeProgress = true;
 
@@ -108,14 +66,14 @@ public class KademliaNetwork implements KademliaIController {
 
             // Seleciona os ALPHA nós mais próximos ainda não consultados
             List<Node> toQuery = shortlist.stream()
-                    .filter(n -> !queried.contains(n.getNodeId().getValue()))
+                    .filter(n -> !queried.contains(n.getNodeId().value()))
                     .limit(MAX_ALPHA)
                     .collect(Collectors.toList());
 
             if (toQuery.isEmpty()) break;
 
             for (Node node : toQuery) {
-                queried.add(node.getNodeId().getValue());
+                queried.add(node.getNodeId().value());
 
                 // RPC: FIND_NODE
                 Message findMsg = new Message(MessageType.FIND_NODE, targetId);
@@ -167,7 +125,7 @@ public class KademliaNetwork implements KademliaIController {
         shortlist.addAll(myself.getRoutingTable().findClosestNodesProximity(key, NODE_K));
 
         Set<BigInteger> queried = new HashSet<>();
-        queried.add(myself.getMyself().getNodeId().getValue());
+        queried.add(myself.getMyself().getNodeId().value());
 
         boolean madeProgress = true;
 
@@ -175,14 +133,14 @@ public class KademliaNetwork implements KademliaIController {
             madeProgress = false;
 
             List<Node> toQuery = shortlist.stream()
-                    .filter(n -> !queried.contains(n.getNodeId().getValue()))
+                    .filter(n -> !queried.contains(n.getNodeId().value()))
                     .limit(MAX_ALPHA)
                     .collect(Collectors.toList());
 
             if (toQuery.isEmpty()) break;
 
             for (Node node : toQuery) {
-                queried.add(node.getNodeId().getValue());
+                queried.add(node.getNodeId().value());
 
                 // RPC: FIND_VALUE (Payload é a chave)
                 Message request = new Message(MessageType.FIND_VALUE, key);
@@ -263,5 +221,49 @@ public class KademliaNetwork implements KademliaIController {
             }
         }
     }
+
+    private Object sendRPC(Node target, Message request) {
+        // Não enviar para si mesmo via rede
+        if (target.getNodeId().equals(myself.getMyself().getNodeId())) {
+            return null;
+        }
+
+        // Try-with-resources garante que o Socket FECHA no final do bloco
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(target.getHost(), target.getPort()), TIMEOUT_MS);
+            socket.setSoTimeout(TIMEOUT_MS);
+
+            try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                 DataInputStream in = new DataInputStream(socket.getInputStream())) {
+
+                // 1. Preparar Payload: Object -> Bytes -> Base64
+                // Nota: Assumimos que request.getPayload() já devolve bytes serializados ou string
+                // Se Message suportar Object, serializamos aqui:
+                byte[] rawBytes = SerializationUtils.serialize(request); // Serializa a mensagem toda
+                String base64Message = Base64Utils.encode(rawBytes);     // Converte para Base64
+
+                // 2. Enviar Protocolo: [Tamanho (Int)] + [Base64 String (UTF-8)]
+                byte[] dataToSend = base64Message.getBytes("UTF-8");
+                out.writeInt(dataToSend.length);
+                out.write(dataToSend);
+                out.flush();
+
+                // 3. Ler Resposta
+                int length = in.readInt();
+                byte[] receivedBytes = new byte[length];
+                in.readFully(receivedBytes);
+
+                // 4. Descodificar: UTF-8 -> Base64 String -> Bytes -> Objeto
+                String receivedBase64 = new String(receivedBytes, "UTF-8");
+                byte[] objectBytes = Base64Utils.decodeToBytes(receivedBase64);
+
+                return SerializationUtils.deserialize(objectBytes);
+            }
+        } catch (Exception e) {
+            // Log de erro: Nó indisponível
+            return null;
+        }
+    }
+
 
 }

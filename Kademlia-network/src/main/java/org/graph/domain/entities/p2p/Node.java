@@ -2,24 +2,27 @@ package org.graph.domain.entities.p2p;
 
 import org.graph.domain.application.mechanism.ProofOfReputation;
 import org.graph.domain.application.mechanism.pow.MiningResult;
+import org.graph.domain.crypto.PublicKeyPeer;
 
+import java.io.Serializable;
 import java.security.PublicKey;
 import java.util.Objects;
 
-public class Node {
+public class Node implements Serializable {
     private NodeId id;
     private String host;
     private int port;
-    private ProofOfReputation myProofOfReputation;
+    private transient ProofOfReputation myProofOfReputation;
     private final long nonce;
-    private final static int NETWORK_DIFFICULTY = 2;
+    private final int NETWORK_DIFFICULTY;
 
 
-    public Node(String host, int port, PublicKey ownerPublicKey, MiningResult miningResult) {
-        this.id = NodeId.createFromProof(ownerPublicKey, miningResult.nonce(), NETWORK_DIFFICULTY);
+    public Node(String host, int port, PublicKey ownerPublicKey, long nonce, int networkDifficulty) {
+        this.NETWORK_DIFFICULTY = networkDifficulty;
+        this.id = NodeId.createFromProof(ownerPublicKey, nonce , NETWORK_DIFFICULTY);
         this.host = host;
         this.port = port;
-        this.nonce = miningResult.nonce();
+        this.nonce = nonce;
         this.myProofOfReputation = new ProofOfReputation();
     }
 
@@ -32,6 +35,10 @@ public class Node {
     }
     public NodeId getNodeId() {return id;}
     public ProofOfReputation getMyProofOfReputation() {return myProofOfReputation;}
+
+    public int getNETWORK_DIFFICULTY() {
+        return NETWORK_DIFFICULTY;
+    }
 
     @Override
     public boolean equals(Object o) {

@@ -1,6 +1,5 @@
 package org.graph.domain.application.mechanism;
 
-
 public class ProofOfReputation {
     private double currentProofOfReputation = 0.0;
     private double maxProofOfReputation = 1000.0;

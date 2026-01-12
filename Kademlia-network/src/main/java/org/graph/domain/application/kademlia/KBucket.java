@@ -18,7 +18,7 @@ public class KBucket { ;
     }
 
     public synchronized boolean addNode(Node newNode) {
-        BigInteger nodeId = newNode.getNodeId().getValue();
+        BigInteger nodeId = newNode.getNodeId().value();
 
         if (nodes.containsKey(nodeId)) {
             nodes.remove(nodeId);
@@ -42,7 +42,7 @@ public class KBucket { ;
             // Lógica S-Kademlia: Evicção baseada em Trust [cite: 58]
             // Se o nó antigo for suspeito (trust baixo) e o novo tiver PoW válido...
             if (leastRecentlySeen.getMyProofOfReputation().getTrustFactor() < 0.2 && newNode.getMyProofOfReputation().getTrustFactor() > 0.5) {
-                nodes.remove(leastRecentlySeen.getNodeId().getValue());
+                nodes.remove(leastRecentlySeen.getNodeId().value());
                 nodes.put(nodeId, newNode);
                 return true;
             }
@@ -64,7 +64,7 @@ public class KBucket { ;
     }
 
     public synchronized boolean removeNode(Node node) {
-        return nodes.remove(node.getNodeId().getValue()) != null;
+        return nodes.remove(node.getNodeId().value()) != null;
     }
 
     public synchronized List<Node> getNodes() {

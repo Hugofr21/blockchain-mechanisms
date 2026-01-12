@@ -1,11 +1,13 @@
 package org.graph.domain.crypto;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.PrivateKey;
 
 
 public class KeyPairPeer implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     private PublicKeyPeer publicKey;
     private PrivateKey privateKey;

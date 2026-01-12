@@ -10,7 +10,7 @@ public class Message implements Serializable, Comparable<Message> {
     private static final long serialVersionUID = 1L;
     private MessageType type;
     private long timestamp;
-    private byte[] payload; // Alterado de String para byte[]
+    private Object payload;
     private String id;
 
     public Message(MessageType type, byte[] payload) {
@@ -35,7 +35,7 @@ public class Message implements Serializable, Comparable<Message> {
         return id;
     }
 
-    public byte[] getPayload() {
+    public Object getPayload() {
         return payload;
     }
 

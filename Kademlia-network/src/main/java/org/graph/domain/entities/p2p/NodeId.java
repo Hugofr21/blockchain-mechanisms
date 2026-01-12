@@ -1,7 +1,6 @@
 package org.graph.domain.entities.p2p;
 
-import org.graph.domain.utils.HashUtils;
-
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
@@ -9,13 +8,8 @@ import java.security.PublicKey;
 import java.util.Objects;
 
 
-public class NodeId {
+public record NodeId(BigInteger value) implements Serializable {
     public static final int ID_LENGTH_BITS = 256;
-    private final BigInteger value;
-
-    private NodeId(BigInteger value) {
-        this.value = value;
-    }
 
     public static NodeId createFromProof(PublicKey publicKey, long nonce, int difficulty) {
         BigInteger generatedId = calculateId(publicKey, nonce);
@@ -49,21 +43,12 @@ public class NodeId {
         return this.value.xor(other);
     }
 
-    public BigInteger getValue() {
-        return value;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         NodeId nodeId = (NodeId) o;
         return Objects.equals(value, nodeId.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(value);
     }
 
     @Override

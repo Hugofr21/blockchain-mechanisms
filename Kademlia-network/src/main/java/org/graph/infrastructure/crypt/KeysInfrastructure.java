@@ -166,7 +166,7 @@ public class KeysInfrastructure {
         fingerprintToPeerId.put(fingerprint, peerId);
 
         keyStorageManager.saveNeighborPublicKey(neighborKey);
-        System.out.println("✓ Vizinho adicionado - Fingerprint: " + fingerprint + ", PeerId: " + peerId);
+        System.out.println("Vizinho adicionado - Fingerprint: " + fingerprint + ", PeerId: " + peerId);
     }
 
     public void updateNeighborPeerId(String fingerprint, BigInteger newPeerId) throws Exception {
@@ -182,7 +182,7 @@ public class KeysInfrastructure {
         fingerprintToPeerId.put(fingerprint, newPeerId);
 
         keyStorageManager.saveNeighborPublicKey(updatedKey);
-        System.out.println("✓ PeerId atualizado - Fingerprint: " + fingerprint + ", Novo PeerId: " + newPeerId);
+        System.out.println("PeerId atualizado - Fingerprint: " + fingerprint + ", Novo PeerId: " + newPeerId);
     }
 
     public void removeNeighborPublicKey(String fingerprint) throws Exception {
