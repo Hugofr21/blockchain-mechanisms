@@ -46,7 +46,7 @@ public class Block implements Serializable {
         AtomicBoolean found = new AtomicBoolean(false);
 
         List<Future<MiningResult>> futures = new ArrayList<>();
-        // Correção de range para evitar overflow de Integer
+
         long nonceRangePerThread = Long.MAX_VALUE / numberThread;
 
         for (int i = 0; i < numberThread; i++) {
@@ -61,30 +61,25 @@ public class Block implements Serializable {
         MiningResult result = null;
 
         try {
-            // Espera pelo primeiro resultado (estratégia simples)
             for (Future<MiningResult> future : futures) {
                 try {
-                    // O get() bloqueia até a thread terminar.
-                    // Como usamos AtomicBoolean 'found' nas threads,
-                    // quando uma acha, as outras devem parar rapidamente.
+
                     MiningResult r = future.get();
                     if (r != null) {
                         result = r;
-                        break; // Se achou, para de esperar as outras
+                        break;
                     }
                 } catch (CancellationException e) {
                     System.out.println("Miner thread has been canceled");
-                    // Ignora threads canceladas
                 }
             }
         } catch (InterruptedException | ExecutionException e) {
             System.out.println("Mining interrupted: " + e.getMessage());
         } finally {
-            // CORREÇÃO CRÍTICA: Não mate o pool (shutdownNow).
-            // Apenas cancele as tarefas deste bloco específico.
+
             for (Future<MiningResult> f : futures) {
                 if (!f.isDone()) {
-                    f.cancel(true); // Interrompe a thread trabalhadora
+                    f.cancel(true);
                 }
             }
         }
@@ -125,7 +120,7 @@ public class Block implements Serializable {
         // 1. Validação de Gênesis
         if (parent == null) {
             boolean isGenesis = this.numberBlock == 0;
-            if(!isGenesis) System.out.println("[DEBUG] Rejeitado: Pai nulo e não é genesis");
+            if(!isGenesis) System.out.println("[DEBUG] Rejected: Father is null and it is not Genesis.");
             return this.numberBlock == 0;
         }
 

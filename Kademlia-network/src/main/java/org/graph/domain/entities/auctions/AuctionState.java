@@ -22,7 +22,7 @@ public class AuctionState {
         this.ownerId = ownerId;
         this.minPrice = minPrice;
         this.endTimestamp = endTimestamp;
-        this.currentHighestBid = minPrice; // Começa no preço mínimo
+        this.currentHighestBid = minPrice;
         this.currentWinnerId = null;
         this.isOpen = true;
     }
