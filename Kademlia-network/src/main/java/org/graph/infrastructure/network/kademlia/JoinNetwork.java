@@ -14,8 +14,8 @@ import java.net.Socket;
 public record JoinNetwork(Peer myPeer) {
 
     /**
-     * Tenta entrar na rede conectando ao IP:Porta do Bootstrap.
-     * Este é o ponto de entrada.
+     * Attempts to connect to the network by accessing the Bootstrap IP:Port.
+     * This is the entry point.
      */
     public void attemptJoin(String bootstrapHost, int bootstrapPort) {
         System.out.println("[JOIN] Conectando ao Bootstrap " + bootstrapHost + ":" + bootstrapPort);

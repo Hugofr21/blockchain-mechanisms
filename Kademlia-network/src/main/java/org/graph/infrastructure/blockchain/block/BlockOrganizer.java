@@ -1,5 +1,8 @@
-package org.graph.domain.application.mechanism.block;
+package org.graph.infrastructure.blockchain.block;
 
+
+import org.graph.domain.application.block.Block;
+import org.graph.infrastructure.blockchain.BlockchainEngine;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,9 +14,9 @@ public class BlockOrganizer {
     private Map<String, Block> blockMap;
     private Map<String, List<Block>> orphanBlocks;
     private Map<Integer, Block> organizedChain;
-    private Blockchain mBlockchain;
+    private BlockchainEngine mBlockchain;
 
-    public BlockOrganizer(Blockchain blockchain) {
+    public BlockOrganizer(BlockchainEngine blockchain) {
         this.mBlockchain = blockchain;
         this.blockMap = new ConcurrentHashMap<>();
         this.orphanBlocks = new ConcurrentHashMap<>();

@@ -26,6 +26,17 @@ public class Transaction {
         this.txId = HashUtils.calculateSha256(dataSign());
     }
 
+    public Transaction(TransactionType type) {
+        this.type = type;
+        this.timestamp = System.currentTimeMillis();
+        String data = String.format("%s%d",
+                type.toString(),
+                timestamp
+        );
+        this.txId = HashUtils.calculateSha256(data);
+    }
+
+
     private String dataSign(){
         return String.format("%s%s%s%d%s",
                 type.toString(),

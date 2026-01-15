@@ -1,21 +1,18 @@
 package org.graph.infrastructure.p2p;
 
-import org.graph.domain.crypto.PublicKeyPeer;
+
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.p2p.Node;
 import org.graph.domain.entities.p2p.NodeId;
 import org.graph.domain.utils.CryptoUtils;
 import org.graph.infrastructure.network.message.HandshakePayload;
-import org.graph.infrastructure.utils.Base64Utils;
 import org.graph.infrastructure.utils.SerializationUtils;
 
 import java.io.*;
 import java.math.BigInteger;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.util.List;
 import java.util.logging.Logger;
@@ -31,7 +28,6 @@ public class ConnectionHandler implements Runnable {
     private Logger logger;
     private volatile boolean running;
     private Node remoteNode;
-    // Limite de segurança: 10MB por mensagem
     private static final int MAX_MESSAGE_SIZE = 10 * 1024 * 1024;
 
     public ConnectionHandler(Socket socket, Peer myPeer, Logger mLogger) {
@@ -53,7 +49,6 @@ public class ConnectionHandler implements Runnable {
 
             while (myPeer.getIsRunning() && !socket.isClosed() && running) {
                 try {
-                    // Usa o método unificado de leitura
                     Message message = readMessage();
 
                     if (message.getType() == MessageType.HELLO) {
@@ -96,6 +91,7 @@ public class ConnectionHandler implements Runnable {
             case CHUNK -> handleChunk(message.getPayload());
             case REQUEST -> handleRequest(message.getPayload());
             case ACK -> handleAck(message.getPayload());
+
             default -> logger.warning("Unhandled message type: " + message.getType());
         }
     }
@@ -192,21 +188,15 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
-    // --- CORREÇÃO 2: LEITURA UNIFICADA ---
     private Message readMessage() throws IOException, ClassNotFoundException {
-        // 1. Lê o tamanho (4 bytes)
         int length = inputStream.readInt();
-
-        // Proteção contra DoS (mensagens gigantes)
         if (length > 10 * 1024 * 1024) throw new IOException("Message too large: " + length);
         if (length <= 0) throw new IOException("Invalid message length: " + length);
 
-        // 2. Lê os bytes exatos
+
         byte[] receivedBytes = new byte[length];
         inputStream.readFully(receivedBytes);
 
-        // 3. Desserializa DIRETAMENTE dos bytes (Removemos a etapa de String/Base64)
-        // O erro 'Illegal base64 character' desaparece aqui porque não há decodificação.
         Object obj = SerializationUtils.deserialize(receivedBytes);
 
         if (obj instanceof Message) {
@@ -216,9 +206,6 @@ public class ConnectionHandler implements Runnable {
         throw new IOException("Received object is not a Message instance");
     }
 
-
-    // --- HANDSHAKE CORRIGIDO ---
-    // --- HANDSHAKE ROBUSTO ---
     public boolean performHandshake() {
         try {
             initStreams();

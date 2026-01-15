@@ -10,6 +10,7 @@ import org.graph.infrastructure.p2p.Peer;
 import java.io.Serializable;
 
 public class ChainSynchronizer {
+
     private final BlockchainEngine blockchain;
     private final Peer myPeer;
 

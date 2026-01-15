@@ -1,8 +1,8 @@
 package org.graph.block;
 
 import org.graph.merkleTree.MerkleTree;
-import org.graph.pow.MinerThread;
-import org.graph.pow.MiningResult;
+import org.graph.pow.MinerThreadBlock;
+import org.graph.pow.MiningResultBlock;
 import org.graph.transaction.Transaction;
 
 import java.io.Serializable;
@@ -45,26 +45,26 @@ public class Block implements Serializable {
         long startTime = System.currentTimeMillis();
         AtomicBoolean found = new AtomicBoolean(false);
 
-        List<Future<MiningResult>> futures = new ArrayList<>();
+        List<Future<MiningResultBlock>> futures = new ArrayList<>();
 
         long nonceRangePerThread = Long.MAX_VALUE / numberThread;
 
         for (int i = 0; i < numberThread; i++) {
             long startNonce = i * nonceRangePerThread;
-            MinerThread miner = new MinerThread(
+            MinerThreadBlock miner = new MinerThreadBlock(
                     i, (int) startNonce, (int) nonceRangePerThread,
                     header.getPayloadForMining(), difficulty, found
             );
             futures.add(minerPool.submit(miner));
         }
 
-        MiningResult result = null;
+        MiningResultBlock result = null;
 
         try {
-            for (Future<MiningResult> future : futures) {
+            for (Future<MiningResultBlock> future : futures) {
                 try {
 
-                    MiningResult r = future.get();
+                    MiningResultBlock r = future.get();
                     if (r != null) {
                         result = r;
                         break;
@@ -77,7 +77,7 @@ public class Block implements Serializable {
             System.out.println("Mining interrupted: " + e.getMessage());
         } finally {
 
-            for (Future<MiningResult> f : futures) {
+            for (Future<MiningResultBlock> f : futures) {
                 if (!f.isDone()) {
                     f.cancel(true);
                 }
@@ -91,19 +91,19 @@ public class Block implements Serializable {
         }
     }
 
-    private void  applyMiningResult(MiningResult result, long startTime){
-        this.header.setNonce(result.getNonce());
-        this.hashCache = result.getHash();
+    private void  applyMiningResult(MiningResultBlock result, long startTime){
+        this.header.setNonce(result.nonce());
+        this.hashCache = result.hash();
         long endTime = System.currentTimeMillis();
 
         System.out.println("\n[INFO] Block miner!");
-        System.out.println("  Thread win: #" + result.getThreadId());
-        System.out.println("  Nonce find: " + result.getNonce());
-        System.out.println("  Attempts: " + result.getAttempts());
+        System.out.println("  Thread win: #" + result.threadId());
+        System.out.println("  Nonce find: " + result.nonce());
+        System.out.println("  Attempts: " + result.attempts());
         System.out.println("  Time: " + (endTime - startTime) + "ms");
         System.out.println("  Hash: " + hashCache.substring(0, 40) + "...");
         System.out.println("  Hash rate: " +
-                (result.getAttempts() * 1000.0 / (endTime - startTime)) + " H/s");
+                (result.attempts() * 1000.0 / (endTime - startTime)) + " H/s");
     }
 
     /**

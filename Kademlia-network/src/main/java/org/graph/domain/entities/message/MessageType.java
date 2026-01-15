@@ -7,11 +7,15 @@ public enum MessageType {
     FIND_NODE((byte) 0x04),
     FIND_VALUE((byte) 0x05),
 
-    BLOCK((byte) 0x10),
+    BLOCK((byte) 0x10), // Resposta: O objeto Bloco em si
     CHUNK((byte) 0x11),
     REQUEST((byte) 0x12),
     ACK((byte) 0x13),
-    HELLO((byte) 0x14);
+    HELLO((byte) 0x14),
+    GET_STATUS((byte) 0x15), // Pergunta: "Qual tua altura e hash atual?"
+    STATUS_RESPONSE((byte) 0x16), // Resposta: "Tenho altura 50, Hash XYZ"
+    GET_BLOCK((byte) 0x17); // Pedido: "Me dá o bloco número X"
+
 
     private final byte code;
 

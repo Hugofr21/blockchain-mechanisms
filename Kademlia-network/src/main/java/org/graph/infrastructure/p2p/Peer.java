@@ -27,28 +27,12 @@ public class Peer {
     private NeighboursConnections neighboursManager;
 
 
-
     public Peer(int port){
         this.keys = new KeysInfrastructure( this, port);
 
         MiningResult proofOfWork = null;
         try {
-            // 3. BLOQUEANTE: Executa mineração para obter identidade válida (S/Kademlia)
-            // O Peer não existe até provar trabalho.
-            System.out.println("[INFO] Starting initialization PoW...");
-            // O invokeAny agora garantirá que, se retornar, será um objeto válido ou lançará exceção
             proofOfWork = MinerOrchestrator.executeMining(keys.getOwnerPublicKey());
-
-            // Verificação Defensiva: Jamais confie cegamente no retorno de operações complexas
-            if (proofOfWork == null) {
-                throw new IllegalStateException("MiningOrchestrator returned null illegally.");
-            }
-
-            // Agora é seguro acessar o getNonce()
-            System.out.println("[DEBUG] PoW Solved! Nonce: " + proofOfWork.nonce() +
-                    " | Hash: " + proofOfWork.nodeId().toString(16));
-
-
         } catch (Exception e) {
             throw new RuntimeException("[CRITICAL] Failed to initialize Peer identity via Mining.", e);
         }
