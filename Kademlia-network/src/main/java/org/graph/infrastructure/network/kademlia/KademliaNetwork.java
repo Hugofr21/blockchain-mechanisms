@@ -31,10 +31,15 @@ public class KademliaNetwork implements KademliaIController {
     }
 
 
-
+   /*
+     // 1. Verificação Local (Otimização)
+     // 2. Inicialização da Lookup List (Shortlist)
+    // S/Kademlia Check: Validar PoW do ID para evitar Eclipse Attacks
+    // Só adicionamos à lista se o nó provar que gerou o ID corretamente
+    // && validateNodeId(received)
+    */
     @Override
     public List<Node> findNode(BigInteger targetId) {
-        // 1. Verificação Local (Otimização)
         if (myself.getMyself().getNodeId().value().equals(targetId)) {
             return Collections.singletonList(myself.getMyself());
         }
@@ -75,25 +80,20 @@ public class KademliaNetwork implements KademliaIController {
             for (Node node : toQuery) {
                 queried.add(node.getNodeId().value());
 
-                // RPC: FIND_NODE
                 Message findMsg = new Message(MessageType.FIND_NODE, targetId);
                 Object res = sendRPC(node, findMsg);
 
-                // --- CORREÇÃO DE SCOPE E CASTING ---
                 List<Node> returnedNodes = Collections.emptyList();
 
                 if (res instanceof List<?>) {
                     try {
                         returnedNodes = (List<Node>) res;
                     } catch (ClassCastException e) {
-                        continue; // Ignorar respostas malformadas
+                        continue;
                     }
                 }
 
                 for (Node received : returnedNodes) {
-                    // S/Kademlia Check: Validar PoW do ID para evitar Eclipse Attacks
-                    // Só adicionamos à lista se o nó provar que gerou o ID corretamente
-                    // && validateNodeId(received)
                     if (!shortlist.contains(received) ) {
                         shortlist.add(received);
                         madeProgress = true;
@@ -101,7 +101,6 @@ public class KademliaNetwork implements KademliaIController {
                 }
             }
 
-            // Manter apenas K
             while (shortlist.size() > NODE_K * 2) {
                 shortlist.pollLast();
             }

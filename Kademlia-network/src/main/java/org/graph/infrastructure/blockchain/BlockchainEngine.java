@@ -169,9 +169,9 @@ public class BlockchainEngine {
     }
 
     public void printStatus() {
-        System.out.println("\n╔════════════════════════════════════╗");
-        System.out.println("║         STATUS BLOCKCHAIN          ║");
-        System.out.println("╚════════════════════════════════════╝");
+        System.out.println("\n========================================");
+        System.out.println("         STATUS BLOCKCHAIN                ");
+        System.out.println("==========================================");
         System.out.println("Altura da cadeia: " + mBlockOrganizer.getChainHeight());
         System.out.println("Blocos órfãos: " + mBlockOrganizer.getOrphanCount());
         System.out.println("Transações pendentes: " + mTransactionOrganizer.getPendingCount());

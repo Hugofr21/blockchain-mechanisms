@@ -10,28 +10,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class LRUCache<K, V> implements LRU<K, V> {
     private static final int DEFAULT_CACHE_SIZE = 100;
-
-    private static class Node<K, V> {
-        K key;
-        V value;
-        Node<K, V> prev;
-        Node<K, V> next;
-
-        public Node(K key, V value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        @Override
-        public String toString() {
-            return "Node(" + key + ", " + value + ", Prev-" + (prev != null ? prev.key : null) +
-                    ", Next-" + (next != null ? next.key : null) + ")";
-        }
-    }
-
-    private Node<K, V> head;
-    private Node<K, V> tail;
-    private final Map<K, Node<K, V>> nodeMap;
+    private NodeCache<K, V> head;
+    private NodeCache<K, V> tail;
+    private final Map<K, NodeCache<K, V>> nodeMap;
     private final int cacheSize;
 
 
@@ -40,8 +21,7 @@ public class LRUCache<K, V> implements LRU<K, V> {
         nodeMap = new ConcurrentHashMap<>();
     }
 
-
-    private void addToFront(Node<K, V> node) {
+    private void addToFront(NodeCache<K, V> node) {
        nodeMap.put(node.key, node);
        if(head == null) {
            head = node;
@@ -54,8 +34,8 @@ public class LRUCache<K, V> implements LRU<K, V> {
 
     }
 
-    private synchronized Node<K, V> removeFromTail() {
-        Node<K, V> removedNode = tail;
+    private synchronized NodeCache<K, V> removeFromTail() {
+        NodeCache<K, V> removedNode = tail;
 
         tail.prev.next = null;
         tail = tail.prev;
@@ -64,7 +44,7 @@ public class LRUCache<K, V> implements LRU<K, V> {
     }
 
 
-    private synchronized void moveToHead(Node<K, V> node) {
+    private synchronized void moveToHead(NodeCache<K, V> node) {
         if (head == node) {
             return;
         }
@@ -92,17 +72,17 @@ public class LRUCache<K, V> implements LRU<K, V> {
         }
 
        if (nodeMap.containsKey(key)) {
-           Node<K, V> node = nodeMap.get(key);
+           NodeCache<K, V> node = nodeMap.get(key);
            node.value = value;
            moveToHead(node);
            return;
        }
 
-        Node<K, V> node = new Node<>(key, value);
+        NodeCache<K, V> node = new NodeCache<>(key, value);
         addToFront(node);
 
         if (nodeMap.size() > cacheSize) {
-            Node<K, V> removedNode = removeFromTail();
+            NodeCache<K, V> removedNode = removeFromTail();
             System.out.println("Remove From Tail!!--------{}" + removedNode.toString());
         }
     }
@@ -112,12 +92,12 @@ public class LRUCache<K, V> implements LRU<K, V> {
         if (key == null) {
            return null;
         }
-        Node<K, V> node = nodeMap.get(key);
+        NodeCache<K, V> node = nodeMap.get(key);
         moveToHead(node);
         return null;
     }
 
-    private synchronized  Map<K, Node<K, V>> getNodeMap() {
+    private synchronized  Map<K, NodeCache<K, V>> getNodeMap() {
         return nodeMap;
     }
 

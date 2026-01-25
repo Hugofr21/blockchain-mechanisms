@@ -3,27 +3,29 @@ package org.graph.domain.entities.message;
 import org.graph.infrastructure.utils.SerializationUtils;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.UUID;
 
 public class Message implements Serializable, Comparable<Message> {
+    @Serial
     private static final long serialVersionUID = 1L;
-    private MessageType type;
-    private long timestamp;
-    private Object payload;
-    private String id;
+    private final MessageType type;
+    private final long timestamp;
+    private final Object payload;
+    private final String requestId;
 
     public Message(MessageType type, byte[] payload) {
         this.type = type;
         this.timestamp = System.currentTimeMillis();
         this.payload = payload;
-        this.id = UUID.randomUUID().toString();
+        this.requestId = UUID.randomUUID().toString();
     }
 
     public Message(MessageType type, Object objectToSerialize) {
         this.type = type;
         this.timestamp = System.currentTimeMillis();
-        this.id = UUID.randomUUID().toString();
+        this.requestId = UUID.randomUUID().toString();
         try {
             this.payload = SerializationUtils.serialize(objectToSerialize);
         } catch (IOException e) {
@@ -32,7 +34,7 @@ public class Message implements Serializable, Comparable<Message> {
     }
 
     public String getId() {
-        return id;
+        return requestId;
     }
 
     public Object getPayload() {

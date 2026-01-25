@@ -53,21 +53,24 @@ public class RoutingTable {
        return null;
     }
 
-
+   /*
+      // 1. Calcula Old Distance (OD) - XOR
+      // 2. Calcula Trust (t)
+      // 3. Calcula New Distance (ND) conforme Eq. (1) do artigo [cite: 370]
+    */
     public synchronized List<Node> findClosestNodesProximity(BigInteger targetNode, int count) {
         PriorityQueue<NodeMetric> closest = new PriorityQueue<>(
-                Comparator.comparing(NodeMetric::getNewDistance)
+                Comparator.comparing(NodeMetric::newDistance)
         );
 
         for (KBucket bucket : buckets) {
             for (Node node : bucket.getNodes()) {
-                // 1. Calcula Old Distance (OD) - XOR
+
                 BigInteger xorDist = node.getNodeId().distanceBetweenNode(targetNode);
 
-                // 2. Calcula Trust (t)
+
                 double trust = node.getMyProofOfReputation().getTrustFactor();
 
-                // 3. Calcula New Distance (ND) conforme Eq. (1) do artigo [cite: 370]
                 double nd = calculateSKademliaMetric(xorDist, trust);
 
                 closest.offer(new NodeMetric(node, nd));
@@ -76,7 +79,7 @@ public class RoutingTable {
 
         List<Node> result = new ArrayList<>();
         for (int i = 0; i < count && !closest.isEmpty(); i++) {
-            result.add(closest.poll().getNode());
+            result.add(closest.poll().node());
         }
         return result;
     }
@@ -94,18 +97,4 @@ public class RoutingTable {
         return (normalizedDistance * BALANCE_FACTOR) + ((1.0 - BALANCE_FACTOR) * (1.0 / safeTrust));
 
     }
-
-    private static class NodeMetric {
-        private final Node node;
-        private final double newDistance;
-
-        public NodeMetric(Node node, double newDistance) {
-            this.node = node;
-            this.newDistance = newDistance;
-        }
-
-        public Node getNode() { return node; }
-        public double getNewDistance() { return newDistance; }
-    }
-
 }

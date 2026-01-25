@@ -1,12 +1,14 @@
 package org.graph.infrastructure.p2p;
 
 
+import org.graph.domain.application.block.Block;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.p2p.Node;
 import org.graph.domain.entities.p2p.NodeId;
 import org.graph.domain.utils.CryptoUtils;
 import org.graph.infrastructure.network.message.HandshakePayload;
+import org.graph.infrastructure.utils.Constants;
 import org.graph.infrastructure.utils.SerializationUtils;
 
 import java.io.*;
@@ -17,8 +19,7 @@ import java.security.PublicKey;
 import java.util.List;
 import java.util.logging.Logger;
 
-import static org.graph.infrastructure.utils.Constants.NODE_K;
-import static org.graph.infrastructure.utils.Constants.NETWORK_DIFFICULTY;
+import static org.graph.infrastructure.utils.Constants.*;
 
 public class ConnectionHandler implements Runnable {
     private Socket socket;
@@ -28,7 +29,6 @@ public class ConnectionHandler implements Runnable {
     private Logger logger;
     private volatile boolean running;
     private Node remoteNode;
-    private static final int MAX_MESSAGE_SIZE = 10 * 1024 * 1024;
 
     public ConnectionHandler(Socket socket, Peer myPeer, Logger mLogger) {
         this.socket = socket;
@@ -106,6 +106,14 @@ public class ConnectionHandler implements Runnable {
     }
 
     private void handleBlock(Object payload) {
+        try {
+            byte[] raw = (byte[]) payload;
+            Block block = (Block) SerializationUtils.deserialize(raw);
+            // isValidBlock
+
+        }catch (Exception e) {
+            System.out.println("Exception in handleBlock: " + e.getMessage());
+        }
     }
 
     private void handleStorage(Object payload) {
@@ -146,32 +154,26 @@ public class ConnectionHandler implements Runnable {
 
 
     /**
-     * Lê e desserializa o próximo objeto do stream.
+     * Write the deserializer.
      */
-    private Object readObject() throws IOException, ClassNotFoundException {
-        // 1. Lê o tamanho do pacote
+    private Message readMessage() throws IOException, ClassNotFoundException {
         int length = inputStream.readInt();
+        if (length <= 0 || length > MAX_MESSAGE_SIZE * 2)
+            throw new IOException("Invalid size: " + length);
 
-        // 2. Proteção contra DoS ou Corrupção
-        if (length <= 0) throw new IOException("Invalid message length: " + length);
-        if (length > MAX_MESSAGE_SIZE) throw new IOException("Message too large: " + length + " bytes");
+        byte[] raw = new byte[length];
+        inputStream.readFully(raw);
+        Object obj = SerializationUtils.deserialize(raw);
 
-        // 3. Aloca buffer e lê os bytes exatos
-        byte[] buffer = new byte[length];
-        inputStream.readFully(buffer);
+        if (!(obj instanceof Message))
+            throw new IOException("Expected Message, got " + obj.getClass());
 
-        // 4. Desserializa bytes brutos para Objeto Java
-        return SerializationUtils.deserialize(buffer);
+        return (Message) obj;
     }
-
 
     public synchronized void sendMessage(Object object) throws IOException {
         if (socket.isClosed()) throw new IOException("Socket closed");
-
-        // 1. Serializa para bytes brutos (Sem Base64 - Mais rápido e menor)
         byte[] data = SerializationUtils.serialize(object);
-
-        // 2. Envia Tamanho -> Dados
         outputStream.writeInt(data.length);
         outputStream.write(data);
         outputStream.flush();
@@ -188,30 +190,11 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
-    private Message readMessage() throws IOException, ClassNotFoundException {
-        int length = inputStream.readInt();
-        if (length > 10 * 1024 * 1024) throw new IOException("Message too large: " + length);
-        if (length <= 0) throw new IOException("Invalid message length: " + length);
-
-
-        byte[] receivedBytes = new byte[length];
-        inputStream.readFully(receivedBytes);
-
-        Object obj = SerializationUtils.deserialize(receivedBytes);
-
-        if (obj instanceof Message) {
-            System.out.println(((Message) obj).getType());
-            return (Message) obj;
-        }
-        throw new IOException("Received object is not a Message instance");
-    }
-
     public boolean performHandshake() {
         try {
             initStreams();
             socket.setSoTimeout(5000);
 
-            // 1. PREPARAR PAYLOAD
             long timestamp = System.currentTimeMillis();
             String challengeData = myPeer.getMyself().getNodeId().value().toString() + ":" + timestamp;
             byte[] signature = myPeer.getIsKeysInfrastructure().signMessage(challengeData);
@@ -223,30 +206,25 @@ public class ConnectionHandler implements Runnable {
                     signature
             );
 
-            // 2. ENVIAR HELLO
-            logger.info("Sending Handshake...");
-            // Enviamos o objeto puro. O sendMessage serializa tudo.
+
             sendMessage(new Message(MessageType.HELLO, myPayload));
 
-            // 3. RECEBER RESPOSTA
             Message response = readMessage();
             if (response == null || response.getType() != MessageType.HELLO) {
                 logger.warning("Invalid Handshake Response: " + (response == null ? "null" : response.getType()));
                 return false;
             }
 
-            // 4. EXTRAÇÃO DO PAYLOAD (CORREÇÃO DO ERRO [B)
+
             Object rawPayload = response.getPayload();
             HandshakePayload remotePayload;
 
             if (rawPayload instanceof HandshakePayload) {
-                // Cenário ideal: O outro lado enviou o objeto corretamente
+
                 remotePayload = (HandshakePayload) rawPayload;
             }
             else if (rawPayload instanceof byte[]) {
-                // CENÁRIO DO ERRO: O outro lado enviou bytes serializados (Dupla Serialização)
-                // Nós corrigimos isso desserializando manualmente aqui.
-                logger.info("Detectado payload em bytes (Legacy). Desserializando...");
+
                 remotePayload = (HandshakePayload) SerializationUtils.deserialize((byte[]) rawPayload);
             }
             else {
@@ -254,15 +232,13 @@ public class ConnectionHandler implements Runnable {
                 return false;
             }
 
-            // 5. VALIDAR
             if (!validateIdentity(remotePayload)) {
                 return false;
             }
 
-            // 6. SUCESSO
+
             this.remoteNode = remotePayload.node();
 
-            // Persistir chave do vizinho
             try {
                 PublicKey pk = (PublicKey) remotePayload.publicKey();
                 myPeer.getIsKeysInfrastructure().addNeighborPublicKey(
@@ -294,7 +270,7 @@ public class ConnectionHandler implements Runnable {
                 return false;
             }
 
-            // Recalcula ID
+
             NodeId calculatedId = NodeId.createFromProof(
                     receivedKey,
                     node.getNonce(),
@@ -305,7 +281,7 @@ public class ConnectionHandler implements Runnable {
                 return false;
             }
 
-            // Verifica Assinatura
+
             String challengeData = node.getNodeId().value().toString() + ":" + payload.timestamp();
 
             return CryptoUtils.verifySignature(

@@ -13,4 +13,5 @@ public class Constants {
     public static final String ALGORITHM_PEER = "ECDSA";
     public static final String ALGORITHM_CURVE = "secp256r1";
     public static final String HOST = "localhost";
+    public static final int MAX_MESSAGE_SIZE = 10 * 1024 * 1024;
 }
