@@ -142,3 +142,33 @@ jan. 25, 2026 2:40:18 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler ru
 INFO: Connection loop started: localhost/127.0.0.1:5001
 jan. 25, 2026 2:40:18 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler closeConnection
 INFO: Connection closed
+jan. 27, 2026 4:00:25 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 27, 2026 4:00:26 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:5001
+jan. 27, 2026 4:00:26 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 27, 2026 4:43:01 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 27, 2026 4:49:33 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 27, 2026 4:49:34 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler run
+SEVERE: Connection stream error: Socket is closed
+jan. 27, 2026 4:49:34 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 27, 2026 5:45:39 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 27, 2026 5:45:40 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler run
+SEVERE: Connection stream error: Socket is closed
+jan. 27, 2026 5:45:40 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 27, 2026 5:46:26 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 27, 2026 5:49:40 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...
+jan. 27, 2026 5:49:41 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler run
+SEVERE: Connection stream error: Socket is closed
+jan. 27, 2026 5:49:41 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 27, 2026 5:56:57 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+INFO: Server listening for connections...

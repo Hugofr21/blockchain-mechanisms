@@ -5,6 +5,7 @@ import org.graph.domain.entities.message.MessageType;
 import org.graph.infrastructure.p2p.ConnectionHandler;
 import org.graph.domain.entities.p2p.Node;
 import org.graph.infrastructure.p2p.Peer;
+import org.graph.infrastructure.utils.MessageUtils;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -135,7 +136,7 @@ public class NeighboursConnections {
             try {
                 // Envia PING usando a conexão TCP já aberta
                 Message pingMsg = new Message(MessageType.PING, "KEEP_ALIVE");
-                entry.handler().sendMessage(pingMsg);
+                MessageUtils.sendMessage(entry.handler().getOutputStream() ,pingMsg);
             } catch (IOException e) {
                 System.out.println("[HEARTBEAT] Falha ao enviar PING: " + e.getMessage());
                 // Se falhar o envio, provavelmente o socket caiu. Removemos na próxima iteração ou agora.

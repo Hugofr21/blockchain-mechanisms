@@ -6,6 +6,7 @@ import org.graph.domain.entities.message.MessageType;
 import org.graph.infrastructure.blockchain.BlockchainEngine;
 import org.graph.infrastructure.p2p.ConnectionHandler;
 import org.graph.infrastructure.p2p.Peer;
+import org.graph.infrastructure.utils.MessageUtils;
 
 import java.io.Serializable;
 
@@ -26,7 +27,7 @@ public class ChainSynchronizer {
         try {
             // Envia um pedido leve apenas para saber a altura do vizinho
             Message statusReq = new Message(MessageType.GET_STATUS, "STATUS_REQ");
-            handler.sendMessage(statusReq);
+            MessageUtils.sendMessage(handler.getOutputStream(),statusReq);
         } catch (Exception e) {
             System.err.println("[SYNC] Falha ao pedir status: " + e.getMessage());
         }
@@ -50,7 +51,8 @@ public class ChainSynchronizer {
                 try {
                     // Pede o bloco pelo número (Height/Index)
                     Message getBlockMsg = new Message(MessageType.GET_BLOCK, i);
-                    handler.sendMessage(getBlockMsg);
+
+                    MessageUtils.sendMessage(handler.getOutputStream(),getBlockMsg);
 
                     // Pequeno delay para não congestionar a rede (opcional)
                     Thread.sleep(50);
@@ -74,7 +76,8 @@ public class ChainSynchronizer {
                     : "0";
 
             StatusPayload payload = new StatusPayload(myHeight, bestHash);
-            handler.sendMessage(new Message(MessageType.STATUS_RESPONSE, payload));
+            MessageUtils.sendMessage(handler.getOutputStream(),new Message(MessageType.STATUS_RESPONSE, payload));
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -87,8 +90,7 @@ public class ChainSynchronizer {
         try {
             Block block = blockchain.getBlockOrganizer().getBlockByNumber(blockNumber);
             if (block != null) {
-                // Envia o bloco inteiro
-                handler.sendMessage(new Message(MessageType.BLOCK, block));
+                MessageUtils.sendMessage(handler.getOutputStream(),block);
                 System.out.println("[SYNC] Enviando Bloco #" + blockNumber + " para " + handler.getRemoteNode().getPort());
             }
         } catch (Exception e) {

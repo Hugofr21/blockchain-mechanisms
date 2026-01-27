@@ -109,14 +109,17 @@ public class KademliaNetwork implements KademliaIController {
         return new ArrayList<>(shortlist).subList(0, Math.min(NODE_K, shortlist.size()));
     }
 
+
+    //1. verifiar local tem o valor
+    //2. verifica ultimas consult se tem o valor LRU
+    //3. Buscar resucrisva do valor aos aphas k
+    //4. Se iver esse k o valor deolve
+    //5 Se nao devolvr uma lista de nod e proximosapra id
     @Override
     public Object findValue(BigInteger key) {
-        // 1. Verificar armazenamento local (Cache/Storage Local)
         Object localVal = storage.get(key, Object.class);
         if (localVal != null) return localVal;
 
-        // 2. Inicializar Busca Iterativa (Similar ao findNode)
-        // Usamos uma shortlist para nos aproximarmos do nó que DEVE ter o valor
         TreeSet<Node> shortlist = new TreeSet<>(Comparator.comparing(
                 n -> n.getNodeId().distanceBetweenNode(key)
         ));

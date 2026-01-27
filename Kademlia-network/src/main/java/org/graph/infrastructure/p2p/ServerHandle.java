@@ -1,7 +1,11 @@
 package org.graph.infrastructure.p2p;
 
+import org.graph.domain.entities.p2p.Node;
+import org.graph.infrastructure.utils.HandshakeUtils;
+
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -32,9 +36,8 @@ public class ServerHandle implements Runnable {
                 connectionPool.execute(() -> {
                     try {
                         ConnectionHandler handler = new ConnectionHandler(socket, myPeer, mLogger);
-                        // O handshake inicial deve ocorrer dentro do handler.
-                        // Apenas após validar o ID e o Nonce o nó deve ser adicionado ao manager.
-                        if (handler.performHandshake()) {
+                        Optional<Node> handshake = HandshakeUtils.doHandshake(myPeer, handler.getInputStream(), handler.getOutputStream());
+                        if (handshake.isPresent()) {
                             myPeer.getNeighboursManager().addConnection(myPeer.getMyself(),handler);
                         } else {
                             socket.close();
