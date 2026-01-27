@@ -55,7 +55,6 @@ public class TransactionOrganizer {
             while (iterator.hasNext() && count < maxTransactionsPending) {
                 Transaction tx = iterator.next();
                 candidateTxs.add(tx);
-                // NÃO REMOVA de 'pending' ainda, apenas selecione.
                 count++;
             }
             return candidateTxs;
@@ -80,7 +79,7 @@ public class TransactionOrganizer {
     public void cleanPool(List<Transaction> minedTxs) {
         synchronized (lock) {
             for (Transaction tx : minedTxs) {
-                // Agora sim removemos, pois estão na blockchain
+
                 pendingTransactions.remove(tx);
                 completedTransactions.add(tx.getTxId());
             }

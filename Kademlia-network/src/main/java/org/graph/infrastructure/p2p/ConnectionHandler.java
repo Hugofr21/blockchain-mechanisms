@@ -115,6 +115,7 @@ public class ConnectionHandler implements Runnable {
     }
 
     private void handleAck(Object payload) {
+
     }
 
     private void handleRequest(Object payload) {
@@ -148,7 +149,7 @@ public class ConnectionHandler implements Runnable {
 
             List<Node> closestNodes = myPeer.getRoutingTable().findClosestNodesProximity(targetId, NODE_K);
 
-            Message response = new Message(MessageType.ACK, closestNodes);
+            Message response = new Message(MessageType.ACK, closestNodes, myPeer.getHybridLogicalClock());
 
             sendMessage(outputStream,response);
 
@@ -163,7 +164,7 @@ public class ConnectionHandler implements Runnable {
 
     private void handlePing(Object payload) {
        try {
-           sendMessage(outputStream,new Message(MessageType.PONG, payload));
+           sendMessage(outputStream,new Message(MessageType.PONG, payload, myPeer.getHybridLogicalClock()));
        }catch (Exception e) {
            System.out.println("[ERROR] Fail as send PING:  " + e.getMessage());
        }

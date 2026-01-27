@@ -80,7 +80,7 @@ public class KademliaNetwork implements KademliaIController {
             for (Node node : toQuery) {
                 queried.add(node.getNodeId().value());
 
-                Message findMsg = new Message(MessageType.FIND_NODE, targetId);
+                Message findMsg = new Message(MessageType.FIND_NODE, targetId, myself.getHybridLogicalClock());
                 Object res = sendRPC(node, findMsg);
 
                 List<Node> returnedNodes = Collections.emptyList();
@@ -145,7 +145,7 @@ public class KademliaNetwork implements KademliaIController {
                 queried.add(node.getNodeId().value());
 
                 // RPC: FIND_VALUE (Payload é a chave)
-                Message request = new Message(MessageType.FIND_VALUE, key);
+                Message request = new Message(MessageType.FIND_VALUE, key, myself.getHybridLogicalClock());
                 Object response = sendRPC(node, request);
 
                 if (response == null) continue; // Timeout ou erro
@@ -189,7 +189,7 @@ public class KademliaNetwork implements KademliaIController {
 
     @Override
     public boolean ping(Node target) {
-        Message pingMsg = new Message(MessageType.PING, "PING");
+        Message pingMsg = new Message(MessageType.PING, "PING", myself.getHybridLogicalClock());
         Object res = sendRPC(target, pingMsg);
         return res != null;
     }
@@ -207,7 +207,7 @@ public class KademliaNetwork implements KademliaIController {
         storagePayload.put("value", value);
 
         // A mensagem transporta o mapa serializável
-        Message storeMsg = new Message(MessageType.STORAGE, storagePayload);
+        Message storeMsg = new Message(MessageType.STORAGE, storagePayload, myself.getHybridLogicalClock());
 
         for (Node node : closestNodes) {
             if (node.equals(myself.getMyself())) {

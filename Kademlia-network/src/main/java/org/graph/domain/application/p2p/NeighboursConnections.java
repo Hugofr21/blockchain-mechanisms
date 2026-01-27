@@ -135,7 +135,7 @@ public class NeighboursConnections {
         if (entry != null && entry.handler() != null) {
             try {
                 // Envia PING usando a conexão TCP já aberta
-                Message pingMsg = new Message(MessageType.PING, "KEEP_ALIVE");
+                Message pingMsg = new Message(MessageType.PING, "KEEP_ALIVE", peer.getHybridLogicalClock().next());
                 MessageUtils.sendMessage(entry.handler().getOutputStream() ,pingMsg);
             } catch (IOException e) {
                 System.out.println("[HEARTBEAT] Falha ao enviar PING: " + e.getMessage());

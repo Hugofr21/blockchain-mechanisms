@@ -1,5 +1,6 @@
 package org.graph.domain.entities.message;
 
+import org.graph.infrastructure.networkTime.HybridLogicalClock;
 import org.graph.infrastructure.utils.SerializationUtils;
 
 import java.io.IOException;
@@ -11,20 +12,13 @@ public class Message implements Serializable, Comparable<Message> {
     @Serial
     private static final long serialVersionUID = 1L;
     private final MessageType type;
-    private final long timestamp;
+    private final HybridLogicalClock timestamp;
     private final Object payload;
     private final String requestId;
 
-    public Message(MessageType type, byte[] payload) {
+    public Message(MessageType type, Object objectToSerialize, HybridLogicalClock timestamp) {
         this.type = type;
-        this.timestamp = System.currentTimeMillis();
-        this.payload = payload;
-        this.requestId = UUID.randomUUID().toString();
-    }
-
-    public Message(MessageType type, Object objectToSerialize) {
-        this.type = type;
-        this.timestamp = System.currentTimeMillis();
+        this.timestamp = timestamp;
         this.requestId = UUID.randomUUID().toString();
         try {
             this.payload = SerializationUtils.serialize(objectToSerialize);
@@ -41,7 +35,7 @@ public class Message implements Serializable, Comparable<Message> {
         return payload;
     }
 
-    public long getTimestamp() {
+    public HybridLogicalClock getTimestamp() {
         return timestamp;
     }
 

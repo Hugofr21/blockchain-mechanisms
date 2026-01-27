@@ -5,6 +5,8 @@ import org.graph.domain.application.p2p.NeighboursConnections;
 import org.graph.domain.application.mechanism.pow.MiningResult;
 import org.graph.domain.entities.p2p.Node;
 import org.graph.infrastructure.crypt.KeysInfrastructure;
+import org.graph.infrastructure.network.kademlia.KademliaNetwork;
+import org.graph.infrastructure.networkTime.HybridLogicalClock;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -25,10 +27,13 @@ public class Peer {
     private volatile boolean running;
     private KeysInfrastructure keys;
     private NeighboursConnections neighboursManager;
+    private KademliaNetwork kademliaNetwork;
+    private HybridLogicalClock hybridLogicalClock;
 
 
     public Peer(int port){
         this.keys = new KeysInfrastructure( this, port);
+        this.hybridLogicalClock = new HybridLogicalClock();
 
         MiningResult proofOfWork = null;
         try {
@@ -42,6 +47,7 @@ public class Peer {
         this.keys.getOwnerKeyPair().setPeerId(this.myself.getNodeId().value());
         this.routingTable = new RoutingTable(myself);
         this.neighboursManager = new NeighboursConnections(this);
+        this.kademliaNetwork = new KademliaNetwork(this);
         try {
             keys.setOwnPeerIdAndSave(this.myself.getNodeId().value());
             System.out.println("[DEBUG] Peer initialization:");
@@ -59,6 +65,7 @@ public class Peer {
     }
     public Logger getLogger() {return mLogger;}
     public RoutingTable getRoutingTable() { return routingTable; }
+    public HybridLogicalClock getHybridLogicalClock() { return hybridLogicalClock; }
 
     private void createdFileLog(Node myself){
         try {

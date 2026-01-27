@@ -58,9 +58,7 @@ public record JoinNetwork(Peer myPeer) {
             System.out.println("[JOIN] Disparando Lookup (FIND_NODE) buscando a mim mesmo...");
 
             BigInteger myId = myPeer.getMyself().getNodeId().value();
-            Message lookup = new Message(MessageType.FIND_NODE, myId);
-
-            // getOutputStream já está aberto (initStreams foi chamado antes)
+            Message lookup = new Message(MessageType.FIND_NODE, myId, myPeer.getHybridLogicalClock());
             MessageUtils.sendMessage(handler.getOutputStream(), lookup);
         } catch (IOException e) {
             System.err.println("[JOIN] Erro ao enviar Lookup: " + e.getMessage());

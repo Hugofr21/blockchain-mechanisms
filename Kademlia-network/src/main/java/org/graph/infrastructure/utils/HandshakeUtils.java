@@ -43,7 +43,7 @@ public final class HandshakeUtils {
                 signature
         );
 
-        MessageUtils.sendMessage(out, new Message(MessageType.HELLO, myPayload));
+        MessageUtils.sendMessage(out, new Message(MessageType.HELLO, myPayload, myPeer.getHybridLogicalClock().next()));
         Message response = MessageUtils.readMessage(in);
 
 
