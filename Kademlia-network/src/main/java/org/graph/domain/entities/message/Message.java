@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.util.UUID;
 
 public class Message implements Serializable, Comparable<Message> {
+
     @Serial
     private static final long serialVersionUID = 1L;
     private final MessageType type;
@@ -47,4 +48,15 @@ public class Message implements Serializable, Comparable<Message> {
     public int compareTo(Message o) {
         return 0;
     }
+
+    @Override
+    public String toString() {
+        return "Message{" +
+                "type=" + type +
+                ", timestamp=" + timestamp +
+                ", payload=" + payload +
+                ", requestId='" + requestId + '\'' +
+                '}';
+    }
+
 }

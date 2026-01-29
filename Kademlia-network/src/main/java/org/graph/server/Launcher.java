@@ -43,5 +43,7 @@ public class Launcher {
                 e.printStackTrace();
             }
         }).start();
+
+        MenuUtils.showMainMenu(peer);
     }
 }

@@ -123,24 +123,6 @@ public class BlockchainEngine {
     }
 
 
-    public boolean isChainValid() {
-        List<Block> chain = mBlockOrganizer.getOrderedChain();
-        for (int i = 1; i < chain.size(); i++) {
-            Block current = chain.get(i);
-            Block previous = chain.get(i - 1);
-
-            if (!current.getHeader().getPreviousBlockHash().equals(previous.getCurrentBlockHash())) {
-                return false;
-            }
-
-            String target = new String(new char[currentDifficulty]).replace('\0', '0');
-            if (!current.getCurrentBlockHash().substring(0, currentDifficulty).equals(target)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public void receiveBlockFromPeer(Block block) throws InterruptedException {
         System.out.println("\n[BLOCKCHAIN] Recieving block from peer...");
         System.out.println("Current Block: " + block);
@@ -148,34 +130,5 @@ public class BlockchainEngine {
         mBlockOrganizer.receiveBlock(block);
     }
 
-
-    public void printBlockchain() {
-        List<Block> chain = mBlockOrganizer.getOrderedChain();
-        System.out.println("\n========================================");
-        System.out.println("         BLOCKCHAIN COMPLETA");
-        System.out.println("========================================");
-        for (Block block : chain) {
-            System.out.println("\nBlock #" + block.getNumberBlock());
-            System.out.println("Hash: " + block.getCurrentBlockHash());
-            System.out.println("Hash Anterior: " + block.getHeader().getPreviousBlockHash());
-            System.out.println("Merkle Root: " + block.getHeader().getMerkleRoot().substring(0, 32) + "...");
-            System.out.println("Nonce: " + block.getHeader().getNonce());
-            System.out.println("Transaction Hash: ");
-            for (Transaction tx : block.getTransactions()) {
-                System.out.println("  - " + tx);
-            }
-        }
-        System.out.println("\n========================================");
-    }
-
-    public void printStatus() {
-        System.out.println("\n========================================");
-        System.out.println("         STATUS BLOCKCHAIN                ");
-        System.out.println("==========================================");
-        System.out.println("Altura da cadeia: " + mBlockOrganizer.getChainHeight());
-        System.out.println("Blocos órfãos: " + mBlockOrganizer.getOrphanCount());
-        System.out.println("Transações pendentes: " + mTransactionOrganizer.getPendingCount());
-        System.out.println("Cadeia válida: " + isChainValid());
-    }
 
 }

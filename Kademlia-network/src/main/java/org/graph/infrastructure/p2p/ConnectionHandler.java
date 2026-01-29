@@ -58,6 +58,21 @@ public class ConnectionHandler implements Runnable {
         return outputStream;
     }
 
+    public DataInputStream getInputStream() {
+        if (inputStream == null) {
+            try {
+                initStreams();
+            } catch (IOException e) {
+                if (logger != null) {
+                    logger.severe("Error initializing streams in getInputStream: " + e.getMessage());
+                } else {
+                    System.err.println("Error initializing streams: " + e.getMessage());
+                }
+            }
+        }
+        return inputStream;
+    }
+
 
     @Override
     public void run() {
@@ -68,6 +83,7 @@ public class ConnectionHandler implements Runnable {
             while (myPeer.getIsRunning() && !socket.isClosed() && running) {
                 try {
                     Message message = readMessage(inputStream);
+                    logger.severe("Received message: " + message.toString());
 
                     if (message.getType() == MessageType.HELLO) {
                         logger.info("Redundant HELLO received in loop.");
@@ -185,10 +201,5 @@ public class ConnectionHandler implements Runnable {
 
     public void setRemoteNode(Node bootstrapNode) {
         remoteNode = bootstrapNode;
-    }
-
-    public DataInputStream getInputStream() {
-        if (inputStream == null) return null;
-        return inputStream;
     }
 }
