@@ -3,6 +3,7 @@ package org.graph.infrastructure.blockchain;
 import org.graph.domain.application.block.Block;
 import org.graph.domain.application.transaction.Transaction;
 import org.graph.domain.application.transaction.TransactionType;
+import org.graph.domain.common.Pair;
 import org.graph.infrastructure.blockchain.block.BlockOrganizer;
 import org.graph.infrastructure.blockchain.block.TransactionOrganizer;
 
@@ -71,29 +72,11 @@ public class BlockchainEngine {
             return;
         }
 
-        // CORREÇÃO CRÍTICA: Não use getChainHeight() + 1 cegamente.
-        // Pegue o objeto do último bloco para garantir o hash correto.
-        Block lastBlock = mBlockOrganizer.getLastBlock();
+        System.out.println("[MINER] Criando Bloco #" + getInfoBlock().getKey() + " apontando para " + getInfoBlock().getValue());
 
-        String previousHash;
-        int newBlockNumber;
-
-        if (lastBlock != null) {
-            previousHash = lastBlock.getCurrentBlockHash();
-            newBlockNumber = lastBlock.getNumberBlock() + 1;
-        } else {
-            // Se não tem lastBlock, assume-se que é o Genesis (ou erro de inicialização)
-            previousHash = "0";
-            newBlockNumber = 0;
-        }
-
-        // Debug para garantir que estamos apontando para o pai certo
-        System.out.println("[MINER] Criando Bloco #" + newBlockNumber + " apontando para " + previousHash);
-
-        Block newBlock = new Block(1, newBlockNumber, previousHash, transactions, currentDifficulty);
+        Block newBlock = new Block(1,getInfoBlock().getKey() , getInfoBlock().getValue(), transactions, currentDifficulty);
         newBlock.mineBlock(currentDifficulty, numThreads);
 
-        // Se falhar aqui, newBlock será válido estruturalmente, mas rejeitado logicamente
         boolean added = mBlockOrganizer.addLocalBlock(newBlock);
 
         if (!added) {
@@ -103,6 +86,20 @@ public class BlockchainEngine {
     }
 
     private Block getBlock(List<Transaction> transactions) {
+
+        Block newBlock = new Block(1, getInfoBlock().getKey() , getInfoBlock().getValue(), transactions, currentDifficulty);
+        newBlock.mineBlock(currentDifficulty, numThreads);
+        return newBlock;
+    }
+
+    public void receiveBlockFromPeer(Block block) throws InterruptedException {
+        System.out.println("\n[BLOCKCHAIN] Recieving block from peer...");
+        System.out.println("Current Block: " + block);
+        Thread.sleep(100);
+        mBlockOrganizer.receiveBlock(block);
+    }
+
+    private Pair<Integer, String> getInfoBlock (){
         Block parentBlock = mBlockOrganizer.getLastBlock();
 
         String previousHash;
@@ -117,18 +114,10 @@ public class BlockchainEngine {
             newHeight = 0;
         }
 
-        Block newBlock = new Block(1, newHeight , previousHash, transactions, currentDifficulty);
-        newBlock.mineBlock(currentDifficulty, numThreads);
-        return newBlock;
+        return new Pair<>(newHeight, previousHash);
     }
 
 
-    public void receiveBlockFromPeer(Block block) throws InterruptedException {
-        System.out.println("\n[BLOCKCHAIN] Recieving block from peer...");
-        System.out.println("Current Block: " + block);
-        Thread.sleep(100);
-        mBlockOrganizer.receiveBlock(block);
-    }
 
 
 }

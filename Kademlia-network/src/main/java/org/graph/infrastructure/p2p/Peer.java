@@ -4,6 +4,7 @@ import org.graph.domain.application.kademlia.RoutingTable;
 import org.graph.domain.application.p2p.NeighboursConnections;
 import org.graph.domain.application.mechanism.pow.MiningResult;
 import org.graph.domain.entities.p2p.Node;
+import org.graph.infrastructure.auction.AuctionEngine;
 import org.graph.infrastructure.crypt.KeysInfrastructure;
 import org.graph.infrastructure.network.kademlia.KademliaNetwork;
 import org.graph.infrastructure.networkTime.HybridLogicalClock;
@@ -29,11 +30,13 @@ public class Peer {
     private NeighboursConnections neighboursManager;
     private KademliaNetwork kademliaNetwork;
     private HybridLogicalClock hybridLogicalClock;
+    private AuctionEngine auctionEngine;
 
 
     public Peer(int port){
         this.keys = new KeysInfrastructure( this, port);
         this.hybridLogicalClock = new HybridLogicalClock();
+        this.auctionEngine = new AuctionEngine();
 
         MiningResult proofOfWork = null;
         try {
@@ -66,6 +69,7 @@ public class Peer {
     public Logger getLogger() {return mLogger;}
     public RoutingTable getRoutingTable() { return routingTable; }
     public HybridLogicalClock getHybridLogicalClock() { return hybridLogicalClock; }
+    public AuctionEngine getAuctionEngine() { return auctionEngine; }
 
     private void createdFileLog(Node myself){
         try {
