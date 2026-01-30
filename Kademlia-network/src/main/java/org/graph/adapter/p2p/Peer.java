@@ -1,10 +1,9 @@
 package org.graph.adapter.p2p;
 
-import org.graph.adapter.blockchain.BlockchainEngine;
 import org.graph.domain.application.kademlia.RoutingTable;
-import org.graph.domain.application.p2p.NeighboursConnections;
 import org.graph.domain.application.mechanism.pow.MiningResult;
 import org.graph.domain.entities.p2p.Node;
+import org.graph.gateway.NetworkGateway;
 import org.graph.infrastructure.crypt.KeysInfrastructure;
 import org.graph.adapter.network.kademlia.KademliaNetwork;
 import org.graph.adapter.networkTime.HybridLogicalClock;
@@ -29,12 +28,13 @@ public class Peer {
     private NeighboursConnections neighboursManager;
     private KademliaNetwork kademliaNetwork;
     private HybridLogicalClock hybridLogicalClock;
-    private BlockchainEngine  blockchainEngine;
+    private NetworkGateway networkGateway;
 
 
     public Peer(int port){
         this.keys = new KeysInfrastructure( this, port);
         this.hybridLogicalClock = new HybridLogicalClock();
+        this.networkGateway = new NetworkGateway();
 
         MiningResult proofOfWork = null;
         try {
@@ -67,6 +67,7 @@ public class Peer {
     public Logger getLogger() {return mLogger;}
     public RoutingTable getRoutingTable() { return routingTable; }
     public HybridLogicalClock getHybridLogicalClock() { return hybridLogicalClock; }
+    public NetworkGateway getNetworkGateway() { return networkGateway; }
 
     private void createdFileLog(Node myself){
         try {

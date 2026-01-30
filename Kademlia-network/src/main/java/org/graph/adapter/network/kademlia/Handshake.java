@@ -7,7 +7,7 @@ import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.p2p.Node;
 import org.graph.domain.entities.p2p.NodeId;
 import org.graph.domain.utils.CryptoUtils;
-import org.graph.adapter.network.message.HandshakePayload;
+import org.graph.adapter.network.message.network.HandshakePayload;
 import org.graph.adapter.p2p.Peer;
 
 import java.io.DataInputStream;

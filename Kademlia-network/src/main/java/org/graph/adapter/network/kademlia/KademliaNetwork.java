@@ -1,5 +1,7 @@
 package org.graph.adapter.network.kademlia;
 
+import org.graph.adapter.storage.cache.LRUCache;
+import org.graph.adapter.utils.MessageUtils;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.p2p.Node;
@@ -11,9 +13,11 @@ import org.graph.adapter.utils.SerializationUtils;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,13 +25,15 @@ import static org.graph.adapter.utils.Constants.MAX_ALPHA;
 import static org.graph.adapter.utils.Constants.NODE_K;
 
 public class KademliaNetwork implements KademliaIController {
-    private Peer myself;
-    private StorageDHT storage;
+    private final Peer myself;
+    private final StorageDHT storage;
     private static final int TIMEOUT_MS = 3000;
+    private final LRUCache<BigInteger, Object> hotCache;
 
     public KademliaNetwork(Peer myself) {
         this.storage = new StorageDHT();
         this.myself = myself;
+        this.hotCache = new LRUCache<>();
     }
 
 
@@ -40,6 +46,12 @@ public class KademliaNetwork implements KademliaIController {
     */
     @Override
     public List<Node> findNode(BigInteger targetId) {
+        Object cachedVal = hotCache.readFromCache(targetId);
+
+        if (cachedVal != null && cachedVal instanceof Node node) {
+            return (List<Node>) node;
+        }
+
         if (myself.getMyself().getNodeId().value().equals(targetId)) {
             return Collections.singletonList(myself.getMyself());
         }
@@ -73,7 +85,7 @@ public class KademliaNetwork implements KademliaIController {
             List<Node> toQuery = shortlist.stream()
                     .filter(n -> !queried.contains(n.getNodeId().value()))
                     .limit(MAX_ALPHA)
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (toQuery.isEmpty()) break;
 
@@ -197,25 +209,18 @@ public class KademliaNetwork implements KademliaIController {
 
     @Override
     public void storage(BigInteger key, Object value) {
-        // 1. Encontrar os K nós mais próximos na rede (Lookup)
         List<Node> closestNodes = findNode(key);
-
-        // 2. Criar mensagem de Storage
-        // Encapsulamos chave e valor num HashMap ou Objeto próprio para envio
         Map<String, Object> storagePayload = new HashMap<>();
         storagePayload.put("key", key);
         storagePayload.put("value", value);
 
-        // A mensagem transporta o mapa serializável
         Message storeMsg = new Message(MessageType.STORAGE, storagePayload, myself.getHybridLogicalClock());
 
         for (Node node : closestNodes) {
             if (node.equals(myself.getMyself())) {
-                // Armazenamento Local (Thread-Safe via StorageDHT)
                 storage.put(key, value);
                 System.out.println("[DHT] Guardado localmente: " + key);
             } else {
-                // Envio Remoto (Thread separada para não bloquear)
                 new Thread(() -> {
                     sendRPC(node, storeMsg);
                     System.out.println("[DHT] Replicado para: " + node.getHost());
@@ -225,12 +230,11 @@ public class KademliaNetwork implements KademliaIController {
     }
 
     private Object sendRPC(Node target, Message request) {
-        // Não enviar para si mesmo via rede
+
         if (target.getNodeId().equals(myself.getMyself().getNodeId())) {
             return null;
         }
 
-        // Try-with-resources garante que o Socket FECHA no final do bloco
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(target.getHost(), target.getPort()), TIMEOUT_MS);
             socket.setSoTimeout(TIMEOUT_MS);
@@ -238,31 +242,17 @@ public class KademliaNetwork implements KademliaIController {
             try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
                  DataInputStream in = new DataInputStream(socket.getInputStream())) {
 
-                // 1. Preparar Payload: Object -> Bytes -> Base64
-                // Nota: Assumimos que request.getPayload() já devolve bytes serializados ou string
-                // Se Message suportar Object, serializamos aqui:
-                byte[] rawBytes = SerializationUtils.serialize(request); // Serializa a mensagem toda
-                String base64Message = Base64Utils.encode(rawBytes);     // Converte para Base64
+                MessageUtils.sendMessage(out, request);
 
-                // 2. Enviar Protocolo: [Tamanho (Int)] + [Base64 String (UTF-8)]
-                byte[] dataToSend = base64Message.getBytes("UTF-8");
-                out.writeInt(dataToSend.length);
-                out.write(dataToSend);
-                out.flush();
 
-                // 3. Ler Resposta
-                int length = in.readInt();
-                byte[] receivedBytes = new byte[length];
-                in.readFully(receivedBytes);
+                Message response = MessageUtils.readMessage(in);
 
-                // 4. Descodificar: UTF-8 -> Base64 String -> Bytes -> Objeto
-                String receivedBase64 = new String(receivedBytes, "UTF-8");
-                byte[] objectBytes = Base64Utils.decodeToBytes(receivedBase64);
+                if (response == null) return null;
 
-                return SerializationUtils.deserialize(objectBytes);
+                return response.getPayload();
             }
-        } catch (Exception e) {
-            // Log de erro: Nó indisponível
+        } catch (IOException | ClassNotFoundException e) {
+             System.err.println("[DHT] Error sending request " + e.getMessage());
             return null;
         }
     }

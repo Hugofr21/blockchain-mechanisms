@@ -1,4 +1,4 @@
-package org.graph.domain.crypto;
+package org.graph.domain.common.crypto;
 
 import java.io.Serial;
 import java.io.Serializable;

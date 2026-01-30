@@ -1,8 +1,6 @@
 package org.graph.domain.entities.p2p;
 
 import org.graph.domain.application.mechanism.ProofOfReputation;
-import org.graph.domain.application.mechanism.pow.MiningResult;
-import org.graph.domain.crypto.PublicKeyPeer;
 
 import java.io.Serializable;
 import java.security.PublicKey;

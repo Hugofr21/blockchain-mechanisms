@@ -6,6 +6,7 @@ import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.p2p.Node;
 import org.graph.adapter.utils.SerializationUtils;
+import org.graph.gateway.NetworkGateway;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -40,7 +41,7 @@ public class ConnectionHandler implements Runnable {
         this.pendingResponses = new ConcurrentHashMap<>();
     }
 
-
+    public Peer getPeer() { return myPeer;}
     public Node getRemoteNode() {return remoteNode;}
     public DataOutputStream getOutputStream() {
         if (outputStream == null) {
@@ -197,4 +198,5 @@ public class ConnectionHandler implements Runnable {
     public void setRemoteNode(Node bootstrapNode) {
         remoteNode = bootstrapNode;
     }
+
 }

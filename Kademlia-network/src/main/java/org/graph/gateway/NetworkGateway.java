@@ -16,10 +16,14 @@ public class NetworkGateway {
         this.validator = new Validator();
     }
 
-    public void incomingBlock(Block block) {
+    public BlockchainEngine getBlockchainEngine() {
+        return blockchainEngine;
+    }
+
+    public boolean incomingBlock(Block block) {
         if (!validator.validateBlockchain(block, NETWORK_DIFFICULTY)){
             System.out.println("Invalid block");
-            return;
+            return false;
         }
         try {
             blockchainEngine.receiveBlockFromPeer(block);
@@ -27,5 +31,6 @@ public class NetworkGateway {
             System.err.println("Error while receiving block from the peer : " + e.getMessage());
         }
 
+        return false;
     }
 }

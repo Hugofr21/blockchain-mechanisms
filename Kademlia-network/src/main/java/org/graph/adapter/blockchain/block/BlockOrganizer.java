@@ -23,8 +23,6 @@ public class BlockOrganizer {
         this.organizedChain = new ConcurrentHashMap<>();
     }
 
-
-
     public synchronized boolean addLocalBlock(Block block) {
         String currentHash = block.getCurrentBlockHash();
 
@@ -127,5 +125,19 @@ public class BlockOrganizer {
         if (organizedChain.isEmpty()) return null;
         Integer maxId = Collections.max(organizedChain.keySet());
         return organizedChain.get(maxId);
+    }
+
+    public boolean contains(String hash) {
+        for (Block block : organizedChain.values()) {
+            if (block.getCurrentBlockHash().equals(hash)) return true;
+        }
+        return false;
+    }
+
+    public Block getBlockByHash(String hash) {
+        for (Block block : organizedChain.values()) {
+            if (block.getCurrentBlockHash().equals(hash)) return block;
+        }
+        return null;
     }
 }

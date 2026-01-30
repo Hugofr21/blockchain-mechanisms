@@ -92,8 +92,12 @@ public class LRUCache<K, V> implements LRU<K, V> {
         if (key == null) {
            return null;
         }
+
         NodeCache<K, V> node = nodeMap.get(key);
-        moveToHead(node);
+        if (node != null) {
+            moveToHead(node);
+            return node.value;
+        }
         return null;
     }
 

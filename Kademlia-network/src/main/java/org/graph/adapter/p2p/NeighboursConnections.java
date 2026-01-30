@@ -1,10 +1,8 @@
-package org.graph.domain.application.p2p;
+package org.graph.adapter.p2p;
 
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
-import org.graph.adapter.p2p.ConnectionHandler;
 import org.graph.domain.entities.p2p.Node;
-import org.graph.adapter.p2p.Peer;
 import org.graph.adapter.utils.MessageUtils;
 
 import java.io.IOException;
@@ -31,6 +29,17 @@ public class NeighboursConnections {
 
     // Executor para a thread de heartbeat
     private final ScheduledExecutorService scheduler;
+
+    public void broadcastExcept(Message invMsg, Node excludeNode) {
+        for (Map.Entry<BigInteger, ConnectionEntry> entry : nodesActives.entrySet()) {
+            if (!entry.getKey().equals(excludeNode)) {
+                ConnectionHandler handler =  entry.getValue().handler;
+
+            }
+
+        }
+    }
+
 
     // Record auxiliar para evitar dependências externas de Pair
     private record ConnectionEntry(Node node, ConnectionHandler handler) {}
