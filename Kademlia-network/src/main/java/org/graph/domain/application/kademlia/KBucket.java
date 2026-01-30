@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import static org.graph.infrastructure.utils.Constants.NODE_K;
+import static org.graph.adapter.utils.Constants.NODE_K;
 
 public class KBucket { ;
     private LinkedHashMap<BigInteger, Node> nodes;

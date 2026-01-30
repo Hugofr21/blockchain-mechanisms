@@ -10,7 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 
-import static org.graph.infrastructure.utils.Constants.ID_BITS;
+import static org.graph.adapter.utils.Constants.ID_BITS;
 
 public class RoutingTable {
     private List<KBucket> buckets;

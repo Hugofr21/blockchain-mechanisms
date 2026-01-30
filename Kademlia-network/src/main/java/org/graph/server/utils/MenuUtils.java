@@ -1,7 +1,7 @@
 package org.graph.server.utils;
 
 import org.graph.domain.entities.auctions.AuctionState;
-import org.graph.infrastructure.p2p.Peer;
+import org.graph.adapter.p2p.Peer;
 
 import java.math.BigDecimal;
 import java.util.Map;

@@ -1,8 +1,7 @@
 package org.graph.domain.application.transaction;
 
-import org.bouncycastle.util.test.FixedSecureRandom;
 import org.graph.domain.utils.HashUtils;
-import org.graph.infrastructure.network.message.auction.AuctionPayload;
+import org.graph.adapter.network.message.auction.AuctionPayload;
 
 import java.math.BigInteger;
 import java.security.PublicKey;

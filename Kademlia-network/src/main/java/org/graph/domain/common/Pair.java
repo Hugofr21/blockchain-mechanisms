@@ -2,17 +2,7 @@ package org.graph.domain.common;
 
 import java.util.Objects;
 
-public class Pair<K,V> {
-    private final K key;
-    private final V value;
-
-    public Pair(K key, V value) {
-        this.key = key;
-        this.value = value;
-    }
-
-    public V getValue() {return value;}
-    public K getKey() {return key;}
+public record Pair<K, V>(K key, V value) {
 
 
     @Override
@@ -24,17 +14,10 @@ public class Pair<K,V> {
     }
 
     @Override
-    public int hashCode() {
-        int result = (key == null ? 0 : key.hashCode());
-        result = 31 * result + (value == null ? 0 : value.hashCode());
-        return result;
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Pair<?, ?> other)) return false;
-        return (Objects.equals(key, other.key))
-                && (Objects.equals(value, other.value));
+        if (!(obj instanceof Pair<?, ?>(Object key1, Object value1))) return false;
+        return (Objects.equals(key, key1))
+                && (Objects.equals(value, value1));
     }
 }

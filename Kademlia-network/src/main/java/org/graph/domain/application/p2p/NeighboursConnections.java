@@ -2,10 +2,10 @@ package org.graph.domain.application.p2p;
 
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
-import org.graph.infrastructure.p2p.ConnectionHandler;
+import org.graph.adapter.p2p.ConnectionHandler;
 import org.graph.domain.entities.p2p.Node;
-import org.graph.infrastructure.p2p.Peer;
-import org.graph.infrastructure.utils.MessageUtils;
+import org.graph.adapter.p2p.Peer;
+import org.graph.adapter.utils.MessageUtils;
 
 import java.io.IOException;
 import java.math.BigInteger;

@@ -10,7 +10,7 @@ import  java.security.PublicKey;
 public class PublicKeyPeer implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
-    private PublicKey key;
+    private final PublicKey key;
     private BigInteger peerId;
     private final String fingerprint;
 

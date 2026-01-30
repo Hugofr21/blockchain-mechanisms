@@ -1,16 +1,16 @@
-jan. 29, 2026 5:53:45 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+jan. 29, 2026 5:53:45 DA TARDE org.graph.adapter.p2p.ServerHandle run
 INFO: Server listening for connections...
-jan. 29, 2026 5:53:48 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+jan. 29, 2026 5:53:48 DA TARDE org.graph.adapter.p2p.ServerHandle run
 INFO: New connection from: /127.0.0.1:35298
-jan. 29, 2026 5:53:48 DA TARDE org.graph.infrastructure.p2p.ServerHandle lambda$run$0
+jan. 29, 2026 5:53:48 DA TARDE org.graph.adapter.p2p.ServerHandle lambda$run$0
 WARNING: Error handling connection
 java.lang.NullPointerException: Cannot invoke "java.io.DataInputStream.readInt()" because "inputStream" is null
-	at org.graph.infrastructure.utils.MessageUtils.readMessage(MessageUtils.java:14)
-	at org.graph.infrastructure.utils.HandshakeUtils.doHandshake(HandshakeUtils.java:47)
-	at org.graph.infrastructure.p2p.ServerHandle.lambda$run$0(ServerHandle.java:39)
+	at org.graph.adapter.utils.MessageUtils.readMessage(MessageUtils.java:14)
+	at org.graph.adapter.utils.HandshakeUtils.doHandshake(HandshakeUtils.java:47)
+	at org.graph.adapter.p2p.ServerHandle.lambda$run$0(ServerHandle.java:39)
 	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
 	at java.base/java.lang.Thread.run(Thread.java:1575)
 
-jan. 29, 2026 5:59:16 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+jan. 29, 2026 5:59:16 DA TARDE org.graph.adapter.p2p.ServerHandle run
 INFO: Server listening for connections...

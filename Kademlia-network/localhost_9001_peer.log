@@ -1,8 +1,8 @@
-jan. 29, 2026 5:53:46 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+jan. 29, 2026 5:53:46 DA TARDE org.graph.adapter.p2p.ServerHandle run
 INFO: Server listening for connections...
-jan. 29, 2026 5:53:48 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler run
+jan. 29, 2026 5:53:48 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
 INFO: Connection loop started: localhost/127.0.0.1:5001
-jan. 29, 2026 5:53:48 DA TARDE org.graph.infrastructure.p2p.ConnectionHandler closeConnection
+jan. 29, 2026 5:53:48 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
 INFO: Connection closed
-jan. 29, 2026 5:59:14 DA TARDE org.graph.infrastructure.p2p.ServerHandle run
+jan. 29, 2026 5:59:14 DA TARDE org.graph.adapter.p2p.ServerHandle run
 INFO: Server listening for connections...

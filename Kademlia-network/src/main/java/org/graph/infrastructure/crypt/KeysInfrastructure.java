@@ -3,8 +3,8 @@ package org.graph.infrastructure.crypt;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.graph.domain.crypto.KeyPairPeer;
 import org.graph.domain.crypto.PublicKeyPeer;
-import org.graph.infrastructure.p2p.Peer;
-import org.graph.infrastructure.utils.Base64Utils;
+import org.graph.adapter.p2p.Peer;
+import org.graph.adapter.utils.Base64Utils;
 
 import java.math.BigInteger;
 import java.security.*;
@@ -13,8 +13,8 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.graph.infrastructure.utils.Constants.ALGORITHM_CURVE;
-import static org.graph.infrastructure.utils.Constants.ALGORITHM_INSTANCE;
+import static org.graph.adapter.utils.Constants.ALGORITHM_CURVE;
+import static org.graph.adapter.utils.Constants.ALGORITHM_INSTANCE;
 
 public class KeysInfrastructure {
     private KeyPairPeer ownKeyPair;
@@ -78,7 +78,7 @@ public class KeysInfrastructure {
 
         // 2. Se não existia ou se falhou ao carregar, cria novas
         if (!loaded) {
-            System.out.println("[INFO] Generating new KeyPair infrastructure...");
+            System.out.println("[INFO] Generating new KeyPair adapter...");
             createKeysInfrastructure();
             // Nota: Não salvamos imediatamente aqui, o Peer fará isso após minerar o ID.
             // Isso evita salvar chaves sem ID associado.
@@ -108,7 +108,7 @@ public class KeysInfrastructure {
             this.ownKeyPair = new KeyPairPeer(myPublic, keyPair.getPrivate());
 
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("[ERROR] creating keys in infrastructure: " + e.getMessage());
+            System.out.println("[ERROR] creating keys in adapter: " + e.getMessage());
         } catch (InvalidAlgorithmParameterException e) {
             System.out.println("[ERROR] Invalid algorithm: " + e.getMessage());
         }

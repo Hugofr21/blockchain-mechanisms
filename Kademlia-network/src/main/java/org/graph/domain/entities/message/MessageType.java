@@ -14,7 +14,8 @@ public enum MessageType {
     HELLO((byte) 0x14),
     GET_STATUS((byte) 0x15),
     STATUS_RESPONSE((byte) 0x16),
-    GET_BLOCK((byte) 0x17);
+    GET_BLOCK((byte) 0x17),
+    INV_DATA((byte) 0x18);
 
 
     private final byte code;

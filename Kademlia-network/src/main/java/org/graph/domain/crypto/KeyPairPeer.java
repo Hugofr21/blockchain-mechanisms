@@ -9,8 +9,8 @@ import java.security.PrivateKey;
 public class KeyPairPeer implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
-    private PublicKeyPeer publicKey;
-    private PrivateKey privateKey;
+    private final PublicKeyPeer publicKey;
+    private final PrivateKey privateKey;
     private BigInteger peerId;
 
     public KeyPairPeer(PublicKeyPeer publicKey, PrivateKey privateKey) {

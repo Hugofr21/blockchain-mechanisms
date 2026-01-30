@@ -1,17 +1,9 @@
 package org.graph.server;
 
 
-import org.graph.infrastructure.network.kademlia.JoinNetwork;
-import org.graph.infrastructure.p2p.Peer;
+import org.graph.adapter.network.kademlia.JoinNetwork;
+import org.graph.adapter.p2p.Peer;
 import org.graph.server.utils.MenuUtils;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.graph.server.utils.Constants.BOOTSTRAP_PORT;
 
