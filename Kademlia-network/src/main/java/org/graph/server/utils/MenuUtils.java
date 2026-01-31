@@ -2,8 +2,10 @@ package org.graph.server.utils;
 
 import org.graph.domain.entities.auctions.AuctionState;
 import org.graph.adapter.p2p.Peer;
+import org.graph.domain.entities.p2p.Node;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -27,31 +29,20 @@ public class MenuUtils {
             System.out.println("1) Display about this peer");
             System.out.println("2) Show the NEIGHBOUR relationship.");
             System.out.println("3) Show the list of BLOCKCHAIN.");
-            System.out.println("4) Created object auction and bidding.");
+            System.out.println("4) Auction Market (Create/Bid).");
             System.out.println("5) Exit");
 
-            System.out.print("Escolha uma opção: ");
+            System.out.print("Choose an option: ");
             int choice = scanner.nextInt();
             scanner.nextLine();
 
             switch (choice) {
-                case 1:
-                    showMyPeerInfo(peer);
-                    break;
-                case 2:
-                    showNeighboursMenu(peer);
-                    break;
-                case 3:
-                    showBlockchainMenu(peer);
-                    break;
-                case 4:
-                    showAuctionMenu(peer);
-                    break;
-                case 5:
-                    System.out.println("Exist...");
-                    return;
-                default:
-                    System.out.println("Option invalid!!");
+                case 1: showMyPeerInfo(peer); break;
+                case 2: showNeighboursMenu(peer);break;
+                case 3: showBlockchainMenu(peer);break;
+                case 4: showAuctionMenu(peer);break;
+                case 5: System.out.println("Exist..."); return;
+                default: System.out.println("Option invalid!!");
             }
         }
     }
@@ -78,6 +69,25 @@ public class MenuUtils {
         switch (choice) {
             case 1:
                 System.out.println("List of NEIGHBOUR relationships: ");
+                List<Node> neighbors = peer.getNeighboursManager().getActiveNeighbours();
+                if (neighbors.isEmpty()){
+                    System.out.println("Next moment not found neighbour.");
+                }else {
+                    System.out.printf("%-15s | %-6s | %s%n", "IP", "Port", "ID (Short)");
+                    System.out.println("------------------------------------------------");
+                    for (Node n : neighbors) {
+                        String shortId = n.getNodeId().value().toString();
+                        if (shortId.length() > 15) shortId = shortId.substring(0, 15) + "...";
+
+                        System.out.printf("%-15s | %-6d | %s%n",
+                                n.getHost(),
+                                n.getPort(),
+                                shortId
+                        );
+                    }
+                    System.out.println("------------------------------------------------");
+                    System.out.println("Total: " + neighbors.size() + " neighbour.");
+                }
                 break;
             case 2:
                 System.out.print("Digit the ID of node: ");
@@ -123,12 +133,12 @@ public class MenuUtils {
 
     private static void showAuctionMenu(Peer peer) {
         System.out .println("\n=== Auction Market ===");
-        System.out .println("1) Create New Auction");
-        System.out .println("2) Bid");
-        System.out .println("3) List Active Auctions");
-        System.out .println("0) Back");
+        System.out.println("1) Create New Auction (Transaction)");
+        System.out.println("2) Place Bid (Transaction)");
+        System.out.println("3) List Active Auctions (Ledger)");
+        System.out.println("0) Back");
 
-        System.out.print("Opção: ");
+        System.out.print("Choose: ");
         int choice = Integer.parseInt(scanner.nextLine());
 
         switch (choice) {
@@ -139,10 +149,10 @@ public class MenuUtils {
                 System.out .print("Starting Price: ");
                 BigDecimal price = new BigDecimal(scanner .nextLine());
 
-                System.out .print("Duration (seconds): ");
-                long duration = Long.parseLong(scanner .nextLine());
+//                System.out .print("Duration (seconds): ");
+//                long duration = Long.parseLong(scanner .nextLine());
 
-                peer.getAuctionEngine().createdLocalAuctions(price, peer.getMyself().getNodeId());
+                peer.getNetworkGateway().getAuctionEngine().createdLocalAuctions(price, peer);
                 break;
 
             case 2:
@@ -155,7 +165,7 @@ public class MenuUtils {
                 System.out.print("Valor do Lance: ");
                 BigDecimal bidValue = new BigDecimal(scanner.nextLine());
 
-                peer.getAuctionEngine().placeBid(auctionId, bidValue, peer);
+                peer.getNetworkGateway().getAuctionEngine().placeBidRequest(auctionId, bidValue, peer);
                 break;
 
             case 3:
@@ -170,7 +180,7 @@ public class MenuUtils {
     }
 
     private static void listActiveAuctions(Peer peer) {
-        Map<String, AuctionState> auctionList = peer.getAuctionEngine().getWorldState();
+        Map<String, AuctionState> auctionList = peer.getNetworkGateway().getAuctionEngine().getWorldState();
         for (AuctionState A:auctionList.values()){
             System.out.println(auctionList.get(A.getAuctionId()));
         }

@@ -1,16 +1,272 @@
-jan. 29, 2026 5:53:45 DA TARDE org.graph.adapter.p2p.ServerHandle run
-INFO: Server listening for connections...
-jan. 29, 2026 5:53:48 DA TARDE org.graph.adapter.p2p.ServerHandle run
-INFO: New connection from: /127.0.0.1:35298
-jan. 29, 2026 5:53:48 DA TARDE org.graph.adapter.p2p.ServerHandle lambda$run$0
-WARNING: Error handling connection
-java.lang.NullPointerException: Cannot invoke "java.io.DataInputStream.readInt()" because "inputStream" is null
-	at org.graph.adapter.utils.MessageUtils.readMessage(MessageUtils.java:14)
-	at org.graph.adapter.utils.HandshakeUtils.doHandshake(HandshakeUtils.java:47)
-	at org.graph.adapter.p2p.ServerHandle.lambda$run$0(ServerHandle.java:39)
-	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
-	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
-	at java.base/java.lang.Thread.run(Thread.java:1575)
-
-jan. 29, 2026 5:59:16 DA TARDE org.graph.adapter.p2p.ServerHandle run
-INFO: Server listening for connections...
+jan. 31, 2026 6:13:44 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 5001
+jan. 31, 2026 6:13:47 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:15550
+jan. 31, 2026 6:13:47 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:15550
+jan. 31, 2026 6:13:47 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@668c511c, payload=[B@684ba3bd, requestId='6c8c9973-8294-4bb9-852f-d2efa4431433'}
+jan. 31, 2026 6:13:47 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Processing error: Uma ligação estabelecida foi anulada pelo software no computador anfitrião
+jan. 31, 2026 6:13:47 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:18:43 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 5001
+jan. 31, 2026 6:18:46 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:31004
+jan. 31, 2026 6:18:46 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:31004
+jan. 31, 2026 6:18:46 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@2653c83c, payload=[B@28943286, requestId='6d31741a-17da-4c9e-a4f6-6e34939db7ef'}
+jan. 31, 2026 6:18:46 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Processing error: Uma ligação estabelecida foi anulada pelo software no computador anfitrião
+jan. 31, 2026 6:18:46 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:23:44 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 5001
+jan. 31, 2026 6:23:47 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:33570
+jan. 31, 2026 6:23:47 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:33570
+jan. 31, 2026 6:23:47 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@1aa6910f, payload=[B@14616c2b, requestId='07cf630a-ec40-49cc-bfdf-da91bc523968'}
+jan. 31, 2026 6:23:47 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Processing error: Uma ligação estabelecida foi anulada pelo software no computador anfitrião
+jan. 31, 2026 6:23:47 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:30:35 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 5001
+jan. 31, 2026 6:30:38 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:2452
+jan. 31, 2026 6:30:38 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:2452
+jan. 31, 2026 6:30:38 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@6818f8cb, payload=[B@66df0bb8, requestId='45cec59f-a794-4792-8b76-3bfcd075af90'}
+jan. 31, 2026 6:33:34 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 5001
+jan. 31, 2026 6:33:38 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:14603
+jan. 31, 2026 6:33:39 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:14603
+jan. 31, 2026 6:33:39 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@135bef65, payload=[B@1d9c137e, requestId='d66586c7-5534-4f8f-996d-e8eb1595bdce'}
+jan. 31, 2026 6:35:07 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 5001
+jan. 31, 2026 6:35:11 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:61472
+jan. 31, 2026 6:35:11 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:61472
+jan. 31, 2026 6:35:11 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@eb8976c, payload=[B@7f68cb, requestId='36ad0d5d-921f-4c6c-a6de-26431ffc92b0'}
+jan. 31, 2026 6:35:44 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 5001
+jan. 31, 2026 6:35:47 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:61506
+jan. 31, 2026 6:35:47 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:61506
+jan. 31, 2026 6:35:47 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@1aa6910f, payload=[B@14616c2b, requestId='221af6d9-76c8-4837-aad6-521ab2cc7c87'}
+jan. 31, 2026 6:39:42 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 5001
+jan. 31, 2026 6:39:45 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:1616
+jan. 31, 2026 6:39:45 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:1616
+jan. 31, 2026 6:39:45 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@1aa6910f, payload=[B@14616c2b, requestId='74db9f76-7b57-4858-bde4-58de1578405e'}
+jan. 31, 2026 6:40:18 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 5001
+jan. 31, 2026 6:40:21 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:1642
+jan. 31, 2026 6:40:21 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:1642
+jan. 31, 2026 6:40:21 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@1d1f3946, payload=[B@13d8c495, requestId='5f885f36-7d13-4427-9f1a-97a294d099ba'}
+jan. 31, 2026 6:40:41 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:1663
+jan. 31, 2026 6:40:41 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:1663
+jan. 31, 2026 6:40:41 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@66e3f3c, payload=[B@251bb29, requestId='7853ef8f-8d44-4278-a10a-461a57f3625d'}
+jan. 31, 2026 6:40:43 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:1669
+jan. 31, 2026 6:40:43 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:1669
+jan. 31, 2026 6:40:44 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@14c3000d, payload=[B@1a04ece5, requestId='83820656-3385-4395-9f8f-06ef366c09c8'}
+jan. 31, 2026 6:40:46 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:1672
+jan. 31, 2026 6:40:46 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:1672
+jan. 31, 2026 6:40:46 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@2076b5b7, payload=[B@2eb15fc9, requestId='371843f7-8765-4b68-8a74-bc6a01aaa7d3'}
+jan. 31, 2026 6:44:15 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 5001
+jan. 31, 2026 6:44:18 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:45668
+jan. 31, 2026 6:44:18 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:45668
+jan. 31, 2026 6:44:18 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@2653c83c, payload=[B@28943286, requestId='1328ea1e-cd06-4131-8361-681769529aee'}
+jan. 31, 2026 6:44:18 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Peer closed connection.
+jan. 31, 2026 6:44:18 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:44:44 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:45701
+jan. 31, 2026 6:44:44 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:45701
+jan. 31, 2026 6:44:44 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@571e7e00, payload=[B@59d98a93, requestId='702a31a6-c800-4834-aaf4-90a54c070806'}
+jan. 31, 2026 6:44:44 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Peer closed connection.
+jan. 31, 2026 6:44:44 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:45:28 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 5001
+jan. 31, 2026 6:45:31 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:45747
+jan. 31, 2026 6:45:32 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:45747
+jan. 31, 2026 6:45:32 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@1aa6910f, payload=[B@14616c2b, requestId='506c583d-4602-4890-a42c-cee7ba01651c'}
+jan. 31, 2026 6:47:38 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 5001
+jan. 31, 2026 6:47:41 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:45958
+jan. 31, 2026 6:47:41 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:45958
+jan. 31, 2026 6:47:41 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@710b32fd, payload=[B@7fccc2ac, requestId='0825c517-d67d-4fd8-b1c8-1c2bbbdd02c2'}
+jan. 31, 2026 6:50:26 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 5001
+jan. 31, 2026 6:50:31 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28157
+jan. 31, 2026 6:50:31 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28157
+jan. 31, 2026 6:50:31 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@710b32fd, payload=[B@7fccc2ac, requestId='a892dc8d-6a37-4c7f-80b5-57e2820199b5'}
+jan. 31, 2026 6:50:52 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28195
+jan. 31, 2026 6:50:52 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28195
+jan. 31, 2026 6:50:52 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@789262f5, payload=[B@7cade93f, requestId='f5bae5a3-4896-4a88-9d93-12daafeae709'}
+jan. 31, 2026 6:50:54 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28203
+jan. 31, 2026 6:50:54 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28203
+jan. 31, 2026 6:50:54 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@763912b9, payload=[B@78fef20e, requestId='19fb04c1-5f89-4f12-b1f9-74f5dc9b3ad7'}
+jan. 31, 2026 6:50:57 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28212
+jan. 31, 2026 6:50:57 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28212
+jan. 31, 2026 6:50:57 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@673fbcb3, payload=[B@69f84e24, requestId='66261ebc-edf0-4ac3-aa6f-44cf14f5da8f'}
+jan. 31, 2026 6:50:59 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28220
+jan. 31, 2026 6:50:59 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28220
+jan. 31, 2026 6:50:59 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@3c3fb818, payload=[B@32f841ef, requestId='72f99da6-702f-43ef-936a-102f87945e0f'}
+jan. 31, 2026 6:51:45 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 5001
+jan. 31, 2026 6:51:49 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28310
+jan. 31, 2026 6:51:49 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28310
+jan. 31, 2026 6:51:49 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@710b32fd, payload=[B@7fccc2ac, requestId='f3e281ae-135c-467a-9816-3c3968b9350e'}
+jan. 31, 2026 6:51:51 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28317
+jan. 31, 2026 6:51:51 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28317
+jan. 31, 2026 6:51:51 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@789262f5, payload=[B@7cade93f, requestId='5f695564-9bd9-4287-a513-07f2bc1ca427'}
+jan. 31, 2026 6:51:53 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28325
+jan. 31, 2026 6:51:53 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28325
+jan. 31, 2026 6:51:53 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@763912b9, payload=[B@78fef20e, requestId='bf10d9bb-3ddb-4c11-ad42-8ab111b2f251'}
+jan. 31, 2026 6:51:56 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28339
+jan. 31, 2026 6:51:56 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28339
+jan. 31, 2026 6:51:56 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@673fbcb3, payload=[B@69f84e24, requestId='4f683e11-f10f-4aba-ac36-feb112b60e04'}
+jan. 31, 2026 6:51:58 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28349
+jan. 31, 2026 6:51:59 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28349
+jan. 31, 2026 6:51:59 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@3c3fb818, payload=[B@32f841ef, requestId='b6ea0a1c-e729-4ef8-becd-31c2ddd4c85c'}
+jan. 31, 2026 6:52:01 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28363
+jan. 31, 2026 6:52:01 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28363
+jan. 31, 2026 6:52:01 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@3dbc12a5, payload=[B@337beb62, requestId='e714ef74-cb34-4b2b-a9e2-5af31e0f1e70'}
+jan. 31, 2026 6:52:03 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28376
+jan. 31, 2026 6:52:03 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28376
+jan. 31, 2026 6:52:03 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@20452100, payload=[B@2e82cb78, requestId='0ee819b5-bc9f-452d-9d6a-de5ba4bdc042'}
+jan. 31, 2026 6:52:06 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28390
+jan. 31, 2026 6:52:06 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28390
+jan. 31, 2026 6:52:06 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@1a800b04, payload=[B@1447f624, requestId='5cfd07d7-b1f2-4457-a8a1-0be00d12c500'}
+jan. 31, 2026 6:52:10 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28410
+jan. 31, 2026 6:52:10 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28410
+jan. 31, 2026 6:52:10 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@6d714c1b, payload=[B@63b6bfc5, requestId='3cfb63ed-130f-4944-99b7-08f1d50136cf'}
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28422
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28422
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@56c82b40, payload=[B@580fdfe9, requestId='9a32d7b8-32d9-4195-b0fa-4d763066bae3'}
+jan. 31, 2026 7:05:58 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 5001
+jan. 31, 2026 7:06:01 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:59700
+jan. 31, 2026 7:06:01 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:59700
+jan. 31, 2026 7:06:01 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@710b32fd, payload=[B@7fccc2ac, requestId='9d633538-47c3-4558-a665-cdb9be8d21a0'}
+jan. 31, 2026 7:06:04 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:59710
+jan. 31, 2026 7:06:04 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:59710
+jan. 31, 2026 7:06:04 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@4f5b7de3, payload=[B@4b64f0d0, requestId='fc9cfd41-82b2-47dc-a842-011505c10161'}
+jan. 31, 2026 7:06:06 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:59721
+jan. 31, 2026 7:06:06 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:59721
+jan. 31, 2026 7:06:06 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@23196f0b, payload=[B@2dde9518, requestId='aa8ab46e-31d6-484c-ad93-1290f7493f15'}
+jan. 31, 2026 7:06:08 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:59729
+jan. 31, 2026 7:06:08 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:59729
+jan. 31, 2026 7:06:08 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@4b03df7c, payload=[B@45c4286c, requestId='452fbc19-c3a7-42c7-9e24-9702434d268c'}
+jan. 31, 2026 7:06:11 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:59739
+jan. 31, 2026 7:06:11 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:59739
+jan. 31, 2026 7:06:11 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@3dbc12a5, payload=[B@337beb62, requestId='774dd3c6-61e6-485e-8d35-01e60a858158'}
+jan. 31, 2026 7:06:13 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:59745
+jan. 31, 2026 7:06:13 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:59745
+jan. 31, 2026 7:06:13 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=FIND_NODE, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@20452100, payload=[B@2e82cb78, requestId='d89f2484-158d-472b-be0d-b410037ff7e7'}

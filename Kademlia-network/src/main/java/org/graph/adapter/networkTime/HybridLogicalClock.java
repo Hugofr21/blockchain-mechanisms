@@ -11,7 +11,7 @@ public class HybridLogicalClock implements Comparable<HybridLogicalClock>, Seria
     private int logicalClock;
 
     public HybridLogicalClock() {
-        this.physicalClock = (System.currentTimeMillis() /1000);
+        this.physicalClock = (System.currentTimeMillis() / 1000);
         this.logicalClock = 0;
     }
 

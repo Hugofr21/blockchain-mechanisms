@@ -50,9 +50,4 @@ public record NodeId(BigInteger value) implements Serializable {
         NodeId nodeId = (NodeId) o;
         return Objects.equals(value, nodeId.value);
     }
-
-    @Override
-    public String toString() {
-        return value.toString(16);
-    }
 }

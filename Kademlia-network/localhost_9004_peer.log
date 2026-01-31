@@ -1,0 +1,74 @@
+jan. 31, 2026 6:40:45 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 9004
+jan. 31, 2026 6:40:46 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:5001
+jan. 31, 2026 6:40:46 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=RESPONSE_NODES, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@6893fd1c, payload=[B@66541e7e, requestId='39294168-405d-43fe-b1f2-88ba7c431806'}
+jan. 31, 2026 6:50:56 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 9004
+jan. 31, 2026 6:50:57 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:5001
+jan. 31, 2026 6:50:57 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=RESPONSE_NODES, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@2e57ae9c, payload=[B@20904526, requestId='f4581578-ed2f-48ab-8f9d-f06cc9693222'}
+jan. 31, 2026 6:50:57 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:9002
+jan. 31, 2026 6:50:57 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:50:57 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:9003
+jan. 31, 2026 6:50:57 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:50:57 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:9001
+jan. 31, 2026 6:50:57 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:50:59 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Incoming connection from: /127.0.0.1:28221
+jan. 31, 2026 6:50:59 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: /127.0.0.1:28221
+jan. 31, 2026 6:50:59 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Peer closed connection.
+jan. 31, 2026 6:50:59 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:52:11 DA TARDE org.graph.adapter.p2p.ServerHandle run
+INFO: Server listening for connections on port 9004
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:5001
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+SEVERE: Received message: Message{type=RESPONSE_NODES, timestamp=org.graph.adapter.networkTime.HybridLogicalClock@19328f63, payload=[B@17f56235, requestId='90871322-4178-4b9d-a235-d34cafa91fb4'}
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:9010
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:9007
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:9001
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:9009
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:9002
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:9008
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:9006
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:9005
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler run
+INFO: Connection loop started: localhost/127.0.0.1:9003
+jan. 31, 2026 6:52:12 DA TARDE org.graph.adapter.p2p.ConnectionHandler closeConnection
+INFO: Connection closed

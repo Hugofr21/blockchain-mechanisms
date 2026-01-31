@@ -24,7 +24,7 @@ public class BlockStrategy implements MessageStrategy {
                     peer.getHybridLogicalClock()
             );
 
-            peer.getNeighboursManager().broadcastExcept(invMsg, context.getRemoteNode());
+//            peer.getNeighboursManager().broadcastExcept(invMsg, context.getRemoteNode());
         }
     }
 }

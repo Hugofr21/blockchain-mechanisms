@@ -22,7 +22,7 @@ public class Transaction {
         this.data = data;
         this.timestamp = System.currentTimeMillis();
         this.ownerId = ownerId;
-        this.txId = HashUtils.calculateSha256(dataSign());
+        this.txId = HashUtils.calculateSha256(getDataSign());
     }
 
     public Transaction(TransactionType type) {
@@ -33,17 +33,6 @@ public class Transaction {
                 timestamp
         );
         this.txId = HashUtils.calculateSha256(data);
-    }
-
-
-    private String dataSign(){
-        return String.format("%s%s%s%d%s",
-                type.toString(),
-                Base64.getEncoder().encodeToString(sender.getEncoded()),
-                data.toString(),
-                timestamp,
-                ownerId
-        );
     }
 
     public String getTxId() {
@@ -66,11 +55,20 @@ public class Transaction {
         return timestamp;
     }
 
-    public byte[] getSignature() {
-        return signature;
+    public String getDataSign(){
+        return String.format("%s%s%s%d%s",
+                type.toString(),
+                Base64.getEncoder().encodeToString(sender.getEncoded()),
+                data.toString(),
+                timestamp,
+                ownerId
+        );
     }
-
     public BigInteger getSenderId() {
         return ownerId;
+    }
+
+    public void setSignature(byte[] signature) {
+        this.signature = signature;
     }
 }

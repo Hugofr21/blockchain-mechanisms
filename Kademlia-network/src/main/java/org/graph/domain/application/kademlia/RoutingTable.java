@@ -53,6 +53,7 @@ public class RoutingTable {
        return null;
     }
 
+
    /*
       // 1. Calcula Old Distance (OD) - XOR
       // 2. Calcula Trust (t)
@@ -96,5 +97,18 @@ public class RoutingTable {
 
         return (normalizedDistance * BALANCE_FACTOR) + ((1.0 - BALANCE_FACTOR) * (1.0 / safeTrust));
 
+    }
+
+    public synchronized boolean removeNode(Node node) {
+        if (node == null) return false;
+
+        int bucketIndex = getBucketIndex(node);
+
+        boolean removed = buckets.get(bucketIndex).removeNode(node);
+
+        if (removed) {
+            System.out.println("[ROUTING] Nó removido da tabela: " + node.getNodeId());
+        }
+        return removed;
     }
 }

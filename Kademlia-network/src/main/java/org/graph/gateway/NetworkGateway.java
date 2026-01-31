@@ -1,5 +1,6 @@
 package org.graph.gateway;
 
+import org.graph.adapter.auction.AuctionEngine;
 import org.graph.adapter.blockchain.BlockchainEngine;
 import org.graph.domain.application.block.Block;
 import org.graph.gateway.validator.Validator;
@@ -9,16 +10,21 @@ import static org.graph.adapter.utils.Constants.NETWORK_DIFFICULTY;
 
 public class NetworkGateway {
     private final BlockchainEngine blockchainEngine;
+    private final AuctionEngine auctionEngine;
     private final Validator validator;
 
     public NetworkGateway() {
         this.blockchainEngine = new BlockchainEngine(NETWORK_DIFFICULTY , MAX_TRANSACTIONS);
         this.validator = new Validator();
+        this.auctionEngine = new AuctionEngine(this.blockchainEngine);
+        this.blockchainEngine.addBlockListener(this.auctionEngine);
     }
 
     public BlockchainEngine getBlockchainEngine() {
         return blockchainEngine;
     }
+    public AuctionEngine getAuctionEngine() {return auctionEngine;}
+
 
     public boolean incomingBlock(Block block) {
         if (!validator.validateBlockchain(block, NETWORK_DIFFICULTY)){

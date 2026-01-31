@@ -1,55 +1,40 @@
 package org.graph.adapter.network.message.auction;
 
+import org.graph.domain.entities.auctions.AuctionState;
+import org.graph.domain.entities.auctions.Bid;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 
 public class AuctionPayload implements Serializable {
-    public AuctionOpType operation;
-    public String itemDescription;
-    public BigDecimal startPrice;
-    public long durationSeconds;
-    public String targetAuctionId;
-    public BigDecimal bidAmount;
+    private AuctionOpType operation;
+    private String itemDescription;
+    private AuctionState auctionState;
+    private Bid bid;
 
-    // Construtor auxiliar para Criação
-    public static AuctionPayload create(String desc, BigDecimal price, long duration) {
+    public static AuctionPayload create(String desc, AuctionState state) {
         AuctionPayload p = new AuctionPayload();
         p.operation = AuctionOpType.CREATE;
         p.itemDescription = desc;
-        p.startPrice = price;
-        p.durationSeconds = duration;
+        p.auctionState  = state;
         return p;
     }
 
-    // Construtor auxiliar para Lance
-    public static AuctionPayload bid(String auctionId, BigDecimal amount) {
+    public static AuctionPayload bid(Bid b) {
         AuctionPayload p = new AuctionPayload();
         p.operation = AuctionOpType.BID;
-        p.targetAuctionId = auctionId;
-        p.bidAmount = amount;
+        p.bid = b;
         return p;
     }
-    public BigDecimal getBidAmount() {
-        return bidAmount;
-    }
 
-    public String getTargetAuctionId() {
-        return targetAuctionId;
+    public AuctionState getAuctionStateRemote() {
+        return auctionState;
     }
-
-    public long getDurationSeconds() {
-        return durationSeconds;
+    public Bid getBidRemote() {
+        return bid;
     }
-
-    public BigDecimal getStartPrice() {
-        return startPrice;
-    }
-
-    public String getItemDescription() {
-        return itemDescription;
-    }
-
     public AuctionOpType getOperation() {
         return operation;
     }
+    public String getItemDescription() {return itemDescription;}
 }

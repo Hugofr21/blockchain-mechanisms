@@ -1,5 +1,6 @@
 package org.graph.adapter.p2p;
 
+import org.graph.adapter.p2p.neigbour.NeighboursConnections;
 import org.graph.domain.application.kademlia.RoutingTable;
 import org.graph.domain.application.mechanism.pow.MiningResult;
 import org.graph.domain.entities.p2p.Node;

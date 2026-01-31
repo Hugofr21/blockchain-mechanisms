@@ -1,6 +1,8 @@
 package org.graph.adapter.blockchain;
 
 import org.graph.adapter.auction.AuctionEngine;
+import org.graph.adapter.provider.BlockListener;
+import org.graph.adapter.provider.TransactionsPublished;
 import org.graph.domain.application.block.Block;
 import org.graph.domain.application.transaction.Transaction;
 import org.graph.domain.application.transaction.TransactionType;
@@ -11,30 +13,43 @@ import org.graph.adapter.blockchain.block.TransactionOrganizer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BlockchainEngine {
+public class BlockchainEngine implements TransactionsPublished {
     private final int numThreads;
     private final int currentDifficulty;
     private final TransactionOrganizer mTransactionOrganizer;
     private final BlockOrganizer mBlockOrganizer;
-    private final AuctionEngine auctionEngine;
+    private final List<BlockListener> listeners;
 
     public BlockchainEngine(int difficulty, int maxTx) {
         this.mTransactionOrganizer = new TransactionOrganizer(maxTx);
         this.mBlockOrganizer = new BlockOrganizer(this);
         this.numThreads = Runtime.getRuntime().availableProcessors();
         this.currentDifficulty = difficulty;
-        this.auctionEngine = new AuctionEngine();
+        this.listeners = new ArrayList<>();
     }
 
 
     public TransactionOrganizer getTransactionOrganizer() {
         return mTransactionOrganizer;
     }
-    public AuctionEngine getAuctionEngine() {return auctionEngine;}
     public BlockOrganizer getBlockOrganizer() {
         return mBlockOrganizer;
     }
 
+    public void addBlockListener(BlockListener listener) {
+        this.listeners.add(listener);
+    }
+
+    @Override
+    public void submitTransaction(Transaction tx) {
+        addTransaction(tx);
+    }
+
+    private void notifyListeners(Block block) {
+        for (BlockListener listener : listeners) {
+            listener.onBlockCommitted(block);
+        }
+    }
 
     public void createGenesisBlock() {
         if (mBlockOrganizer.getChainHeight() >= 0) {
@@ -78,11 +93,7 @@ public class BlockchainEngine {
         Block newBlock = new Block(1,getInfoBlock().key() , getInfoBlock().value(), transactions, currentDifficulty);
         newBlock.mineBlock(currentDifficulty, numThreads);
 
-        boolean added = mBlockOrganizer.addLocalBlock(newBlock);
-
-        if (!added) {
-            System.err.println("[MINER] Falha crítica: Bloco minerado foi rejeitado pelo organizador local!");
-        }
+        notifyListeners(newBlock);
 
     }
 
@@ -97,6 +108,7 @@ public class BlockchainEngine {
         System.out.println("\n[BLOCKCHAIN] Recieving block from peer...");
         System.out.println("Current Block: " + block);
         Thread.sleep(100);
+        notifyListeners(block);
         mBlockOrganizer.receiveBlock(block);
     }
 
@@ -117,8 +129,5 @@ public class BlockchainEngine {
 
         return new Pair<>(newHeight, previousHash);
     }
-
-
-
 
 }
