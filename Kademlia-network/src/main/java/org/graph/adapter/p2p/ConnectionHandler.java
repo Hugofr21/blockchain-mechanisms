@@ -142,11 +142,9 @@ public class ConnectionHandler implements Runnable {
 
     }
 
-    private void handleRequest(Object payload) {
-    }
+    private void handleRequest(Object payload) {}
 
-    private void handleChunk(Object payload) {
-    }
+    private void handleChunk(Object payload) {}
 
     private void handleBlock(Object payload) {
         try {
