@@ -3,6 +3,7 @@ package org.graph.adapter.network;
 import org.graph.adapter.p2p.ConnectionHandler;
 import org.graph.adapter.utils.MessageUtils;
 import org.graph.adapter.utils.SerializationUtils;
+import org.graph.domain.application.mechanism.EventType;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.p2p.Node;
@@ -129,9 +130,15 @@ public final class Handshake {
 
                         newHandler.setRemoteNode(verifiedNode);
 
+                        myself.getReputationsManager().reportEvent(
+                                verifiedNode.getNodeId().value(),
+                                EventType.PING_SUCCESS
+                        );
                         myself.getNeighboursManager().addConnection(verifiedNode, newHandler);
 
                         myself.getRoutingTable().addNode(verifiedNode);
+
+//                        myself.getRoutingTable().updateNode(verifiedNode);
 
                         new Thread(newHandler).start();
 

@@ -89,8 +89,13 @@ public class BlockEventManger {
             case MISSING_PARENT -> {
                 System.out.println("[SYNC] Gap detected in the block " + block.getNumberBlock());
                 System.out.println("[SYNC] Requesting PAI block: " + block.getHeader().getPreviousBlockHash());
+                String parentHash = block.getHeader().getPreviousBlockHash();
+                sendGetData(parentHash, source);
 
-                sendGetData(block.getHeader().getPreviousBlockHash(), source);
+                if (source.getPeer().getmChainSyncController() != null) {
+                    source.getPeer().getmChainSyncController().recoverMissingBlock(parentHash);
+                }
+
             }
 
             case INVALID -> System.err.println("[SYNC] Invalid block of " + source.getRemoteNode().getPort());

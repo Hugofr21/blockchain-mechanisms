@@ -54,7 +54,7 @@ public class ReputationsManager implements IReputationsManager {
     }
 
 
-    public void recordEvent(BigInteger nodeId, EventType event){
+    public void reportEvent(BigInteger nodeId, EventType event){
         ProofOfReputation proof = getProofOfReputation(nodeId);
         double newScore = proof.recordEvent(event);
         if (event == EventType.INVALID_BLOCK || event == EventType.PING_FAIL) {

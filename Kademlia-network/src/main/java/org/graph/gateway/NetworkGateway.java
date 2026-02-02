@@ -22,8 +22,9 @@ public class NetworkGateway {
     private IEventDispatcher dispatcher;
     private Peer myself;
 
-    public NetworkGateway() {
-        this.blockchainEngine = new BlockchainEngine(NETWORK_DIFFICULTY , MAX_TRANSACTIONS);
+    public NetworkGateway(Peer myself) {
+        this.myself = myself;
+        this.blockchainEngine = new BlockchainEngine(NETWORK_DIFFICULTY , MAX_TRANSACTIONS, myself);
         this.securityValidator = new SecurityValidator();
         this.auctionEngine = new AuctionEngine(this.blockchainEngine);
         this.blockchainEngine.addBlockListener(this.auctionEngine);

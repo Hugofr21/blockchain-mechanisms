@@ -162,14 +162,14 @@ public class AuctionEngine implements BlockListener {
         long endTime = System.currentTimeMillis() + durationMillis;
         String entropyId = HashUtils.calculateSha256(myself.getMyself().getNodeId().value() + startPrice.toString() + endTime);
 
-        AuctionState tempStateDTO = new AuctionState(
+        AuctionState newAuctionId = new AuctionState(
                 entropyId,
                 myself.getMyself().getNodeId().value(),
                 startPrice,
                 endTime
         );
 
-        AuctionPayload payload = AuctionPayload.create("New Auction", tempStateDTO);
+        AuctionPayload payload = AuctionPayload.create("New Auction", newAuctionId);
         Transaction tx = new Transaction(
                 TransactionType.AUCTION_CREATED,
                 myself.getIsKeysInfrastructure().getOwnerPublicKey(),
@@ -178,6 +178,8 @@ public class AuctionEngine implements BlockListener {
         );
 
         signAndSubmit(tx, myself);
+
+        myself.getMkademliaNetwork().storage(myself.getMyself().getNodeId().value(), newAuctionId);
     }
 
     public void placeBidRequest(String auctionId, BigDecimal bidValue, Peer myself) {

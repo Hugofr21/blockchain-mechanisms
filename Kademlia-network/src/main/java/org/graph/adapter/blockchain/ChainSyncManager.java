@@ -96,15 +96,21 @@ public class ChainSyncManager {
 
 
     public void recoverMissingBlock(String missingHash) {
-        BigInteger targetKey = new BigInteger(missingHash, 16);
-        Object result = myself.getMkademliaNetwork().findValue(targetKey);
-
-        if (result != null && result instanceof Block recoveredBlock) {
-            System.out.println("[KADEMLIA] Block successfully recovered!");
-            myself.getNetworkGateway().processIncomingBlock(recoveredBlock);
-        } else {
-            System.out.println("[KADEMLIA] Block not found on the network.");
-        }
+        new Thread(() -> {
+            try {
+                System.out.println("[KADEMLIA] A procurar bloco órfão na DHT: " + missingHash);
+                BigInteger targetKey = new BigInteger(missingHash, 16);
+                Block recoveredBlock = myself.getMkademliaNetwork().findValue(targetKey, Block.class);
+                if (recoveredBlock != null) {
+                    System.out.println("[KADEMLIA] Bloco recuperado com sucesso!");
+                    myself.getNetworkGateway().processIncomingBlock(recoveredBlock);
+                } else {
+                    System.out.println("[KADEMLIA] Bloco não encontrado na rede.");
+                }
+            } catch (Exception e) {
+                System.err.println("[KADEMLIA] Erro na recuperação: " + e.getMessage());
+            }
+        }).start();
     }
 
     private void sendGetData(String hash, ConnectionHandler target) {

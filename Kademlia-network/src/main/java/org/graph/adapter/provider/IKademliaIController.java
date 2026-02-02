@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface IKademliaIController {
     List<Node>  findNode(BigInteger nodeId);
-    Object findValue(BigInteger hash);
+    <T> T findValue(BigInteger key, Class<T> type);
     boolean ping(Node node);
     void storage(BigInteger nodeId, Object value);
 }

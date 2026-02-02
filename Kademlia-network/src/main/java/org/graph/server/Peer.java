@@ -44,7 +44,7 @@ public class Peer {
     public Peer(int port){
         this.keys = new KeysInfrastructure(this, port);
         this.hybridLogicalClock = new HybridLogicalClock();
-        this.networkGateway = new NetworkGateway();
+        this.networkGateway = new NetworkGateway(this);
 
         MiningResult proofOfWork = null;
         try {

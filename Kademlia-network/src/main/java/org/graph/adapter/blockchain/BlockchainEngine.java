@@ -9,7 +9,9 @@ import org.graph.domain.application.transaction.TransactionType;
 import org.graph.domain.common.Pair;
 import org.graph.adapter.blockchain.block.BlockOrganizer;
 import org.graph.adapter.blockchain.block.TransactionOrganizer;
+import org.graph.server.Peer;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,14 +61,16 @@ public class BlockchainEngine implements TransactionsPublished {
     private final List<BlockListener> listeners;
     private long lastTxTime;
     private static final long MAX_WAIT_TIME_MS = 2000;
-    
-    public BlockchainEngine(int difficulty, int maxTx) {
+    private Peer myself;
+
+    public BlockchainEngine(int difficulty, int maxTx, Peer myself) {
         this.mTransactionOrganizer = new TransactionOrganizer(maxTx);
         this.mBlockOrganizer = new BlockOrganizer(this);
         this.numThreads = Runtime.getRuntime().availableProcessors();
         this.currentDifficulty = difficulty;
         this.listeners = new ArrayList<>();
         this.lastTxTime = System.currentTimeMillis();
+        this.myself = myself;
         startMiningWatchdog();
         
     }
@@ -166,6 +170,9 @@ public class BlockchainEngine implements TransactionsPublished {
 
         this.lastTxTime = System.currentTimeMillis();
         notifyListeners(newBlock);
+
+        BigInteger keyId = new BigInteger(newBlock.getCurrentBlockHash(), 16);
+        myself.getMkademliaNetwork().storage(keyId, newBlock);
 
     }
 

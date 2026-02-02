@@ -262,4 +262,7 @@ public class ConnectionHandler implements Runnable {
         remoteNode = bootstrapNode;
     }
 
+    public Socket getSocket() {
+        return socket;
+    }
 }
