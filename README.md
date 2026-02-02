@@ -1,4 +1,4 @@
-# blockchain‑mechanisms
+# Blockchain Mechanisms
 
 **Implementação de uma blockchain distribuída para suportar leilões (auctions) e licitações**, com mecanismo de mineração e estratégias de mitigação de vetores de ataque.
 
@@ -117,7 +117,18 @@ A camada de gateway desempenha um papel crítico na fronteira do sistema, sendo 
 * Cada `NodeId` é incluído em todas as mensagens `HELLO`.
 * O `SecurityValidator` recalcula o hash no recebimento e verifica a igualdade; qualquer manipulação resulta em rejeição.
 
-### 4.11. Outros problemas típicos de sistemas distribuídos
+
+### 4.11. Race codictiosn Auactiosn ao Pub/Sub
+Em ambientes distribuídos que combinam Pub/Sub com a camada de descoberta/armazenamento Kademlia, os nós frequentemente executam ciclos Read‑Modify‑Write (RMW) sobre recursos compartilhados (por exemplo, leilões). Cada nó pode:
+
+1) Ler o estado atual de um recurso.
+2) Aplicar uma modificação local (ex.: registrar um novo lance).
+3) Escrever a nova versão de volta ao DHT.
+
+Devido à latência da rede e à ausência de um coordenador central, dois ou mais nós podem publicar simultaneamente alterações que, embora referenciem o mesmo recurso, possuam identificadores de operação diferentes. O resultado são mensagens duplicadas ou versões conflitantes nos assinantes.
+- Condições de corrida: duas publicações concorrentes podem chegar em ordem diferente nos consumidores, gerando estados inconsistentes.
+- Duplicação de eventos: o mesmo leilão pode ser entregue duas vezes, cada uma com um operationId distinto, provocando reprocessamento desnecessário e, possivelmente, decisões conflitantes (ex.: aceitação de dois lances diferentes para o mesmo instante).
+### 4.12. Outros problemas típicos de sistemas distribuídos
 
 | Problema | Solução |
 |----------|----------|

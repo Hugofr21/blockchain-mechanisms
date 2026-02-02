@@ -1,6 +1,5 @@
 package org.graph.adapter.network.kademlia;
 
-import org.graph.adapter.p2p.ConnectionHandler;
 import org.graph.adapter.storage.cache.LRUCache;
 import org.graph.adapter.utils.MessageUtils;
 import org.graph.adapter.utils.SerializationUtils;
@@ -14,7 +13,6 @@ import org.graph.adapter.storage.StorageDHT;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.net.Socket;
 import java.util.*;
@@ -325,6 +323,30 @@ public class KademliaNetwork implements IKademliaIController {
     }
 
 
+    /**
+     * O armazenamento é responsável por anunciar e manter a associação entre
+     * identificadores e objetos criados na rede, refletindo o estado de posse
+     * desses objetos num determinado momento. Um objeto pode estar associado
+     * a um único nó ou a um conjunto de nós, dependendo da distribuição da rede
+     * e do grau de comunicação estabelecido entre o nó criador e os restantes
+     * participantes.
+     *
+     * Os objetos armazenados são identificados de forma determinística através
+     * de chaves geradas por mecanismos de prova de trabalho, garantindo um
+     * espaço de endereçamento de 256 bits e reduzindo a probabilidade de colisão
+     * ou apropriação maliciosa de identificadores.
+     *
+     * @param key
+     *        Identificador do objeto dentro da rede, utilizado para estabelecer
+     *        a sua relação e localização lógica no sistema distribuído. A chave
+     *        resulta de um processo de prova de trabalho e possui 256 bits.
+     * @param value
+     *        Valor associado ao identificador {@code key}, representando a
+     *        referência lógica ao objeto. Este valor pode corresponder, por
+     *        exemplo, a um bloco ou a um nó, devendo ser evitada a passagem de
+     *        objetos diretos para a blockchain.
+     */
+
     @Override
     public void storage(BigInteger key, Object value) {
         List<Node> closestNodes = findNode(key);
@@ -352,8 +374,7 @@ public class KademliaNetwork implements IKademliaIController {
 
         if (target.getNodeId().equals(myself.getMyself().getNodeId())) return null;
 
-
-        try (Socket socket = new java.net.Socket(target.getHost(), target.getPort())) {
+        try (Socket socket = new Socket(target.getHost(), target.getPort())) {
 
             socket.setSoTimeout(5000);
 

@@ -79,7 +79,7 @@ public class BlockchainEngine implements TransactionsPublished {
         Thread watchdog = new Thread(() -> {
             while (true) {
                 try {
-                    Thread.sleep(500); // Verifica a cada meio segundo
+                    Thread.sleep(500);
 
                     synchronized (this) {
                         int pending = mTransactionOrganizer.getPendingCount();
