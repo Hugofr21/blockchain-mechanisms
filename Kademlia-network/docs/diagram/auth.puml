@@ -1,0 +1,120 @@
+@startuml
+title P2P Join Process: Authentication, Reputation & Discovery
+skinparam round corner 10
+skinparam sequenceMessageAlign center
+skinparam participantBorderColor #005A9C
+skinparam participantBackgroundColor #E0F0FF
+autonumber
+
+box "Local Peer (My Node)" #F9F9F9
+    participant "Peer" as P
+    participant "Handshake\n(Utility)" as HS
+    participant "Reputation\nManager" as REP
+    participant "Routing\nTable" as RT
+    participant "ChainSync\nManager" as SYNC
+    participant "Kademlia\nNetwork" as KAD
+    participant "Connection\nHandler" as CH
+end box
+
+box "Remote Network" #EFEFEF
+    participant "Bootstrap\nNode" as B
+end box
+
+
+group "Phase1: Cryptographic Authentication"
+    P -> P : new Socket(bootstrapIP)
+    P -> CH : new ConnectionHandler(socket)
+    activate CH
+
+    P -> HS : doHandshake(CH)
+    activate HS
+
+    HS -> CH : send(HELLO + PubKey + Nonce)
+    CH -> B : [TCP] HELLO request
+
+    B -> B : verify PoW & signature
+    B -> CH : [TCP] HELLO response (signed)
+    CH -> HS : return response payload
+
+    HS -> HS : validateRemoteIdentity()
+
+    alt Invalid signature
+        HS --> P : throw SecurityException
+        P -> CH : close()
+        deactivate CH
+    else Success
+        HS --> P : return RemoteNode(B)
+    end
+    deactivate HS
+end
+
+group "Phase2: Initial Reputation Registration"
+    P -> REP : reportEvent(B, PING_SUCCESS)
+    activate REP
+    note right of REP
+        Initialise reputation score.
+        TrustFactor>0.1
+    end note
+    REP --> P : ok
+    deactivate REP
+
+    P -> RT : updateNode(B)
+    activate RT
+    RT -> REP : getTrustFactor(B)
+    RT -> RT : addOrUpdate(B)
+    note right of RT
+        Accept node because
+        handshake proved identity.
+    end note
+    deactivate RT
+
+    P -> CH : startReaderThread()
+    activate CH
+    deactivate CH
+end
+
+
+group "Phase3: Chain Height Check"
+    P -> SYNC : startSync(CH)
+    activate SYNC
+
+    SYNC -> CH : send(GET_STATUS)
+    CH -> B : [MSG] GET_STATUS
+    B --> CH : [MSG] STATUS_RESPONSE(Height, TopHash)
+
+    CH -> SYNC : handleResponse()
+    SYNC -> SYNC : compareHeights()
+
+    opt Remote height > local height
+        SYNC -> CH : send(GET_BLOCK, TopHash)
+        note right of SYNC
+            Initiate reverse download
+            (Missing parents)
+        end note
+    end
+    deactivate SYNC
+end
+
+
+group "Phase4: Network Discovery (Bootstrap)"
+    P -> KAD : findNode(myNodeId)
+    activate KAD
+
+    KAD -> CH : send(FIND_NODE, target=myNodeId)
+    CH -> B : [MSG] FIND_NODE
+    B --> CH : [MSG] NODES_RESPONSE(List<Node>)
+
+    CH -> KAD : return List<Node>
+
+    loop For each received neighbour
+        KAD -> REP : reportEvent(neighbour, FIND_NODE_USEFUL)
+        KAD -> RT : updateNode(neighbour)
+        note right of KAD
+            Populate routing table
+            with new peers
+        end note
+    end
+    deactivate KAD
+end
+
+@enduml

@@ -2,9 +2,15 @@ package org.graph.gateway;
 
 import org.graph.adapter.auction.AuctionEngine;
 import org.graph.adapter.blockchain.BlockchainEngine;
+import org.graph.adapter.network.message.block.InventoryPayload;
+import org.graph.adapter.network.message.block.InventoryType;
+import org.graph.adapter.provider.IEventDispatcher;
 import org.graph.domain.application.block.Block;
+import org.graph.domain.entities.message.Message;
+import org.graph.domain.entities.message.MessageType;
 import org.graph.gateway.block.BlockStateRemote;
-import org.graph.gateway.validator.Validator;
+import org.graph.gateway.validator.SecurityValidator;
+import org.graph.server.Peer;
 
 import static org.graph.adapter.utils.Constants.MAX_TRANSACTIONS;
 import static org.graph.adapter.utils.Constants.NETWORK_DIFFICULTY;
@@ -12,11 +18,13 @@ import static org.graph.adapter.utils.Constants.NETWORK_DIFFICULTY;
 public class NetworkGateway {
     private final BlockchainEngine blockchainEngine;
     private final AuctionEngine auctionEngine;
-    private final Validator validator;
+    private final SecurityValidator securityValidator;
+    private IEventDispatcher dispatcher;
+    private Peer myself;
 
     public NetworkGateway() {
         this.blockchainEngine = new BlockchainEngine(NETWORK_DIFFICULTY , MAX_TRANSACTIONS);
-        this.validator = new Validator();
+        this.securityValidator = new SecurityValidator();
         this.auctionEngine = new AuctionEngine(this.blockchainEngine);
         this.blockchainEngine.addBlockListener(this.auctionEngine);
     }
@@ -25,6 +33,11 @@ public class NetworkGateway {
         return blockchainEngine;
     }
     public AuctionEngine getAuctionEngine() {return auctionEngine;}
+
+    public void setNetworkDependencies(IEventDispatcher dispatcher, Peer myself) {
+        this.dispatcher = dispatcher;
+        this.myself = myself;
+    }
 
     /**
      * 1- Processa a receção de um bloco remoto e determina o seu estado final após validação e persistência.
@@ -57,7 +70,7 @@ public class NetworkGateway {
 
     public BlockStateRemote processIncomingBlock(Block block) {
 
-        if (!validator.validateBlockchain(block, NETWORK_DIFFICULTY)){
+        if (!securityValidator.validateBlockchain(block, NETWORK_DIFFICULTY)){
             System.out.println("[GATEWAY] Invalid block (PoW/Incorrect signature).");
             return BlockStateRemote.INVALID;
         }
@@ -80,6 +93,24 @@ public class NetworkGateway {
         }
 
         return BlockStateRemote.ADDED;
+    }
+
+    /**
+     * Processa o envio de cada bloco após a sua mineração.
+     *
+     * Os blocos não são armazenados numa fila de pendentes; no entanto, sempre que
+     * exista pelo menos um bloco disponível para envio, este deve ser imediatamente
+     * transmitido.
+     * @param block que será enviado para a rede.
+     */
+    public void announceBlockToNetwork(Block block){
+        InventoryPayload inv = new InventoryPayload(InventoryType.BLOCK, block.getCurrentBlockHash());
+        Message msg = new Message(
+                MessageType.INV_DATA,
+                inv,
+                myself.getHybridLogicalClock()
+        );
+        dispatcher.broadcastExcept(msg, null);
     }
 
 }

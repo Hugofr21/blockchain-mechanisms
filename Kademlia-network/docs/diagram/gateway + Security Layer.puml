@@ -1,0 +1,49 @@
+@startuml
+title P2P Node - Gateway + Security Layer (Defence-in-Depth)
+
+package "Network Edge" {
+    component "NetworkGateway" as GW <<Component>>
+    note right of GW
+        Receives inbound messages (INV, GET_BLOCK, BLOCK)
+        Sends outbound messages
+    end note
+}
+
+package "Security Layer" {
+    component "SecurityValidator" as VAL <<Component>>
+    note right of VAL
+        • PoW verification
+        • Signature / ECDSA check
+        • Replay‑attack detection
+        • Rate‑limit / Reputation scoring
+    end note
+
+    component "MessageSanitizer" as SAN <<Component>>
+    note right of SAN
+        Basic format validation, size limits,
+        protocol version check.
+    end note
+}
+
+package "Adapter Services" {
+    component "BlockProcessor"   as PROC   <<Component>>
+    component "Ledger"           as CHAIN  <<Component>>
+    component "OrphanPool"      as ORPHAN <<Component>>
+    component "SyncManager"     as SYNC   <<Component>>
+    component "MetricsCollector" as METRICS <<Component>>
+}
+
+
+GW --> SAN   : inbound raw bytes
+SAN --> VAL  : sanitized Message
+VAL --> PROC : validated Message
+PROC --> CHAIN   : tryAdd(block)
+PROC --> ORPHAN  : storeOrphan(block)
+PROC --> SYNC    : requestMissingParent(hash)
+PROC --> METRICS : recordProcessing()
+PROC --> GW      : response(BlockStateRemote)
+
+GW --> SAN   : outbound Message (INV, BLOCK, REJECT)
+SAN --> VAL  : outbound validation (sign, proof)
+VAL --> METRICS : recordSecurityEvent()
+@enduml

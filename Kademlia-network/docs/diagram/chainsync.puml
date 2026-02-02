@@ -1,0 +1,112 @@
+@startuml
+title P2P Blockchain: State Sync & Block Gossip
+skinparam sequenceMessageAlign center
+skinparam round corner 10
+skinparam participantBorderColor #005A9C
+skinparam participantBackgroundColor #E0F0FF
+autonumber
+
+
+box "Peers" #F8F8F8
+    participant "Remote Peer (R)" as R
+    participant "Local Node (L)" as L
+    participant "Other Peers (O)" as O
+end box
+
+
+group Phase1 – Initial Sync (Handshake)
+    L -> R : GET_STATUS
+    activate R
+    note over R
+        ChainSyncController:
+        - reads local tip (last block)
+        - returns **height** and **topHash**
+    end note
+    R --> L : STATUS_RESPONSE(topHash, height)
+    deactivate R
+
+    activate L
+    L -> L : handleStatusResponse()
+    note right of L
+        Compare heights:
+        if remoteHeight > localHeight
+            *Sync needed*
+        else
+            *Already up‑to‑date*
+        end if
+    end note
+
+    opt Remote is ahead (remoteHeight > localHeight)
+        L -> R : GET_BLOCK(hash=remoteTopHash)
+        activate R
+        R --> L : BLOCK(latestBlock)
+        deactivate R
+        note right of L
+            This triggers the **Missing‑Parent** walk
+            until the common ancestor is found.
+        end note
+    end
+    deactivate L
+end
+
+group Phase2 – Live Gossip (Block Propagation)
+    R -> L : INV(BLOCK, hash=X)
+    activate L
+    note right of L
+        InvHandler:
+        if !BlockStore.contains(X) then
+            request block
+        end if
+    end note
+end
+
+alt Block X already stored
+    'nothing to do – already have it
+else Block X unknown
+    group Download (Request Block)
+        L -> R : GET_BLOCK(hash=X)
+        activate R
+        R --> L : BLOCK(fullBlockData)
+        deactivate R
+    end
+
+    group Processing & Consensus
+        L -> L : BlockProcessor.process()
+        alt Block is VALID (added to chain)
+            L -> L : Ledger.addBlock()
+            note right of L
+                onBlockCommitted event fired
+                → updates state, UTXO set, mempool, etc.
+            end note
+
+            '--- RE‑BROADCAST TO OTHER PEERS ---
+            par Gossip (broadcast)
+                L -> O : INV(BLOCK, hash=X)
+            end
+        else Block MISSING_PARENT
+            note right of L
+                Block saved as *orphan*.
+                Missing ancestor detected.
+            end note
+
+            loop while parent missing
+                L -> R : GET_BLOCK(hash=parentOfX)
+                activate R
+                R --> L : BLOCK(parentBlock)
+                deactivate R
+                note right of L
+                    SyncManager may also try Kademlia
+                    or direct peer fallback.
+                end note
+            end
+        else Block INVALID
+            L -> L : discard()
+            note right of L
+                Penalise sender reputation
+                (rate‑limit, temporary ban, etc.)
+            end note
+        end
+    end
+    deactivate L
+end
+@enduml

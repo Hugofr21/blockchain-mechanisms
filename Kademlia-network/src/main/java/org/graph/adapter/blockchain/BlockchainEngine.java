@@ -152,7 +152,7 @@ public class BlockchainEngine implements TransactionsPublished {
         List<Transaction> transactions = mTransactionOrganizer.getTransactionsForBlock();
 
         if (transactions == null || transactions.isEmpty()) {
-            System.out.println("[INFO] Sem transações pendentes");
+            System.out.println("[INFO] No pending transactions");
             return;
         }
 
@@ -170,12 +170,12 @@ public class BlockchainEngine implements TransactionsPublished {
     }
 
 
-    public void receiveBlockFromPeer(Block block) throws InterruptedException {
-        System.out.println("\n[BLOCKCHAIN] Recieving block from peer...");
+    public boolean receiveBlockFromPeer(Block block) throws InterruptedException {
+        System.out.println("\n[BLOCKCHAIN] Receiving block from peer...");
         System.out.println("Current Block: " + block);
         Thread.sleep(100);
         notifyListeners(block);
-        mBlockOrganizer.receiveBlock(block);
+        return mBlockOrganizer.receiveBlock(block);
     }
 
     private Pair<Integer, String> getInfoBlock (){

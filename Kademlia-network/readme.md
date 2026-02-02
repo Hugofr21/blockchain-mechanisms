@@ -2,7 +2,7 @@
 Sistemas distribuídos utilizam mecanismos baseados em blockchain para garantir dados imutáveis.  
 Para aplicações com requisitos de segurança, o objetivo deste projeto
 
-## Arquietura objectica: ARchitetura Clean 
+## Arquietura objectica: Architetura Clean 
 - domain
   - aplication
     - block

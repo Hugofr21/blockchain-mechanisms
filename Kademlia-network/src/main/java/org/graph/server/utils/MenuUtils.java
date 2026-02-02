@@ -111,6 +111,8 @@ public class MenuUtils {
         System.out.println("1) View list of BLOCKCHAIN relationships.");
         System.out.println("2) Show the BLOCKCHAIN by prev hash.");
         System.out.println("3) Which size the blockchain has been viewed.");
+        System.out.println("4) [MANUAL] Broadcast Last Block (Gossip/INV).");
+        System.out.println("0) Back");
 
         System.out.print("choose an option: ");
         int choice = scanner.nextInt();
@@ -146,6 +148,18 @@ public class MenuUtils {
                 System.out.println("Size of blockchain: ");
                 System.out.println("Total: " + organizer.getChainHeight());
                 break;
+            case 4:
+                Block lastBlock = organizer.getLastBlock();
+                if (lastBlock != null) {
+                    System.out.println("[DEBUG] Starting the propagation of the Block#" + lastBlock.getNumberBlock());
+                    peer.getNetworkGateway().announceBlockToNetwork(lastBlock);
+                    System.out.println("[DEBUG] INV message sent to neighbors.");
+                } else {
+                    System.out.println("[DEBUG] There are no blocks to send (Empty chain?).");
+                }
+                break;
+            case 0:
+                return;
             default:
                 System.out.println("Option invalid!");
         }
@@ -180,7 +194,7 @@ public class MenuUtils {
 
                 listActiveAuctions(peer);
 
-                System.out.print("\nID do Leilão (Hash): ");
+                System.out.print("\nAuction ID (Hash): ");
                 String auctionId = scanner.nextLine();
 
                 System.out.print("Valor do Lance: ");
@@ -198,80 +212,65 @@ public class MenuUtils {
             case 0:
                 return;
             default:
-                System.out.println("Inválido.");
+                System.out.println("Invalid.");
         }
     }
 
     private static void listActiveAuctions(Peer peer) {
         Map<String, AuctionState> auctionList = peer.getNetworkGateway().getAuctionEngine().getWorldState();
 
-        System.out.println("\n=== LISTA DE LEILÕES (Ledger Confirmado) ===");
+        System.out.println("\n=== AUCTION LIST (Ledger Confirmed) ===");
 
         if (auctionList.isEmpty()) {
-            System.out.println(" >> Nenhum leilão registado na Blockchain ainda.");
-            System.out.println(" >> (Nota: Crie um leilão e aguarde a mineração do bloco).");
+            System.out.println(" >> No auctions registered on the Blockchain yet.");
+            System.out.println(" >> (Note: Create an auction and wait for the block to be mined).");
             return;
         }
 
-        // Correção: Iterar diretamente sobre os valores
         for (AuctionState state : auctionList.values()) {
             System.out.println(state);
         }
     }
 
-    /**
-     * Simulação Automática:
-     * 1. Cria Leilão de Carro (Preço 1000)
-     * 2. Espera ser minerado e obtém o ID.
-     * 3. Cria Leilão de Pintura (Preço 500)
-     * 4. Espera ser minerado e obtém o ID.
-     * 5. Dispara 20 lances sequenciais para cada um.
-     */
     private static void runStressTest(Peer peer) {
         new Thread(() -> {
             try {
                 var auctionEngine = peer.getNetworkGateway().getAuctionEngine();
                 System.out.println("\n[SIMULATION] === INICIANDO STRESS TEST ===");
 
-                // --- PASSO 1: CRIAR LEILÃO A ---
-                System.out.println("[SIMULATION] 1. Criando Leilão 'Ferrari' (Base: 1000)...");
                 BigDecimal priceA = new BigDecimal("1000");
                 auctionEngine.createdLocalAuctions(priceA, peer);
 
 
                 String auctionIdA = waitForAuctionInLedger(peer, null);
                 if (auctionIdA == null) return;
-                System.out.println("[SIMULATION] >> Leilão A confirmado no Ledger: " + auctionIdA);
 
-                // --- PASSO 2: CRIAR LEILÃO B ---
-                System.out.println("[SIMULATION] 2. Criando Leilão 'Van Gogh' (Base: 500)...");
                 BigDecimal priceB = new BigDecimal("500");
                 auctionEngine.createdLocalAuctions(priceB, peer);
 
                 String auctionIdB = waitForAuctionInLedger(peer, auctionIdA);
                 if (auctionIdB == null) return;
-                System.out.println("[SIMULATION] >> Leilão B confirmado no Ledger: " + auctionIdB);
+                System.out.println("[SIMULATION] >> Auction B confirmed at Ledger:" + auctionIdB);
 
-                // --- PASSO 3: DISPARAR 40 LANCES (20 em cada) ---
-                System.out.println("[SIMULATION] 3. Disparando 40 Lances...");
+
+                System.out.println("[SIMULATION] 3. Firing 40 shots...");
 
                 for (int i = 1; i <= 20; i++) {
-                    // Lance no Carro: 1000 + (i * 50)
+
                     BigDecimal bidA = priceA.add(BigDecimal.valueOf(1000 + i * 50));
                     auctionEngine.placeBidRequest(auctionIdA, bidA, peer);
-                    System.out.println("[SIMULATION] Bid #" + i + " enviado p/ Carro: " + bidA);
+                    System.out.println("[SIMULATION] Bid #" + i + "Sent to Car: " + bidA);
 
-                    // Lance na Pintura: 500 + (i * 25)
+
                     BigDecimal bidB = priceB.add(BigDecimal.valueOf(500 + i * 25));
                     auctionEngine.placeBidRequest(auctionIdB, bidB, peer);
-                    System.out.println("[SIMULATION] Bid #" + i + " enviado p/ Pintura: " + bidB);
+                    System.out.println("[SIMULATION] Bid #" + i + "Sent to Painting:" + bidB);
 
-                    // Pequena pausa para garantir ordem na mempool (opcional)
                     Thread.sleep(100);
                 }
 
-                System.out.println("[SIMULATION] === TESTE ENVIADO COM SUCESSO ===");
-                System.out.println("Aguarde a mineração dos blocos para ver o resultado final no Menu 4 -> 3.");
+                System.out.println("[SIMULATION] === This was sent successfully. ===");
+                System.out.println("Please wait for the blocks to be mined to see the final result in the Menu 4 -> 3.");
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -279,20 +278,16 @@ public class MenuUtils {
         }).start();
     }
 
-    /**
-     * Helper para esperar a blockchain processar a transação de CREATE.
-     * Ele verifica o ledger a cada 1 segundo até encontrar um ID novo.
-     */
     private static String waitForAuctionInLedger(Peer peer, String excludeId) throws InterruptedException {
         var engine = peer.getNetworkGateway().getAuctionEngine();
         int attempts = 0;
 
-        System.out.print("[SIMULATION] Aguardando mineração...");
-        while (attempts < 30) { // Timeout de 30 segundos
+        System.out.print("[SIMULATION] Awaiting mining...");
+        while (attempts < 30) {
             Map<String, AuctionState> ledger = engine.getWorldState();
 
             for (String id : ledger.keySet()) {
-                // Se encontramos um ID que não é o que queremos excluir (o anterior)
+
                 if (!id.equals(excludeId)) {
                     System.out.println(" Done!");
                     return id;
@@ -303,12 +298,9 @@ public class MenuUtils {
             System.out.print(".");
             attempts++;
 
-            // DICA: Se o BlockOrganizer tiver tamanho de lote grande (ex: 10 tx),
-            // precisamos forçar mineração ou esperar encher.
-            // Aqui assumimos que o minerador roda periodicamente ou com lote pequeno.
         }
 
-        System.err.println("\n[ERROR] Timeout! O leilão não foi minerado a tempo. Verifique a dificuldade ou tamanho do bloco.");
+        System.err.println("\n[ERROR] Timeout! The auction was not mined in time. Check the difficulty or block size.");
         return null;
     }
 }

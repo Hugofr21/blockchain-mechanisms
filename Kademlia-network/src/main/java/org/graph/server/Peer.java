@@ -63,7 +63,7 @@ public class Peer {
         this.mkademliaNetwork = new KademliaNetwork(this);
         this.networkEvent = new NetworkEvent(this.neighboursManager, this.mLogger);
         this.mBlockEventManger = new BlockEventManger(this.networkGateway, this.networkEvent);
-        this.mChainSyncManager = new ChainSyncManager(this.networkGateway, this.networkEvent);
+        this.mChainSyncManager = new ChainSyncManager(this.networkGateway, this.networkEvent,this);
 
         try {
             keys.setOwnPeerIdAndSave(this.myself.getNodeId().value());
@@ -73,6 +73,7 @@ public class Peer {
         } catch (Exception e) {
             System.out.println("[ERROR] Save the keys in file: " + e.getMessage());
         }
+        this.networkGateway.setNetworkDependencies(this.networkEvent, this);
     }
 
     public NeighboursConnections getNeighboursManager() {return neighboursManager;}

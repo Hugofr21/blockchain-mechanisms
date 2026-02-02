@@ -52,12 +52,11 @@ public class BlockOrganizer {
     }
 
 
-    // Corrigido para garantir processamento recursivo
-    public synchronized void receiveBlock(Block block) {
-        if (block == null) return;
+    public synchronized boolean receiveBlock(Block block) {
+        if (block == null) return false;
 
         String currentHash = block.getCurrentBlockHash();
-        if (blockMap.containsKey(currentHash)) return; // Já existe na main chain
+        if (blockMap.containsKey(currentHash)) return false;
 
         String prevHash = block.getHeader().getPreviousBlockHash();
         Block parent = blockMap.get(prevHash);
@@ -66,17 +65,17 @@ public class BlockOrganizer {
         boolean hasParent = (parent != null);
 
         if (hasParent || isGenesis) {
-            // Cenário Ideal: Temos o pai. Adiciona e verifica se este bloco tinha filhos à espera (Órfãos)
             if (validateAndAddToChain(block, parent)) {
                 blockMap.put(currentHash, block);
-                // ACIONA A CASCATA: Verifica se havia blocos à espera deste
                 processOrphans(currentHash);
+                return true;
             }
         } else {
-            // Cenário de Sync Reverso: Não temos o pai. Guarda no Buffer.
             System.out.println("[ORGANIZER] Buffering orphan block: " + block.getNumberBlock());
             orphanBlocks.computeIfAbsent(prevHash, k -> new ArrayList<>()).add(block);
+            return true;
         }
+        return false;
     }
 
     private boolean validateAndAddToChain(Block block, Block parent){

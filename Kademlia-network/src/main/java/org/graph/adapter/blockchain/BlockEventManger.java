@@ -10,6 +10,37 @@ import org.graph.domain.entities.message.MessageType;
 import org.graph.gateway.NetworkGateway;
 import org.graph.gateway.block.BlockStateRemote;
 
+/**
+ * O BlockEventManager atua como camada central de validação e coordenação
+ * no tratamento de eventos relacionados com blocos recebidos da rede.
+ *
+ * Esta componente é responsável por validar a conformidade estrutural dos
+ * dados recebidos, verificar a integridade da cadeia e determinar a resposta
+ * apropriada em cada situação: aceitar o bloco, solicitar blocos em falta
+ * ou rejeitar dados inconsistentes.
+ *
+ * Caso um bloco seja recebido sem que o seu bloco pai esteja disponível,
+ * o bloco deve ser marcado como órfão. Nessa situação, é iniciado um pedido
+ * explícito ao par correspondente para obtenção do bloco pai em falta.
+ *
+ * O comportamento do gestor varia consoante o tipo de evento recebido:
+ *
+ * CENÁRIO 1: Receção de um anúncio (INV).
+ * Um nó vizinho anuncia a disponibilidade de um determinado bloco.
+ * O sistema avalia se o bloco já existe localmente e, caso contrário,
+ * decide se deve solicitar o seu conteúdo.
+ *
+ * CENÁRIO 2: Receção de um pedido (GET_BLOCK / GET_DATA).
+ * Um nó vizinho solicita explicitamente um bloco existente.
+ * O sistema valida a disponibilidade do bloco e procede ao seu envio,
+ * respeitando as regras de sincronização e segurança.
+ *
+ * CENÁRIO 3: Receção de um bloco (BLOCK).
+ * O bloco é recebido na íntegra e submetido a validações estruturais,
+ * criptográficas e de encadeamento antes de ser integrado na cadeia
+ * ou armazenado temporariamente como bloco órfão.
+ */
+
 public class BlockEventManger {
     private final NetworkGateway gateway;
     private final IEventDispatcher dispatcher;
@@ -19,25 +50,19 @@ public class BlockEventManger {
         this.dispatcher = dispatcher;
     }
 
-    /**
-     * CENÁRIO 1: Recebo um ANÚNCIO (INV)
-     * "O vizinho diz que tem o bloco X."
-     */
+
     public void handleInv(InventoryPayload payload, ConnectionHandler source) {
         if (payload.type() != InventoryType.BLOCK) return;
 
         String hash = payload.hash();
 
         if (!gateway.getBlockchainEngine().getBlockOrganizer().contains(hash)) {
-            System.out.println("[SYNC] Hash desconhecido anunciado: " + hash + ". Pedindo dados...");
+            System.out.println("[SYNC] Hash unknown announce: " + hash + ". Request data...");
             sendGetData(hash, source);
         }
     }
 
-    /**
-     * CENÁRIO 2: Recebo um PEDIDO (GET_BLOCK/GET_DATA)
-     * "O vizinho quer o bloco X."
-     */
+
     public void handleGetData(InventoryPayload payload, ConnectionHandler requester) {
         if (!payload.getTypeInventoryBlock()) return;
 
@@ -45,21 +70,13 @@ public class BlockEventManger {
         Block block = gateway.getBlockchainEngine().getBlockOrganizer().getBlockByHash(hash);
 
         if (block != null) {
-            System.out.println("[UPLOAD] Enviando bloco " + hash + " para " + requester.getRemoteNode().getPort());
+            System.out.println("[UPLOAD] To send block " + hash + " para " + requester.getRemoteNode().getPort());
 
-            // Enviamos o bloco inteiro (Java Serialization lida com o tamanho via TCP Stream)
             Message response = new Message(MessageType.BLOCK, block, requester.getPeer().getHybridLogicalClock());
             dispatcher.sendUnicast(response, requester);
         }
     }
 
-    /**
-     * CENÁRIO 3: Recebo o BLOCO (BLOCK)
-     * "O bloco chegou (pode ser grande)."
-     */
-    /**
-     * CENÁRIO 3: Recebo o BLOCO (BLOCK)
-     */
     public void handleBlock(Block block, ConnectionHandler source) {
         BlockStateRemote result = gateway.processIncomingBlock(block);
 

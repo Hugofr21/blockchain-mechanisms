@@ -1,10 +1,19 @@
 package org.graph.gateway.validator;
 
 import org.graph.domain.application.block.Block;
-import org.graph.adapter.blockchain.block.BlockOrganizer;
 
-import java.util.List;
-public class Validator {
+
+/**
+ * O validator constitui uma camada de proteção contra ataques ou alterações
+ * indevidas que modifiquem a estrutura ou o estado dos objetos em violação
+ * das regras de negócio.
+ *
+ * A validação não se limita a confirmar a integridade da cadeia; garante também
+ * que a dificuldade de mineração aplicada está conforme os parâmetros definidos
+ * pelo sistema e que os valores de mineração utilizados para identificação
+ * não foram adulterados.
+ */
+public class SecurityValidator {
 
     public boolean validateBlockchain(Block block, int currentDifficulty) {
         if (block == null) {

@@ -1,0 +1,56 @@
+@startuml
+title Blockchain Core Model – Block, Transaction & Auction
+skinparam classAttributeIconSize 0
+skinparam Shadowing false
+skinparam BackgroundColor #FEFEFE
+skinparam ArrowColor #444444
+skinparam ArrowFontSize 11
+
+class Block {
+    - blockNumber : int
+    - cachedHash   : String
+}
+class BlockHeader {
+    - previousHash : String
+    - merkleRoot   : String
+    - timestamp    : long
+    - nonce        : long
+    - difficulty   : int
+}
+class Transaction {
+    - txId      : String
+    - sender    : PublicKey
+    - signature : byte[]
+}
+class AuctionPayload {
+    - operation : AuctionOpType
+}
+class AuctionState {
+    - auctionId : String
+    - minPrice  : BigDecimal
+    - endTime   : long
+}
+class Bid {
+    - auctionId : String
+    - bidPrice  : BigDecimal
+    - bidderId  : BigInteger
+}
+class MerkleTree {
+    + getRootHash(transactions : List<Transaction>) : String
+}
+
+
+Block "1" *-- "1" BlockHeader   : composes >
+Block "1" *-- "0..*" Transaction : contains >
+
+Block ..> MerkleTree : uses to compute root
+MerkleTree ..> Transaction : hashes >
+
+Transaction "1" *-- "1" AuctionPayload : carries >
+
+AuctionPayload o-- "0..1" AuctionState : when OP_CREATE >
+AuctionPayload o-- "0..1" Bid          : when OP_BID    >
+
+AuctionState "1" *-- "0..*" Bid : bidHistory >
+
+@enduml
