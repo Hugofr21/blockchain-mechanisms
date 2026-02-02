@@ -1,33 +1,29 @@
 package org.graph.adapter.network.kademlia;
 
+import org.graph.adapter.p2p.ConnectionHandler;
 import org.graph.adapter.storage.cache.LRUCache;
 import org.graph.adapter.utils.MessageUtils;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.p2p.Node;
-import org.graph.adapter.p2p.Peer;
-import org.graph.adapter.provider.KademliaIController;
+import org.graph.server.Peer;
+import org.graph.adapter.provider.IKademliaIController;
 import org.graph.adapter.storage.StorageDHT;
-import org.graph.adapter.utils.Base64Utils;
-import org.graph.adapter.utils.SerializationUtils;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.graph.adapter.utils.Constants.MAX_ALPHA;
 import static org.graph.adapter.utils.Constants.NODE_K;
 
-public class KademliaNetwork implements KademliaIController {
+/*
+ So devemos usar esta Kademlia quando tivermos a lista de nodes confiavel para comunicaçao ja segura entre nodes
+ */
+public class KademliaNetwork implements IKademliaIController {
     private final Peer myself;
     private final StorageDHT storage;
-    private static final int TIMEOUT_MS = 3000;
     private final LRUCache<BigInteger, Object> hotCache;
 
     public KademliaNetwork(Peer myself) {
@@ -38,11 +34,14 @@ public class KademliaNetwork implements KademliaIController {
 
 
    /*
-     // 1. Verificação Local (Otimização)
+     // 1. Verificação Local cache/RAM (Otimização)
      // 2. Inicialização da Lookup List (Shortlist)
     // S/Kademlia Check: Validar PoW do ID para evitar Eclipse Attacks
     // Só adicionamos à lista se o nó provar que gerou o ID corretamente
     // && validateNodeId(received)
+    // Seed nodes da tabela local
+    // 3. Loop Iterativo de Rede (Iterative Lookup)
+    // Seleciona os ALPHA nós mais próximos ainda não consultados
     */
     @Override
     public List<Node> findNode(BigInteger targetId) {
@@ -63,12 +62,11 @@ public class KademliaNetwork implements KademliaIController {
             return result;
         }
 
-        // 2. Inicialização da Lookup List (Shortlist)
+
         TreeSet<Node> shortlist = new TreeSet<>(Comparator.comparing(
                 n -> n.getNodeId().distanceBetweenNode(targetId)
         ));
 
-        // Seed nodes da tabela local
         List<Node> localClosest = myself.getRoutingTable().findClosestNodesProximity(targetId, NODE_K);
         shortlist.addAll(localClosest);
 
@@ -76,12 +74,8 @@ public class KademliaNetwork implements KademliaIController {
         queried.add(myself.getMyself().getNodeId().value());
 
         boolean madeProgress = true;
-
-        // 3. Loop Iterativo de Rede (Iterative Lookup)
         while (madeProgress && !shortlist.isEmpty()) {
             madeProgress = false;
-
-            // Seleciona os ALPHA nós mais próximos ainda não consultados
             List<Node> toQuery = shortlist.stream()
                     .filter(n -> !queried.contains(n.getNodeId().value()))
                     .limit(MAX_ALPHA)
@@ -122,11 +116,25 @@ public class KademliaNetwork implements KademliaIController {
     }
 
 
-    //1. verifiar local tem o valor
+    //1. verifiar cahe/local tem o valor
     //2. verifica ultimas consult se tem o valor LRU
     //3. Buscar resucrisva do valor aos aphas k
     //4. Se iver esse k o valor deolve
     //5 Se nao devolvr uma lista de nod e proximosapra id
+    // RPC: FIND_VALUE (Payload é a chave)
+    // CASO A: O nó retornou o VALOR (Sucesso!)
+    // Assumimos que se NÃO for uma lista de nós, é o objeto procurado.
+    // Deve-se melhorar esta verificação dependendo do tipo de Objeto (Block, Transaction, etc.)
+    // Opcional: Cachear o valor localmente antes de retornar (LRU Cache)
+    // CASO B: O nó retornou Vizinhos (não tem o valor, mas sabe quem está perto)
+    // Continuamos a busca iterativa
+    // S/Kademlia Check: Proteção contra Sybil/Eclipse
+    // && validateNodeId(received)
+    // Limpeza da shortlist para manter eficiência
+    // Se o loop terminar e não encontrarmos o valor, retornamos null.
+    // O Kademlia puro não retorna os nós mais próximos no findValue se falhar,
+    // mas algumas implementações retornam para o cliente decidir. Aqui retornamos null (não encontrado).
+
     @Override
     public Object findValue(BigInteger key) {
         Object localVal = storage.get(key, Object.class);
@@ -156,30 +164,22 @@ public class KademliaNetwork implements KademliaIController {
             for (Node node : toQuery) {
                 queried.add(node.getNodeId().value());
 
-                // RPC: FIND_VALUE (Payload é a chave)
                 Message request = new Message(MessageType.FIND_VALUE, key, myself.getHybridLogicalClock());
                 Object response = sendRPC(node, request);
 
-                if (response == null) continue; // Timeout ou erro
+                if (response == null) continue;
 
-                // --- LÓGICA CRÍTICA DE FIND_VALUE ---
 
-                // CASO A: O nó retornou o VALOR (Sucesso!)
-                // Assumimos que se NÃO for uma lista de nós, é o objeto procurado.
-                // Deve-se melhorar esta verificação dependendo do tipo de Objeto (Block, Transaction, etc.)
                 if (!(response instanceof List<?>)) {
-                    // Opcional: Cachear o valor localmente antes de retornar (LRU Cache)
+
                     storage.put(key, response);
                     return response;
                 }
 
-                // CASO B: O nó retornou Vizinhos (não tem o valor, mas sabe quem está perto)
-                // Continuamos a busca iterativa
+
                 List<Node> returnedNodes = (List<Node>) response;
 
                 for (Node received : returnedNodes) {
-                    // S/Kademlia Check: Proteção contra Sybil/Eclipse
-                    // && validateNodeId(received)
                     if (!shortlist.contains(received)) {
                         shortlist.add(received);
                         madeProgress = true;
@@ -187,15 +187,11 @@ public class KademliaNetwork implements KademliaIController {
                 }
             }
 
-            // Limpeza da shortlist para manter eficiência
             while (shortlist.size() > NODE_K * 2) {
                 shortlist.pollLast();
             }
         }
 
-        // Se o loop terminar e não encontrarmos o valor, retornamos null.
-        // O Kademlia puro não retorna os nós mais próximos no findValue se falhar,
-        // mas algumas implementações retornam para o cliente decidir. Aqui retornamos null (não encontrado).
         return null;
     }
 
@@ -230,27 +226,16 @@ public class KademliaNetwork implements KademliaIController {
     }
 
     private Object sendRPC(Node target, Message request) {
+        if (target.getNodeId().equals(myself.getMyself().getNodeId())) {return null;}
+        try  {
+            ConnectionHandler handler = myself.getNeighboursManager().getNeighbourById(target.getNodeId().value());
+            if (handler == null){return null;}
+            MessageUtils.sendMessage(handler.getOutputStream(), request);
+            Message response = MessageUtils.readMessage(handler.getInputStream());
 
-        if (target.getNodeId().equals(myself.getMyself().getNodeId())) {
-            return null;
-        }
+            if (response == null) return null;
+            return response.getPayload();
 
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(target.getHost(), target.getPort()), TIMEOUT_MS);
-            socket.setSoTimeout(TIMEOUT_MS);
-
-            try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                 DataInputStream in = new DataInputStream(socket.getInputStream())) {
-
-                MessageUtils.sendMessage(out, request);
-
-
-                Message response = MessageUtils.readMessage(in);
-
-                if (response == null) return null;
-
-                return response.getPayload();
-            }
         } catch (IOException | ClassNotFoundException e) {
              System.err.println("[DHT] Error sending request " + e.getMessage());
             return null;

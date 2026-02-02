@@ -146,7 +146,7 @@ public class Block implements Serializable {
 
         // 5. CRÍTICO: Validação do Proof of Work
         // Recalculamos o hash com o nonce declarado e verificamos a dificuldade
-//        String recalculatedHash = this.header.calculateHash();
+//        String reclaculatedHash = this.header.calculateHash();
 //        if (!recalculatedHash.equals(this.hashCache)) {
 //            System.out.println("Hash integrity check failed");
 //            return false;
@@ -169,12 +169,35 @@ public class Block implements Serializable {
 
     @Override
     public String toString() {
-        return "Block{" +
-                "numberBlock=" + numberBlock +
-                ", header=" + header +
-                ", transactions=" + transactions +
-                ", hashCache='" + hashCache + '\'' +
-                '}';
+        StringBuilder sb = new StringBuilder();
+
+        String timeStr = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                .format(new java.util.Date(header.getTimestamp()));
+
+        sb.append("\n ===================================================================== \n");
+        sb.append(String.format("| BLOCK #%-4d                                                       ║\n", numberBlock));
+        sb.append("===================================================================== \n");
+
+        sb.append(String.format("| Hash:      %s\n", (hashCache != null ? hashCache : "PENDING MINING")));
+        sb.append(String.format("| Prev Hash: %s\n", header.getPreviousBlockHash()));
+        sb.append(String.format("| Root:      %s\n", header.getMerkleRoot()));
+        sb.append(String.format("| Nonce:     %-10d | Difficulty: %d\n", header.getNonce(), header.getDifficulty()));
+        sb.append(String.format("| Time:      %s\n", timeStr));
+
+        sb.append("===================================================================== \n");
+        sb.append(String.format("| TRANSACTIONS (%d)                                             ║\n", transactions.size()));
+        sb.append("===================================================================== \n");
+
+        if (transactions.isEmpty()) {
+            sb.append("| (Empty Block)                                                      ║\n");
+        } else {
+            for (Transaction tx : transactions) {
+                sb.append("| > ").append(tx.toString()).append("\n");
+            }
+        }
+
+        sb.append("===================================================================== ");
+        return sb.toString();
     }
 
 

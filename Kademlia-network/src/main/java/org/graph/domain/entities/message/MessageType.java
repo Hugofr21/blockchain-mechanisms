@@ -16,7 +16,8 @@ public enum MessageType {
     STATUS_RESPONSE((byte) 0x16),
     GET_BLOCK((byte) 0x17),
     INV_DATA((byte) 0x18),
-    RESPONSE_NODES((byte) 0x19);
+    RESPONSE_NODES((byte) 0x19),
+    CHAIN_STATUS_RESPONSE((byte) 0x20);
 
 
     private final byte code;

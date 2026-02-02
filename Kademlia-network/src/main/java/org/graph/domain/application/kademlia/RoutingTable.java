@@ -1,5 +1,6 @@
 package org.graph.domain.application.kademlia;
 
+import org.graph.adapter.provider.IReputationsManager;
 import org.graph.domain.entities.p2p.Node;
 
 import java.math.BigDecimal;
@@ -15,18 +16,18 @@ import static org.graph.adapter.utils.Constants.ID_BITS;
 public class RoutingTable {
     private List<KBucket> buckets;
     private Node localNode;
-
+    private final IReputationsManager reputationProvider;
     private static final double BALANCE_FACTOR = 0.65;
-
     // Constante para normalizar a distância XOR (2^256) para o intervalo [0, 1]
     private static final BigDecimal MAX_DISTANCE = new BigDecimal(BigInteger.ONE.shiftLeft(ID_BITS));
 
-    public RoutingTable(Node localNode) {
+    public RoutingTable(Node localNode , IReputationsManager reputationProvider) {
         this.localNode = localNode;
         this.buckets = new ArrayList<>();
         for (int i = 0; i < ID_BITS; i++) {
-            buckets.add(new KBucket());
+            buckets.add(new KBucket(reputationProvider));
         }
+        this.reputationProvider = reputationProvider;
     }
 
     public synchronized boolean addNode(Node node) {
@@ -70,7 +71,7 @@ public class RoutingTable {
                 BigInteger xorDist = node.getNodeId().distanceBetweenNode(targetNode);
 
 
-                double trust = node.getMyProofOfReputation().getTrustFactor();
+                double trust = reputationProvider.getTrustFactor(targetNode);
 
                 double nd = calculateSKademliaMetric(xorDist, trust);
 

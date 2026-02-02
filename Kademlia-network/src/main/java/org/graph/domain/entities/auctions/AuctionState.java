@@ -1,12 +1,16 @@
 package org.graph.domain.entities.auctions;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
 
-public class AuctionState {
+public class AuctionState implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     private final String auctionId;
     private final BigInteger ownerId;
     private final BigDecimal minPrice;
@@ -37,7 +41,7 @@ public class AuctionState {
     public List<Bid> getBidHistory() {return bidHistory; }
 
     public void addSuccessfulBid(Bid bid) {
-        if (bid != null) {
+        if (bid != null && !this.bidHistory.contains(bid)) {
             this.bidHistory.add(bid);
             this.currentHighestBid = bid.bidPrice();
             this.currentWinnerId = bid.newBidderId();

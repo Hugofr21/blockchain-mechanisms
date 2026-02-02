@@ -1,7 +1,8 @@
 package org.graph.adapter.p2p;
 
 import org.graph.domain.entities.p2p.Node;
-import org.graph.adapter.network.kademlia.Handshake;
+import org.graph.adapter.network.Handshake;
+import org.graph.server.Peer;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -10,7 +11,6 @@ import java.net.SocketTimeoutException;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ServerHandle implements Runnable {
@@ -18,8 +18,6 @@ public class ServerHandle implements Runnable {
     private Logger mLogger;
     private Peer myPeer;
     private final ExecutorService connectionPool;
-
-    // Constante para evitar travar threads com conexões mudas
     private static final int HANDSHAKE_TIMEOUT_MS = 5000;
 
     public ServerHandle(ServerSocket server, Logger logger, Peer peer) {

@@ -33,13 +33,13 @@ public class BlockOrganizer {
         Block parent = blockMap.get(prevHash);
 
         if (parent == null && block.getNumberBlock() != 0) {
-            System.err.println("[ERRO CRÍTICO] Tentativa de adicionar bloco local órfão #" + block.getNumberBlock());
+            System.err.println("[ERROR] Attempt to add orphaned local block" + block.getNumberBlock());
             return false;
         }
 
         if (validateAndAddToChain(block, parent)) {
             blockMap.put(currentHash, block);
-            System.out.println("[LOCAL] ✓ Block #" + block.getNumberBlock() + " added the chain");
+            System.out.println("[DEBUG] Block " + block.getNumberBlock() + " added the chain");
             mBlockchain.getTransactionOrganizer().markTransactionsAsProcessed(block.getTransactions());
             mBlockchain.getTransactionOrganizer().cleanPool(block.getTransactions());
 
@@ -52,11 +52,12 @@ public class BlockOrganizer {
     }
 
 
+    // Corrigido para garantir processamento recursivo
     public synchronized void receiveBlock(Block block) {
         if (block == null) return;
 
         String currentHash = block.getCurrentBlockHash();
-        if (blockMap.containsKey(currentHash)) return;
+        if (blockMap.containsKey(currentHash)) return; // Já existe na main chain
 
         String prevHash = block.getHeader().getPreviousBlockHash();
         Block parent = blockMap.get(prevHash);
@@ -65,14 +66,17 @@ public class BlockOrganizer {
         boolean hasParent = (parent != null);
 
         if (hasParent || isGenesis) {
+            // Cenário Ideal: Temos o pai. Adiciona e verifica se este bloco tinha filhos à espera (Órfãos)
             if (validateAndAddToChain(block, parent)) {
                 blockMap.put(currentHash, block);
+                // ACIONA A CASCATA: Verifica se havia blocos à espera deste
                 processOrphans(currentHash);
             }
         } else {
+            // Cenário de Sync Reverso: Não temos o pai. Guarda no Buffer.
+            System.out.println("[ORGANIZER] Buffering orphan block: " + block.getNumberBlock());
             orphanBlocks.computeIfAbsent(prevHash, k -> new ArrayList<>()).add(block);
         }
-
     }
 
     private boolean validateAndAddToChain(Block block, Block parent){
@@ -85,13 +89,16 @@ public class BlockOrganizer {
         return true;
     }
 
+
     private void processOrphans(String parentHash) {
         List<Block> orphans = orphanBlocks.remove(parentHash);
         if (orphans != null) {
+            System.out.println("[ORGANIZER] Found " + orphans.size() + " orphans waiting for parent " + parentHash);
             for (Block orphan : orphans) {
                 Block parent = blockMap.get(parentHash);
                 if (validateAndAddToChain(orphan, parent)) {
-                    System.out.println("[INFO] Orphan #" + orphan.getNumberBlock() + " dotard!");
+                    blockMap.put(orphan.getCurrentBlockHash(), orphan);
+                    System.out.println("[ORGANIZER] Orphan " + orphan.getNumberBlock() + " connected to chain!");
                     processOrphans(orphan.getCurrentBlockHash());
                 }
             }
@@ -139,5 +146,10 @@ public class BlockOrganizer {
             if (block.getCurrentBlockHash().equals(hash)) return block;
         }
         return null;
+    }
+
+    public boolean isParentInChain(String parentHash) {
+        // Verifica apenas se o pai está na cadeia confirmada (blockMap ou organizedChain)
+        return blockMap.containsKey(parentHash);
     }
 }

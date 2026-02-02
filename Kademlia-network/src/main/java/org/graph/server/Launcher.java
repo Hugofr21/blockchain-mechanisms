@@ -2,7 +2,6 @@ package org.graph.server;
 
 
 import org.graph.adapter.network.kademlia.JoinNetwork;
-import org.graph.adapter.p2p.Peer;
 import org.graph.server.utils.MenuUtils;
 
 import static org.graph.server.utils.Constants.BOOTSTRAP_PORT;
@@ -20,8 +19,6 @@ public class Launcher {
         } else {
             peer = null;
         }
-
-        System.out.println("Peer iniciado: " + peer.getMyself());
 
         new Thread(() -> {
             try {

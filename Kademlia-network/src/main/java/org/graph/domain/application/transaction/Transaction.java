@@ -3,17 +3,18 @@ package org.graph.domain.application.transaction;
 import org.graph.domain.utils.HashUtils;
 import org.graph.adapter.network.message.auction.AuctionPayload;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.PublicKey;
 import java.util.Base64;
 
-public class Transaction {
-    private String txId;
-    private TransactionType type;
+public class Transaction implements Serializable {
+    private final String txId;
+    private final TransactionType type;
     private PublicKey sender;
     private BigInteger ownerId;
     private AuctionPayload data;
-    private long timestamp;
+    private final long timestamp;
     private byte[] signature;
 
     public Transaction(TransactionType type, PublicKey sender, AuctionPayload data, BigInteger ownerId) {
@@ -70,5 +71,28 @@ public class Transaction {
 
     public void setSignature(byte[] signature) {
         this.signature = signature;
+    }
+    @Override
+    public String toString() {
+        String timeStr = new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date(timestamp));
+        String shortId = (txId != null && txId.length() > 8) ? txId.substring(0, 8) + "..." : "null";
+        String senderStr = (ownerId != null) ? ownerId.toString() : "System/Genesis";
+        if (senderStr.length() > 10) senderStr = senderStr.substring(0, 10) + "..";
+
+        String sigStatus = (signature != null && signature.length > 0) ? "[Sig:OK]" : "[Sig:NO]";
+
+        String payloadSummary = "N/A";
+        if (data != null) {
+            payloadSummary = data.toString();
+        }
+
+        return String.format("Tx{%s | %-10s | From:%-12s | Time:%s | %s | Data: %s}",
+                shortId,
+                type,
+                senderStr,
+                timeStr,
+                sigStatus,
+                payloadSummary
+        );
     }
 }

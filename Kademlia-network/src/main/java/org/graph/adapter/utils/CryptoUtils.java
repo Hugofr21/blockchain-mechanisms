@@ -1,4 +1,4 @@
-package org.graph.domain.utils;
+package org.graph.adapter.utils;
 
 import java.security.PublicKey;
 import java.security.Signature;

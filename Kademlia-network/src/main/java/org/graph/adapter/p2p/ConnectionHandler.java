@@ -1,7 +1,7 @@
 package org.graph.adapter.p2p;
 
 
-import org.graph.adapter.network.kademlia.Handshake;
+import org.graph.adapter.network.Handshake;
 import org.graph.adapter.network.message.node.FindNodePayload;
 import org.graph.adapter.network.message.node.NodeInfoPayload;
 import org.graph.adapter.network.message.node.NodeListPayload;
@@ -13,25 +13,26 @@ import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.p2p.Node;
 import org.graph.adapter.utils.SerializationUtils;
-import org.graph.gateway.NetworkGateway;
+import org.graph.gateway.block.*;
+import org.graph.server.Peer;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.*;
 import java.util.logging.Logger;
 
 import static org.graph.adapter.utils.Constants.*;
 import static org.graph.adapter.utils.MessageUtils.readMessage;
 import static org.graph.adapter.utils.MessageUtils.sendMessage;
 
+/*
+   Presitente demos gudar na fila caso dnao podemos precessar nomentomnto
+   Assicrone seem bloquear para oepraçoes de leitura e de escripta desencupalekmto tremporal
+ */
 public class ConnectionHandler implements Runnable {
     private Socket socket;
     private Peer myPeer;
@@ -41,6 +42,7 @@ public class ConnectionHandler implements Runnable {
     private volatile boolean running;
     private Node remoteNode;
     private final ConcurrentMap<UUID, CompletableFuture<Message>> pendingResponses;
+    private final ExecutorService messageProcessor;
 
     public ConnectionHandler(Socket socket, Peer myPeer, Logger mLogger) {
         this.socket = socket;
@@ -48,6 +50,7 @@ public class ConnectionHandler implements Runnable {
         this.logger = mLogger;
         this.running = true;
         this.pendingResponses = new ConcurrentHashMap<>();
+        this.messageProcessor = Executors.newVirtualThreadPerTaskExecutor();
     }
 
     public Peer getPeer() { return myPeer;}
@@ -95,7 +98,8 @@ public class ConnectionHandler implements Runnable {
                         continue;
                     }
 
-                    dispatch(message);
+                   // dispatch(message);
+                    processAsync(message);
 
                 } catch (EOFException e) {
                     logger.info("Peer closed connection.");
@@ -114,6 +118,18 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
+    private void processAsync(Message message) {
+        messageProcessor.submit(() -> {
+            try {
+                // O dispatch agora corre numa thread separada
+                dispatch(message);
+            } catch (Exception e) {
+                logger.severe("Error processing message async: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
+    }
+
     public void initStreams() throws IOException {
         if (inputStream != null && outputStream != null) return;
         if (outputStream == null) outputStream = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
@@ -127,12 +143,15 @@ public class ConnectionHandler implements Runnable {
             case FIND_NODE -> handleFindNode(message.getPayload());
             case FIND_VALUE -> handleFindValue(message.getPayload());
             case STORAGE -> handleStorage(message.getPayload());
-            case BLOCK -> handleBlock(message.getPayload());
             case CHUNK -> handleChunk(message.getPayload());
             case REQUEST -> handleRequest(message.getPayload());
             case RESPONSE_NODES -> handleResponseNode(message.getPayload());
             case ACK -> handleAck(message.getPayload());
-
+            case GET_STATUS -> new GetStatusStrategy().handle(message, this);
+            case CHAIN_STATUS_RESPONSE -> new ChainStatusResponseStrategy().handle(message, this);
+            case GET_BLOCK -> new GetBlockStrategy().handle(message, this);
+            case BLOCK -> new BlockStrategy().handle(message, this);
+            case INV_DATA -> new InvStrategy().handle(message, this);
             default -> logger.warning("Unhandled message type: " + message.getType());
         }
     }
@@ -145,17 +164,6 @@ public class ConnectionHandler implements Runnable {
     private void handleRequest(Object payload) {}
 
     private void handleChunk(Object payload) {}
-
-    private void handleBlock(Object payload) {
-        try {
-            byte[] raw = (byte[]) payload;
-            Block block = (Block) SerializationUtils.deserialize(raw);
-            // isValidBlock
-
-        }catch (Exception e) {
-            System.out.println("Exception in handleBlock: " + e.getMessage());
-        }
-    }
 
     private void handleStorage(Object payload) {
     }

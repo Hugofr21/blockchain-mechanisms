@@ -14,7 +14,7 @@ public class TransactionOrganizer {
 
     public TransactionOrganizer(int maxTransactionsPending) {
         this.transactions = new HashSet<Transaction>();
-        this.pendingTransactions = new HashSet<>();
+        this.pendingTransactions = new LinkedHashSet<>();
         this.completedTransactions = new ArrayList<>();
         this.maxTransactionsPending = maxTransactionsPending;
         this.lock = new Object();
@@ -82,8 +82,7 @@ public class TransactionOrganizer {
                 pendingTransactions.remove(tx);
                 completedTransactions.add(tx.getTxId());
             }
-            System.out.println("[POOL] Limpeza concluída. Pendentes restantes: " + pendingTransactions.size());
+            System.out.println("[POOL] Cleaning completed. Remaining tasks: " + pendingTransactions.size());
         }
     }
-
 }

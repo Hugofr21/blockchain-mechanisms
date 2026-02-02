@@ -5,7 +5,7 @@ import org.graph.domain.entities.p2p.Node;
 import java.math.BigInteger;
 import java.util.List;
 
-public interface KademliaIController {
+public interface IKademliaIController {
     List<Node>  findNode(BigInteger nodeId);
     Object findValue(BigInteger hash);
     boolean ping(Node node);

@@ -8,7 +8,8 @@ public class ProofOfReputation {
     private double weightPingSuccess = 1.0;
     private double weightFindNodeUseful = 5.0;
     private double weightPingFail = -10.0;
-    private double weightInvalidData = -500.0;
+    private double weightInvalidData = -100.0;
+    private double weightInvalidBlock = -500.0;
 
     private double decayFactor = 0.99;
 
@@ -20,6 +21,7 @@ public class ProofOfReputation {
             case FIND_NODE_USEFUL -> weightFindNodeUseful;
             case PING_FAIL -> weightPingFail;
             case INVALID_DATA -> weightInvalidData;
+            case INVALID_BLOCK -> weightInvalidBlock;
             default -> 0.0;
         };
 
@@ -62,15 +64,16 @@ public class ProofOfReputation {
 
     // Método crucial para o S-Kademlia: Retorna 't' para a fórmula
     // Deve retornar um valor positivo para evitar problemas na divisão 1/t
+    // Normaliza para um valor positivo onde 0.0 (neutro) vira 1.0 ou similar
+    // Estratégia: Mapear [-1000, 1000] para (0, 2] ou similar, ou usar sigmoid
+    // Abordagem simples: Se score <= 0, trust é muito baixo (ex: 0.1). Se > 0, escala.
+    // Trust mínimo para nós desconhecidos ou ruins
+    // Exemplo: Score 100 -> Trust 2.0; Score 1000 -> Trust 11.0
     public synchronized double getTrustFactor() {
-        // Normaliza para um valor positivo onde 0.0 (neutro) vira 1.0 ou similar
-        // Estratégia: Mapear [-1000, 1000] para (0, 2] ou similar, ou usar sigmoid
-        // Abordagem simples: Se score <= 0, trust é muito baixo (ex: 0.1). Se > 0, escala.
 
         if (currentProofOfReputation <= 0) {
-            return 0.1; // Trust mínimo para nós desconhecidos ou ruins
+            return 0.1;
         }
-        // Exemplo: Score 100 -> Trust 2.0; Score 1000 -> Trust 11.0
         return 1.0 + (currentProofOfReputation / 100.0);
     }
 }

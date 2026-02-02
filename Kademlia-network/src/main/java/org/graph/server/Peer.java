@@ -1,5 +1,11 @@
-package org.graph.adapter.p2p;
+package org.graph.server;
 
+import org.graph.adapter.blockchain.BlockEventManger;
+import org.graph.adapter.blockchain.ChainSyncManager;
+import org.graph.adapter.mechanism.ReputationsManager;
+import org.graph.adapter.network.NetworkEvent;
+import org.graph.adapter.p2p.MinerOrchestrator;
+import org.graph.adapter.p2p.ServerHandle;
 import org.graph.adapter.p2p.neigbour.NeighboursConnections;
 import org.graph.domain.application.kademlia.RoutingTable;
 import org.graph.domain.application.mechanism.pow.MiningResult;
@@ -27,13 +33,16 @@ public class Peer {
     private volatile boolean running;
     private KeysInfrastructure keys;
     private NeighboursConnections neighboursManager;
-    private KademliaNetwork kademliaNetwork;
+    private KademliaNetwork mkademliaNetwork;
     private HybridLogicalClock hybridLogicalClock;
     private NetworkGateway networkGateway;
-
+    private BlockEventManger mBlockEventManger;
+    private NetworkEvent networkEvent;
+    private ChainSyncManager mChainSyncManager;
+    private ReputationsManager reputationsManager;
 
     public Peer(int port){
-        this.keys = new KeysInfrastructure( this, port);
+        this.keys = new KeysInfrastructure(this, port);
         this.hybridLogicalClock = new HybridLogicalClock();
         this.networkGateway = new NetworkGateway();
 
@@ -45,30 +54,37 @@ public class Peer {
         }
 
         this.myself = new Node(HOST, port, keys.getOwnerPublicKey(), proofOfWork.nonce(), NETWORK_DIFFICULTY);
-
         this.keys.getOwnerKeyPair().setPeerId(this.myself.getNodeId().value());
-        this.routingTable = new RoutingTable(myself);
+
+        createdFileLog(myself);
+        this.reputationsManager = new ReputationsManager();
+        this.routingTable = new RoutingTable(myself,reputationsManager);
         this.neighboursManager = new NeighboursConnections(this);
-        this.kademliaNetwork = new KademliaNetwork(this);
+        this.mkademliaNetwork = new KademliaNetwork(this);
+        this.networkEvent = new NetworkEvent(this.neighboursManager, this.mLogger);
+        this.mBlockEventManger = new BlockEventManger(this.networkGateway, this.networkEvent);
+        this.mChainSyncManager = new ChainSyncManager(this.networkGateway, this.networkEvent);
+
         try {
             keys.setOwnPeerIdAndSave(this.myself.getNodeId().value());
-            System.out.println("[DEBUG] Peer initialization:");
+            System.out.println("[DEBUG] Peer initialization complete.");
             System.out.println("[DEBUG] - Fingerprint: " + keys.getOwnFingerprint());
             System.out.println("[DEBUG] - PeerId: " + myself.getNodeId().value());
         } catch (Exception e) {
             System.out.println("[ERROR] Save the keys in file: " + e.getMessage());
         }
-
-        createdFileLog(myself);
     }
 
-    public NeighboursConnections getNeighboursManager() {
-        return neighboursManager;
-    }
+    public NeighboursConnections getNeighboursManager() {return neighboursManager;}
     public Logger getLogger() {return mLogger;}
     public RoutingTable getRoutingTable() { return routingTable; }
     public HybridLogicalClock getHybridLogicalClock() { return hybridLogicalClock; }
     public NetworkGateway getNetworkGateway() { return networkGateway; }
+    public ChainSyncManager getmChainSyncController(){ return mChainSyncManager;}
+    public BlockEventManger getBlockEventManger(){ return mBlockEventManger;}
+    public NetworkEvent getNetworkEvent(){return networkEvent;}
+    public KademliaNetwork getMkademliaNetwork( ) {return mkademliaNetwork;}
+    public ReputationsManager getReputationsManager(){return reputationsManager;}
 
     private void createdFileLog(Node myself){
         try {

@@ -13,4 +13,7 @@ public class Constants {
     public static final String ALGORITHM_CURVE = "secp256r1";
     public static final String HOST = "localhost";
     public static final int MAX_MESSAGE_SIZE = 10 * 1024 * 1024;
+    public final static long TIME_LIMIT_FAIL_CONNECTIONS = 45000L; // 45s
+    public final static long TIME_TO_SEND_PING = 20000L;           // 20s
+    public final static long CHECK_INTERVAL = 5000L;               // 5s
 }

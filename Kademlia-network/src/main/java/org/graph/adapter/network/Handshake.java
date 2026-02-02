@@ -1,4 +1,4 @@
-package org.graph.adapter.network.kademlia;
+package org.graph.adapter.network;
 
 import org.graph.adapter.p2p.ConnectionHandler;
 import org.graph.adapter.utils.MessageUtils;
@@ -7,9 +7,9 @@ import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.p2p.Node;
 import org.graph.domain.entities.p2p.NodeId;
-import org.graph.domain.utils.CryptoUtils;
+import org.graph.adapter.utils.CryptoUtils;
 import org.graph.adapter.network.message.network.HandshakePayload;
-import org.graph.adapter.p2p.Peer;
+import org.graph.server.Peer;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -31,26 +31,26 @@ public final class Handshake {
      *
      * @return Optional contendo o Node remoto (já validado) ou empty se falhar.
      */
-    public static Optional<Node> doHandshake(Peer myPeer,
+    public static Optional<Node> doHandshake(Peer myself,
                                              DataInputStream  in,
                                              DataOutputStream out) throws Exception {
 
-        Logger logger = myPeer.getLogger();
+        Logger logger = myself.getLogger();
         long ts = System.currentTimeMillis();
-        String challenge = myPeer.getMyself().getNodeId().value().toString() + ":" + ts;
-        byte[] signature = myPeer.getIsKeysInfrastructure().signMessage(challenge);
+        String challenge = myself.getMyself().getNodeId().value().toString() + ":" + ts;
+        byte[] signature = myself.getIsKeysInfrastructure().signMessage(challenge);
 
         HandshakePayload myPayload = new HandshakePayload(
-                myPeer.getMyself().getHost(),
-                myPeer.getMyself().getPort(),
-                myPeer.getMyself().getNonce(),
-                myPeer.getMyself().getNETWORK_DIFFICULTY(),
-                myPeer.getIsKeysInfrastructure().getOwnerPublicKey(),
+                myself.getMyself().getHost(),
+                myself.getMyself().getPort(),
+                myself.getMyself().getNonce(),
+                myself.getMyself().getNETWORK_DIFFICULTY(),
+                myself.getIsKeysInfrastructure().getOwnerPublicKey(),
                 ts,
                 signature
         );
 
-        MessageUtils.sendMessage(out, new Message(MessageType.HELLO, myPayload, myPeer.getHybridLogicalClock().next()));
+        MessageUtils.sendMessage(out, new Message(MessageType.HELLO, myPayload, myself.getHybridLogicalClock().next()));
         Message response = MessageUtils.readMessage(in);
 
 
@@ -73,7 +73,8 @@ public final class Handshake {
 
 
         Node newNode = new Node(remote.host(),remote.port(), remote.publicKey(), remote.nonce(), remote.networkDifficulty());
-        System.out.println("[HANDSHAKE] Creadted new node: " + newNode);
+        myself.getReputationsManager().getProofOfReputation(newNode.getNodeId().value());
+//        System.out.println("[HANDSHAKE] Create new node: " + newNode);
 
         if (!validateRemoteIdentity(remote ,newNode)) {
             logger.severe("Handshake validation failed (PoW or signature).");
@@ -82,7 +83,7 @@ public final class Handshake {
 
 
         PublicKey pk = (PublicKey) remote.publicKey();
-        myPeer.getIsKeysInfrastructure()
+        myself.getIsKeysInfrastructure()
                 .addNeighborPublicKey(newNode.getNodeId().value(), pk);
 
         return Optional.of(newNode);
@@ -105,7 +106,7 @@ public final class Handshake {
         }
     }
 
-    public static void connectAndVerify(String host, int port, Peer myPeer) {
+    public static void connectAndVerify(String host, int port, Peer myself) {
         new Thread(() -> {
             try {
 
@@ -113,11 +114,11 @@ public final class Handshake {
                     socket.connect(new InetSocketAddress(host, port), 3000);
 
 
-                    ConnectionHandler newHandler = new ConnectionHandler(socket, myPeer, myPeer.getLogger());
+                    ConnectionHandler newHandler = new ConnectionHandler(socket, myself, myself.getLogger());
                     newHandler.initStreams();
 
                     Optional<Node> handshakeResult = doHandshake(
-                            myPeer,
+                            myself,
                             newHandler.getInputStream(),
                             newHandler.getOutputStream()
                     );
@@ -128,9 +129,9 @@ public final class Handshake {
 
                         newHandler.setRemoteNode(verifiedNode);
 
-                        myPeer.getNeighboursManager().addConnection(verifiedNode, newHandler);
+                        myself.getNeighboursManager().addConnection(verifiedNode, newHandler);
 
-                        myPeer.getRoutingTable().addNode(verifiedNode);
+                        myself.getRoutingTable().addNode(verifiedNode);
 
                         new Thread(newHandler).start();
 
@@ -144,5 +145,4 @@ public final class Handshake {
             }
         }).start();
     }
-
 }

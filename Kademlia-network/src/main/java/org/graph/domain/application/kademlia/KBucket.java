@@ -1,5 +1,6 @@
 package org.graph.domain.application.kademlia;
 
+import org.graph.adapter.provider.IReputationsManager;
 import org.graph.domain.entities.p2p.Node;
 
 import java.math.BigInteger;
@@ -12,9 +13,11 @@ import static org.graph.adapter.utils.Constants.NODE_K;
 
 public class KBucket { ;
     private LinkedHashMap<BigInteger, Node> nodes;
-
-    public KBucket() {
+    private final IReputationsManager reputationProvider;
+    public KBucket(IReputationsManager reputationProvider) {
+        this.reputationProvider = reputationProvider;
         this.nodes = new LinkedHashMap<>(NODE_K, 0.75f, true);
+
     }
 
     public synchronized boolean addNode(Node newNode) {
@@ -36,19 +39,24 @@ public class KBucket { ;
         // Se o antigo responder, o novo é descartado.
         // S-Kademlia Extension: Se o antigo tiver Trust MUITO baixo e o novo tiver Trust alto,
         // podemos considerar a troca.
+        // Lógica S-Kademlia: Evicção baseada em Trust [cite: 58]
+        // Se o nó antigo for suspeito (trust baixo) e o novo tiver PoW válido...
+        // Caso contrário, preferimos a estabilidade (resistência a Sybil Flooding)
+        // Retornamos false indicando que o caller deve testar o 'leastRecentlySeen' antes de descartar
 
         Node leastRecentlySeen = getLeastRecentlySeen();
         if (leastRecentlySeen != null) {
-            // Lógica S-Kademlia: Evicção baseada em Trust [cite: 58]
-            // Se o nó antigo for suspeito (trust baixo) e o novo tiver PoW válido...
-            if (leastRecentlySeen.getMyProofOfReputation().getTrustFactor() < 0.2 && newNode.getMyProofOfReputation().getTrustFactor() > 0.5) {
+
+            double oldTrust = reputationProvider.getTrustFactor(leastRecentlySeen.getNodeId().value());
+            double newTrust = reputationProvider.getTrustFactor(nodeId);
+
+            if (oldTrust < 0.5 && newTrust > 1.5) {
+                System.out.println("[DEBUG] Replacing weak node (" + oldTrust + ") by strong (" + newTrust + ")");
                 nodes.remove(leastRecentlySeen.getNodeId().value());
                 nodes.put(nodeId, newNode);
                 return true;
             }
 
-            // Caso contrário, preferimos a estabilidade (resistência a Sybil Flooding)
-            // Retornamos false indicando que o caller deve testar o 'leastRecentlySeen' antes de descartar
             return false;
         }
 
