@@ -7,6 +7,7 @@ import org.graph.domain.application.block.Block;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.p2p.Node;
+import org.graph.domain.utils.HashUtils;
 import org.graph.server.Peer;
 import org.graph.adapter.provider.IKademliaIController;
 import org.graph.adapter.storage.StorageDHT;
@@ -49,6 +50,10 @@ public class KademliaNetwork implements IKademliaIController {
         this.storage = new StorageDHT();
         this.myself = myself;
         this.hotCache = new LRUCache<>();
+    }
+
+    public StorageDHT getStorage() {
+        return this.storage;
     }
 
 
@@ -349,7 +354,9 @@ public class KademliaNetwork implements IKademliaIController {
 
     @Override
     public void storage(BigInteger key, Object value) {
+        storage.put(key, value);
         List<Node> closestNodes = findNode(key);
+
         Map<String, Object> storagePayload = new HashMap<>();
         storagePayload.put("key", key);
         storagePayload.put("value", value);
@@ -357,18 +364,16 @@ public class KademliaNetwork implements IKademliaIController {
         Message storeMsg = new Message(MessageType.STORAGE, storagePayload, myself.getHybridLogicalClock());
 
         for (Node node : closestNodes) {
-            if (node.equals(myself.getMyself())) {
-                storage.put(key, value);
-                System.out.println("[DHT] Saving  local: " + key);
-            } else {
-                new Thread(() -> {
-                    sendRPC(node, storeMsg);
-                    System.out.println("[DHT] Replica to: " + node.getHost());
-                }).start();
+            if (node.getNodeId().value().equals(myself.getMyself().getNodeId().value())) {
+                continue;
             }
+
+            new Thread(() -> {
+                sendRPC(node, storeMsg);
+                System.out.println("[DHT] Replica to: " + node.getPort());
+            }).start();
         }
     }
-
 
     private Object sendRPC(Node target, Message request) {
 
@@ -393,5 +398,4 @@ public class KademliaNetwork implements IKademliaIController {
             return null;
         }
     }
-
 }

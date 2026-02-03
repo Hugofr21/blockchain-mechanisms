@@ -148,7 +148,6 @@ public class BlockOrganizer {
     }
 
     public boolean isParentInChain(String parentHash) {
-        // Verifica apenas se o pai está na cadeia confirmada (blockMap ou organizedChain)
         return blockMap.containsKey(parentHash);
     }
 }

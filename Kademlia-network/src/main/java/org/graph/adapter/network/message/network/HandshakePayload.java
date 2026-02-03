@@ -4,6 +4,7 @@ import org.graph.adapter.networkTime.HybridLogicalClock;
 import org.graph.domain.entities.p2p.Node;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.security.PublicKey;
 
 /**
@@ -15,6 +16,7 @@ public record HandshakePayload(
         String host,
         int port,
         long nonce,
+        BigInteger id,
         int networkDifficulty,
         PublicKey publicKey,
         long timestamp,

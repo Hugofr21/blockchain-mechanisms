@@ -53,7 +53,7 @@ public class Peer {
             throw new RuntimeException("[CRITICAL] Failed to initialize Peer identity via Mining.", e);
         }
 
-        this.myself = new Node(HOST, port, keys.getOwnerPublicKey(), proofOfWork.nonce(), NETWORK_DIFFICULTY);
+        this.myself = new Node(HOST, port, proofOfWork.nodeId(),   proofOfWork.nonce(), NETWORK_DIFFICULTY);
         this.keys.getOwnerKeyPair().setPeerId(this.myself.getNodeId().value());
 
         createdFileLog(myself);

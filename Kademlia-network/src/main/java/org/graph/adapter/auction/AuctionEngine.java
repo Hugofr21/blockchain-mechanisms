@@ -1,22 +1,30 @@
 package org.graph.adapter.auction;
 
+import org.graph.adapter.network.message.block.InventoryPayload;
+import org.graph.adapter.network.message.block.InventoryType;
+import org.graph.adapter.p2p.ConnectionHandler;
 import org.graph.adapter.provider.BlockListener;
 import org.graph.adapter.provider.TransactionsPublished;
+import org.graph.adapter.utils.MessageUtils;
 import org.graph.domain.application.block.Block;
 import org.graph.domain.application.transaction.Transaction;
 import org.graph.domain.application.transaction.TransactionType;
 import org.graph.domain.entities.auctions.AuctionState;
 import org.graph.domain.entities.auctions.Bid;
+import org.graph.domain.entities.message.Message;
+import org.graph.domain.entities.message.MessageType;
+import org.graph.domain.entities.p2p.Node;
 import org.graph.domain.utils.HashUtils;
 import org.graph.adapter.network.message.auction.AuctionOpType;
 import org.graph.adapter.network.message.auction.AuctionPayload;
 import org.graph.server.Peer;
+
+import java.io.DataOutputStream;
 import java.math.BigDecimal;
-import java.util.Comparator;
-import java.util.Map;
+import java.math.BigInteger;
+import java.net.Socket;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Este componente é responsável pela gestão de leilões (Auctions) tanto em contexto local
@@ -160,16 +168,17 @@ public class AuctionEngine implements BlockListener {
     public void createdLocalAuctions(BigDecimal startPrice, Peer myself) {
         long durationMillis = 24L * 60L * 60L * 1000L;
         long endTime = System.currentTimeMillis() + durationMillis;
+
         String entropyId = HashUtils.calculateSha256(myself.getMyself().getNodeId().value() + startPrice.toString() + endTime);
 
-        AuctionState newAuctionId = new AuctionState(
+        AuctionState newAuction = new AuctionState(
                 entropyId,
                 myself.getMyself().getNodeId().value(),
                 startPrice,
                 endTime
         );
 
-        AuctionPayload payload = AuctionPayload.create("New Auction", newAuctionId);
+        AuctionPayload payload = AuctionPayload.create("New Auction", newAuction);
         Transaction tx = new Transaction(
                 TransactionType.AUCTION_CREATED,
                 myself.getIsKeysInfrastructure().getOwnerPublicKey(),
@@ -179,7 +188,8 @@ public class AuctionEngine implements BlockListener {
 
         signAndSubmit(tx, myself);
 
-        myself.getMkademliaNetwork().storage(myself.getMyself().getNodeId().value(), newAuctionId);
+        BigInteger key = new BigInteger(entropyId, 16);
+        myself.getMkademliaNetwork().storage(key, newAuction);
     }
 
     public void placeBidRequest(String auctionId, BigDecimal bidValue, Peer myself) {

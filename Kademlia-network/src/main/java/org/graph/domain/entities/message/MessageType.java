@@ -17,7 +17,10 @@ public enum MessageType {
     GET_BLOCK((byte) 0x17),
     INV_DATA((byte) 0x18),
     RESPONSE_NODES((byte) 0x19),
-    CHAIN_STATUS_RESPONSE((byte) 0x20);
+    CHAIN_STATUS_RESPONSE((byte) 0x20),
+    // --- NOVOS TIPOS ---
+    GET_DATA((byte) 0x21),    // Para pedir Transações (baseado em INV)
+    TRANSACTION((byte) 0x22); // Para enviar a Transação (resposta ao GET_DATA)
 
 
     private final byte code;

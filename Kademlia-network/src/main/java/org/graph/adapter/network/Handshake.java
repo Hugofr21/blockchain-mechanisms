@@ -30,7 +30,7 @@ public final class Handshake {
      * NÃO fecha os streams – eles permanecerão abertos para a comunicação
      * posterior.
      *
-     * @return Optional contendo o Node remoto (já validado) ou empty se falhar.
+     * @return Optional<Node> contendo o Node remoto (já validado) ou empty se falhar.
      */
     public static Optional<Node> doHandshake(Peer myself,
                                              DataInputStream  in,
@@ -45,6 +45,7 @@ public final class Handshake {
                 myself.getMyself().getHost(),
                 myself.getMyself().getPort(),
                 myself.getMyself().getNonce(),
+                myself.getMyself().getNodeId().value(),
                 myself.getMyself().getNETWORK_DIFFICULTY(),
                 myself.getIsKeysInfrastructure().getOwnerPublicKey(),
                 ts,
@@ -73,7 +74,7 @@ public final class Handshake {
         }
 
 
-        Node newNode = new Node(remote.host(),remote.port(), remote.publicKey(), remote.nonce(), remote.networkDifficulty());
+        Node newNode = new Node(remote.host(),remote.port(), remote.id(), remote.nonce(), remote.networkDifficulty());
         myself.getReputationsManager().getProofOfReputation(newNode.getNodeId().value());
 //        System.out.println("[HANDSHAKE] Create new node: " + newNode);
 
@@ -91,18 +92,32 @@ public final class Handshake {
     }
 
 
-    private static boolean validateRemoteIdentity(HandshakePayload payload,Node remote) {
+    private static boolean validateRemoteIdentity(HandshakePayload payload, Node remote) {
         try {
-            PublicKey pk = (PublicKey) payload.publicKey();
-
+            PublicKey pk = payload.publicKey();
             if (pk == null) return false;
 
-            NodeId expected = NodeId.createFromProof(pk, remote.getNonce(), remote.getNETWORK_DIFFICULTY());
-            if (!expected.equals(remote.getNodeId())) return false;
-            String challenge = remote.getNodeId().value().toString() + ":" + payload.timestamp();
-            return CryptoUtils.verifySignature(pk, challenge, payload.signature());
+            boolean isIdValid = NodeId.isValidNode(remote, pk);
+
+            if (!isIdValid) {
+                System.err.println("[DEBUG]Handshake rejected: Invalid node ID or false PoW.");
+                return false;
+            }
+
+
+            String challengeData = remote.getNodeId().value().toString() + ":" + payload.timestamp();
+
+            boolean isSignatureValid = CryptoUtils.verifySignature(pk, challengeData, payload.signature());
+
+            if (!isSignatureValid) {
+                System.err.println("[DEBUG]Handshake rejected: Invalid signature.");
+                return false;
+            }
+
+            return true;
 
         } catch (Exception e) {
+            System.err.println("[DEBUG] Identity validation error: " + e.getMessage());
             return false;
         }
     }

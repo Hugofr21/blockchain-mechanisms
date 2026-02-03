@@ -1,8 +1,10 @@
 package org.graph.domain.utils;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 
 public class HashUtils {
 
@@ -25,25 +27,21 @@ public class HashUtils {
         return null;
     }
 
-    public static BigInteger sha256(String input) {
+    public static BigInteger calculateHashFromNodeId(PublicKey publicKey, long nonce) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(input.getBytes());
+            byte[] keyBytes = publicKey.getEncoded();
+            ByteBuffer buffer = ByteBuffer.allocate(keyBytes.length + Long.BYTES);
+            buffer.put(keyBytes);
+            buffer.putLong(nonce);
+            byte[] hash = digest.digest(buffer.array());
             return new BigInteger(1, hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA-256 algorithm not found", e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public static BigInteger sha256(byte[] input) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(input);
-            return new BigInteger(1, hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA-256 algorithm not found", e);
-        }
-    }
+
 
     public static String toHexString(BigInteger value) {
         return value.toString(16);

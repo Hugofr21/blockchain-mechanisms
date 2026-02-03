@@ -1,6 +1,5 @@
 package org.graph.adapter.blockchain.block;
 
-
 import org.graph.domain.application.transaction.Transaction;
 
 import java.util.*;

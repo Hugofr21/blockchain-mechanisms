@@ -31,7 +31,8 @@ public class MenuUtils {
             System.out.println("2) Show the NEIGHBOUR relationship.");
             System.out.println("3) Show the list of BLOCKCHAIN.");
             System.out.println("4) Auction Market (Create/Bid).");
-            System.out.println("5) Exit");
+            System.out.println("5) Environment the test (Nodes/Object).");
+            System.out.println("6) Exit");
 
             System.out.print("Choose an option: ");
             int choice = scanner.nextInt();
@@ -52,9 +53,7 @@ public class MenuUtils {
 
     private static void showMyPeerInfo(Peer peer) {
         System.out.println("\n=== Info of Peer ===");
-        System.out.println("ID: " + peer.getMyself().getNodeId().value());
-        System.out.println("Port: " + peer.getMyself().getPort());
-//        System.out.println("Current of Reputation: " + peer.getMyself().getMyProofOfReputation().getCurrentProofOfReputation());
+        System.out.println("My self: " + peer.getMyself());
     }
 
     private static void showNeighboursMenu(Peer peer) {
@@ -62,7 +61,8 @@ public class MenuUtils {
         System.out.println("1) List Active Connected Neighbours");
         System.out.println("2) DHT: Find Node (Lookup K-Closest)");
         System.out.println("3) DHT: Store Value (Publish Data)");
-        System.out.println("4) DHT: Find Value (Search Block/Data)");
+        System.out.println("4) DHT: Find Value (Search Data)");
+        System.out.println("5) DHT: List Local Storage (Debug History)");
         System.out.println("0) Back");
 
         System.out.print("Choose a option: ");
@@ -100,6 +100,30 @@ public class MenuUtils {
                 break;
             case 3:
                 System.out.println("Neighbor with the most relationships:: ?");
+                break;
+            case 4:
+                System.out.println("Find Value");
+
+                break;
+            case 5:
+                System.out.println("\n=== Local DHT Storage Content ===");
+                Map<String, String> dataMap = peer.getMkademliaNetwork().getStorage().getAllDataSnapshot();
+
+                if (dataMap.isEmpty()) {
+                    System.out.println("Storage is empty.");
+                } else {
+                    System.out.printf("%-64s | %s%n", "Key (Hex)", "Value Summary");
+                    System.out.println("----------------------------------------------------------------------------------");
+
+                    for (Map.Entry<String, String> entry : dataMap.entrySet()) {
+                        System.out.printf("%-64s | %s%n",
+                                entry.getKey(),
+                                entry.getValue()
+                        );
+                    }
+                    System.out.println("----------------------------------------------------------------------------------");
+                    System.out.println("Total items stored: " + dataMap.size());
+                }
                 break;
             default:
                 System.out.println("Invalid option!");

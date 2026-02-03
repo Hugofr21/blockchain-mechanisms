@@ -2,6 +2,8 @@ package org.graph.adapter.p2p;
 
 
 import org.graph.adapter.network.Handshake;
+import org.graph.adapter.network.message.block.InventoryPayload;
+import org.graph.adapter.network.message.block.InventoryType;
 import org.graph.adapter.network.message.node.FindNodePayload;
 import org.graph.adapter.network.message.node.NodeInfoPayload;
 import org.graph.adapter.network.message.node.NodeListPayload;
@@ -21,6 +23,7 @@ import java.math.BigInteger;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
@@ -98,7 +101,6 @@ public class ConnectionHandler implements Runnable {
                         continue;
                     }
 
-                   // dispatch(message);
                     processAsync(message);
 
                 } catch (EOFException e) {
@@ -143,8 +145,6 @@ public class ConnectionHandler implements Runnable {
             case FIND_NODE -> handleFindNode(message.getPayload());
             case FIND_VALUE -> handleFindValue(message.getPayload());
             case STORAGE -> handleStorage(message.getPayload());
-            case CHUNK -> handleChunk(message.getPayload());
-            case REQUEST -> handleRequest(message.getPayload());
             case RESPONSE_NODES -> handleResponseNode(message.getPayload());
             case ACK -> handleAck(message.getPayload());
             case GET_STATUS -> new GetStatusStrategy().handle(message, this);
@@ -161,15 +161,48 @@ public class ConnectionHandler implements Runnable {
 
     }
 
-    private void handleRequest(Object payload) {}
-
-    private void handleChunk(Object payload) {}
-
     private void handleStorage(Object payload) {
+        try {
+
+            if (payload instanceof byte[]) {
+                payload = SerializationUtils.deserialize((byte[]) payload);
+            }
+
+            if (payload instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> storageData = (Map<String, Object>) payload;
+
+                BigInteger key = (BigInteger) storageData.get("key");
+                Object value = storageData.get("value");
+
+                if (key != null && value != null) {
+                    myPeer.getMkademliaNetwork().getStorage().put(key, value);
+                } else {
+                    logger.warning("[DHT] Incomplete Storage Payload (null key or value).");
+                }
+            } else {
+                logger.warning("[DHT] Invalid format in handleStorage. Expected: Map, received: [Insert value here].: " +
+                        (payload != null ? payload.getClass().getSimpleName() : "null"));
+            }
+
+        } catch (Exception e) {
+            logger.severe("Critical error in handleStorage: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void handleFindValue(Object payload) {
+        try {
 
+            if (payload instanceof byte[]) {
+                payload = SerializationUtils.deserialize((byte[]) payload);
+            }
+
+
+        } catch (Exception e) {
+            logger.severe("Critical error in handleStorage: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void handleFindNode(Object rawPayload) {
