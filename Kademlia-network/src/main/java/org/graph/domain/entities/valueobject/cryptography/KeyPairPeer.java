@@ -1,4 +1,4 @@
-package org.graph.domain.valueobject.cryptography;
+package org.graph.domain.entities.valueobject.cryptography;
 
 import java.io.Serial;
 import java.io.Serializable;

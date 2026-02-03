@@ -1,4 +1,4 @@
-package org.graph.domain.entities.network;
+package org.graph.adapter.outbound.network.kademlia;
 
 import org.graph.domain.entities.node.Node;
 

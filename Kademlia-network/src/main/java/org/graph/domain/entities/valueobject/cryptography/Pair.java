@@ -1,4 +1,4 @@
-package org.graph.domain.entities.valueobject;
+package org.graph.domain.entities.valueobject.cryptography;
 
 import java.util.Objects;
 

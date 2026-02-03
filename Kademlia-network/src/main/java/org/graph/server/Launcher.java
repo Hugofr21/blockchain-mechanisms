@@ -1,7 +1,7 @@
 package org.graph.server;
 
 
-import org.graph.adapter.network.kademlia.JoinNetwork;
+import org.graph.adapter.inbound.network.JoinNetwork;
 import org.graph.server.utils.MenuUtils;
 
 import static org.graph.server.utils.Constants.BOOTSTRAP_PORT;

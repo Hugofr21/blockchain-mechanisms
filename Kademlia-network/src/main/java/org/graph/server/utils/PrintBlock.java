@@ -1,10 +1,5 @@
 package org.graph.server.utils;
 
-import org.graph.domain.application.block.Block;
-import org.graph.domain.application.transaction.Transaction;
-
-import java.util.List;
-
 public class PrintBlock {
 
 //    public void printBlockchain() {

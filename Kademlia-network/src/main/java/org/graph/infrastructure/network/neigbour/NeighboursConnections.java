@@ -1,6 +1,6 @@
-package org.graph.adapter.p2p.neigbour;
+package org.graph.infrastructure.network.neigbour;
 
-import org.graph.adapter.p2p.ConnectionHandler;
+import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.server.Peer;
 import org.graph.domain.entities.node.Node;
 

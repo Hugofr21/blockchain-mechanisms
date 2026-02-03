@@ -1,9 +1,9 @@
-package org.graph.domain.application.tree;
+package org.graph.domain.entities.tree;
 
 
 import java.util.ArrayList;
 import java.util.List;
-import org.graph.domain.application.transaction.Transaction;
+import org.graph.domain.entities.transaction.Transaction;
 import org.graph.domain.entities.valueobject.utils.HashUtils;
 
 public class MerkleTree {

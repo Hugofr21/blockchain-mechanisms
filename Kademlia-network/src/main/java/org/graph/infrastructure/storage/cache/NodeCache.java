@@ -1,4 +1,4 @@
-package org.graph.adapter.storage.cache;
+package org.graph.infrastructure.storage.cache;
 
 
 public class NodeCache<K, V> {

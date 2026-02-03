@@ -1,10 +1,10 @@
-package org.graph.adapter.storage.cache;
+package org.graph.infrastructure.storage.cache;
 
 // https://medium.com/@vishal637yadav/least-recently-used-lru-cache-implementation-in-java-7460346ffe73
 // Least Recently Used (LRU) Cache
 
 
-import org.graph.adapter.storage.povider.LRU;
+import org.graph.infrastructure.storage.povider.LRU;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

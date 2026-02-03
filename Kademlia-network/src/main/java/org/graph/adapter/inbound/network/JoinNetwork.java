@@ -1,12 +1,11 @@
-package org.graph.adapter.network.kademlia;
+package org.graph.adapter.inbound.network;
 
-import org.graph.adapter.network.Handshake;
-import org.graph.adapter.network.message.node.FindNodePayload;
+import org.graph.adapter.outbound.network.message.node.FindNodePayload;
 import org.graph.adapter.utils.Base64Utils;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.node.Node;
-import org.graph.adapter.p2p.ConnectionHandler;
+import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.server.Peer;
 import org.graph.adapter.utils.MessageUtils;
 import java.io.IOException;

@@ -1,14 +1,10 @@
-package org.graph.adapter.network.message.auction;
+package org.graph.adapter.outbound.network.message.auction;
 
 import org.graph.domain.entities.auctions.AuctionState;
 import org.graph.domain.entities.auctions.Bid;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 
 public class AuctionPayload implements Serializable {
     @Serial

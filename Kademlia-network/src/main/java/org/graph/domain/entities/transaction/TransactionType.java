@@ -1,4 +1,4 @@
-package org.graph.domain.application.transaction;
+package org.graph.domain.entities.transaction;
 
 public enum TransactionType {
     BID,

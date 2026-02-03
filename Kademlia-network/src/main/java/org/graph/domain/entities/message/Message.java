@@ -1,6 +1,6 @@
 package org.graph.domain.entities.message;
 
-import org.graph.adapter.networkTime.HybridLogicalClock;
+import org.graph.infrastructure.networkTime.HybridLogicalClock;
 import org.graph.adapter.utils.SerializationUtils;
 
 import java.io.IOException;

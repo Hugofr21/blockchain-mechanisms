@@ -1,15 +1,15 @@
-package org.graph.adapter.auction;
+package org.graph.domain.application.usecase.auction;
 
-import org.graph.adapter.provider.BlockListener;
-import org.graph.adapter.provider.TransactionsPublished;
+import org.graph.domain.application.usecase.provider.BlockListener;
+import org.graph.domain.application.usecase.provider.TransactionsPublished;
 import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.transaction.Transaction;
 import org.graph.domain.entities.transaction.TransactionType;
 import org.graph.domain.entities.auctions.AuctionState;
 import org.graph.domain.entities.auctions.Bid;
 import org.graph.domain.entities.valueobject.utils.HashUtils;
-import org.graph.adapter.network.message.auction.AuctionOpType;
-import org.graph.adapter.network.message.auction.AuctionPayload;
+import org.graph.adapter.outbound.network.message.auction.AuctionOpType;
+import org.graph.adapter.outbound.network.message.auction.AuctionPayload;
 import org.graph.server.Peer;
 
 import java.math.BigDecimal;

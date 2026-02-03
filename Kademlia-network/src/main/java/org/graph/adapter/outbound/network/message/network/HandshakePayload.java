@@ -1,4 +1,4 @@
-package org.graph.adapter.network.message.network;
+package org.graph.adapter.outbound.network.message.network;
 
 import java.io.Serializable;
 import java.math.BigInteger;

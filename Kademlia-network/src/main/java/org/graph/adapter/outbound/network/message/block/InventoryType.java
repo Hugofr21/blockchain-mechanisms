@@ -1,4 +1,4 @@
-package org.graph.adapter.network.message.block;
+package org.graph.adapter.outbound.network.message.block;
 
 public enum InventoryType {
     BLOCK,

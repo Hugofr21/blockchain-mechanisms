@@ -1,11 +1,11 @@
 package org.graph.gateway;
 
-import org.graph.adapter.auction.AuctionEngine;
-import org.graph.adapter.blockchain.BlockchainEngine;
-import org.graph.adapter.network.message.block.InventoryPayload;
-import org.graph.adapter.network.message.block.InventoryType;
+import org.graph.domain.application.usecase.auction.AuctionEngine;
+import org.graph.domain.application.usecase.blockchain.BlockchainEngine;
+import org.graph.adapter.outbound.network.message.block.InventoryPayload;
+import org.graph.adapter.outbound.network.message.block.InventoryType;
 import org.graph.adapter.provider.IEventDispatcher;
-import org.graph.domain.application.block.Block;
+import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.gateway.block.BlockStateRemote;

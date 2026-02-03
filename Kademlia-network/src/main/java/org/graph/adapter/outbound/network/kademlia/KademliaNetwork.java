@@ -1,4 +1,4 @@
-package org.graph.adapter.inbound.network;
+package org.graph.adapter.outbound.network.kademlia;
 
 import org.graph.infrastructure.storage.cache.LRUCache;
 import org.graph.adapter.utils.MessageUtils;

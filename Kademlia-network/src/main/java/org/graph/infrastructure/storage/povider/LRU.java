@@ -1,4 +1,4 @@
-package org.graph.adapter.storage.povider;
+package org.graph.infrastructure.storage.povider;
 
 public interface LRU<K, V> {
 

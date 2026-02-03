@@ -1,4 +1,4 @@
-package org.graph.domain.valueobject.utils;
+package org.graph.domain.entities.valueobject.utils;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;

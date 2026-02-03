@@ -1,4 +1,4 @@
-package org.graph.domain.application.tree;
+package org.graph.domain.entities.tree;
 
 import org.graph.domain.entities.valueobject.utils.HashUtils;
 

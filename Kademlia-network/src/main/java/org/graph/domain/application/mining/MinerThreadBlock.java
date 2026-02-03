@@ -1,4 +1,4 @@
-package org.graph.domain.application.mechanism.pow;
+package org.graph.domain.application.mining;
 
 
 import org.graph.domain.entities.valueobject.utils.HashUtils;

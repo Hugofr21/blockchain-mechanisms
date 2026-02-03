@@ -1,4 +1,4 @@
-package org.graph.adapter.p2p;
+package org.graph.infrastructure.network;
 
 
 import org.graph.adapter.inbound.network.Handshake;

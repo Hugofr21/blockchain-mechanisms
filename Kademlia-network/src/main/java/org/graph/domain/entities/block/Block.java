@@ -1,10 +1,9 @@
-package org.graph.domain.application.block;
+package org.graph.domain.entities.block;
 
-import org.graph.domain.application.mechanism.pow.MinerThreadBlock;
-import org.graph.domain.application.mechanism.pow.MiningResult;
-import org.graph.domain.application.mechanism.pow.MiningResultBlock;
-import org.graph.domain.application.transaction.Transaction;
-import org.graph.domain.application.tree.MerkleTree;
+import org.graph.domain.application.mining.MinerThreadBlock;
+import org.graph.domain.application.mining.MiningResultBlock;
+import org.graph.domain.entities.transaction.Transaction;
+import org.graph.domain.entities.tree.MerkleTree;
 
 import java.io.Serializable;
 import java.util.ArrayList;

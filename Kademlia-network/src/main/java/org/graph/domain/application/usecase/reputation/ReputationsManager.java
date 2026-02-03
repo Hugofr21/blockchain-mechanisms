@@ -1,6 +1,6 @@
-package org.graph.adapter.mechanism;
+package org.graph.domain.application.usecase.reputation;
 
-import org.graph.adapter.provider.IReputationsManager;
+import org.graph.domain.application.usecase.provider.IReputationsManager;
 import org.graph.domain.entities.policy.EventType;
 import org.graph.domain.entities.policy.reputation.ProofOfReputation;
 

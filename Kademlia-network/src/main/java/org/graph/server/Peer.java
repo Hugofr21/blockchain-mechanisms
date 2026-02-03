@@ -1,19 +1,19 @@
 package org.graph.server;
 
-import org.graph.adapter.blockchain.BlockEventManger;
-import org.graph.adapter.blockchain.ChainSyncManager;
-import org.graph.adapter.mechanism.ReputationsManager;
-import org.graph.adapter.network.NetworkEvent;
-import org.graph.adapter.p2p.MinerOrchestrator;
-import org.graph.adapter.p2p.ServerHandle;
-import org.graph.adapter.p2p.neigbour.NeighboursConnections;
-import org.graph.domain.application.kademlia.RoutingTable;
-import org.graph.domain.application.mechanism.pow.MiningResult;
-import org.graph.domain.entities.p2p.Node;
+import org.graph.domain.application.usecase.blockchain.BlockEventManger;
+import org.graph.domain.application.usecase.blockchain.ChainSyncManager;
+import org.graph.domain.application.usecase.reputation.ReputationsManager;
+import org.graph.adapter.inbound.network.NetworkEvent;
+import org.graph.infrastructure.network.MinerOrchestrator;
+import org.graph.infrastructure.network.ServerHandle;
+import org.graph.infrastructure.network.neigbour.NeighboursConnections;
+import org.graph.adapter.outbound.network.kademlia.RoutingTable;
+import org.graph.domain.application.mining.MiningResult;
+import org.graph.domain.entities.node.Node;
 import org.graph.gateway.NetworkGateway;
 import org.graph.infrastructure.crypt.KeysInfrastructure;
-import org.graph.adapter.network.kademlia.KademliaNetwork;
-import org.graph.adapter.networkTime.HybridLogicalClock;
+import org.graph.adapter.outbound.network.kademlia.KademliaNetwork;
+import org.graph.infrastructure.networkTime.HybridLogicalClock;
 
 import java.io.IOException;
 import java.net.ServerSocket;

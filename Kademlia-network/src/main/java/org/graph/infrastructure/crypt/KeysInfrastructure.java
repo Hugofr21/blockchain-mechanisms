@@ -1,8 +1,8 @@
 package org.graph.infrastructure.crypt;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.graph.domain.common.crypto.KeyPairPeer;
-import org.graph.domain.common.crypto.PublicKeyPeer;
+import org.graph.domain.entities.valueobject.cryptography.KeyPairPeer;
+import org.graph.domain.entities.valueobject.cryptography.PublicKeyPeer;
 import org.graph.server.Peer;
 import org.graph.adapter.utils.Base64Utils;
 

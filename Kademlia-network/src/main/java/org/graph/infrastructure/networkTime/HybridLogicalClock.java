@@ -1,4 +1,4 @@
-package org.graph.adapter.networkTime;
+package org.graph.infrastructure.networkTime;
 
 import java.io.Serial;
 import java.io.Serializable;

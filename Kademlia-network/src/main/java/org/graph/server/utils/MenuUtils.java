@@ -1,9 +1,9 @@
 package org.graph.server.utils;
 
-import org.graph.domain.application.block.Block;
+import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.auctions.AuctionState;
 import org.graph.server.Peer;
-import org.graph.domain.entities.p2p.Node;
+import org.graph.domain.entities.node.Node;
 
 import java.math.BigDecimal;
 import java.util.List;

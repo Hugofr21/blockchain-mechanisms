@@ -1,4 +1,4 @@
-package org.graph.adapter.network.message.auction;
+package org.graph.adapter.outbound.network.message.auction;
 
 public enum AuctionOpType {
     CREATE,

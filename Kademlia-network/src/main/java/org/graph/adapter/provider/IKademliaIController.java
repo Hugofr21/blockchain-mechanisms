@@ -1,6 +1,6 @@
 package org.graph.adapter.provider;
 
-import org.graph.domain.entities.p2p.Node;
+import org.graph.domain.entities.node.Node;
 
 import java.math.BigInteger;
 import java.util.List;

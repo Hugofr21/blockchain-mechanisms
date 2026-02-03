@@ -1,7 +1,7 @@
 package org.graph.infrastructure.crypt;
 
-import org.graph.domain.common.crypto.KeyPairPeer;
-import org.graph.domain.common.crypto.PublicKeyPeer;
+import org.graph.domain.entities.valueobject.cryptography.KeyPairPeer;
+import org.graph.domain.entities.valueobject.cryptography.PublicKeyPeer;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;

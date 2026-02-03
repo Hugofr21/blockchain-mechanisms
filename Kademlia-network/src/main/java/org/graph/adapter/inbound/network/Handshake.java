@@ -1,6 +1,6 @@
-package org.graph.adapter.network;
+package org.graph.adapter.inbound.network;
 
-import org.graph.adapter.p2p.ConnectionHandler;
+import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.adapter.utils.MessageUtils;
 import org.graph.adapter.utils.SerializationUtils;
 import org.graph.domain.entities.policy.EventType;
@@ -9,7 +9,7 @@ import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.node.Node;
 import org.graph.domain.entities.node.NodeId;
 import org.graph.adapter.utils.CryptoUtils;
-import org.graph.adapter.network.message.network.HandshakePayload;
+import org.graph.adapter.outbound.network.message.network.HandshakePayload;
 import org.graph.server.Peer;
 
 import java.io.DataInputStream;

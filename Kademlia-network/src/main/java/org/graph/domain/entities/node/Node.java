@@ -1,4 +1,4 @@
-package org.graph.domain.entities.p2p;
+package org.graph.domain.entities.node;
 
 import java.io.Serializable;
 import java.math.BigInteger;

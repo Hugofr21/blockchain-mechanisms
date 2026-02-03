@@ -1,4 +1,4 @@
-package org.graph.adapter.storage;
+package org.graph.infrastructure.storage;
 
 import java.lang.reflect.Type;
 import java.math.BigInteger;

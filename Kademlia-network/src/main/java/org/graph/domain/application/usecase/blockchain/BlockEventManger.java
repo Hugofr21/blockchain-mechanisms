@@ -1,8 +1,8 @@
-package org.graph.adapter.blockchain;
+package org.graph.domain.application.usecase.blockchain;
 
-import org.graph.adapter.network.message.block.InventoryPayload;
-import org.graph.adapter.network.message.block.InventoryType;
-import org.graph.adapter.p2p.ConnectionHandler;
+import org.graph.adapter.outbound.network.message.block.InventoryPayload;
+import org.graph.adapter.outbound.network.message.block.InventoryType;
+import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.adapter.provider.IEventDispatcher;
 import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.message.Message;

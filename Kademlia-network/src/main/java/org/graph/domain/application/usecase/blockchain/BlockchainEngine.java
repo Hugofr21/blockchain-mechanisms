@@ -1,13 +1,13 @@
-package org.graph.adapter.blockchain;
+package org.graph.domain.application.usecase.blockchain;
 
-import org.graph.adapter.provider.BlockListener;
-import org.graph.adapter.provider.TransactionsPublished;
+import org.graph.domain.application.usecase.provider.BlockListener;
+import org.graph.domain.application.usecase.provider.TransactionsPublished;
 import org.graph.domain.entities.block.Block;
-import org.graph.domain.application.transaction.Transaction;
-import org.graph.domain.application.transaction.TransactionType;
-import org.graph.domain.entities.valueobject.Pair;
-import org.graph.adapter.blockchain.block.BlockOrganizer;
-import org.graph.adapter.blockchain.block.TransactionOrganizer;
+import org.graph.domain.entities.transaction.Transaction;
+import org.graph.domain.entities.transaction.TransactionType;
+import org.graph.domain.entities.valueobject.cryptography.Pair;
+import org.graph.domain.application.usecase.blockchain.block.BlockOrganizer;
+import org.graph.domain.application.usecase.blockchain.block.TransactionOrganizer;
 import org.graph.server.Peer;
 
 import java.math.BigInteger;

@@ -1,4 +1,4 @@
-package org.graph.adapter.network.message.node;
+package org.graph.adapter.outbound.network.message.node;
 
 import java.io.Serializable;
 

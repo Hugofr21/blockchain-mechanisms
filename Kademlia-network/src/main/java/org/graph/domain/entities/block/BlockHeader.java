@@ -1,4 +1,4 @@
-package org.graph.domain.application.block;
+package org.graph.domain.entities.block;
 
 
 import java.io.Serializable;

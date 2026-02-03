@@ -1,4 +1,4 @@
-package org.graph.adapter.blockchain.block;
+package org.graph.domain.application.usecase.blockchain.block;
 
 
 import org.graph.domain.entities.block.Block;

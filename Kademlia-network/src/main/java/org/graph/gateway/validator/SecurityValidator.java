@@ -1,6 +1,6 @@
 package org.graph.gateway.validator;
 
-import org.graph.domain.application.block.Block;
+import org.graph.domain.entities.block.Block;
 
 
 /**
