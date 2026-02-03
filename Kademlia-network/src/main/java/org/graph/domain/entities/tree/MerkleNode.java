@@ -1,6 +1,6 @@
 package org.graph.domain.entities.tree;
 
-import org.graph.domain.entities.valueobject.utils.HashUtils;
+import org.graph.domain.valueobject.utils.HashUtils;
 
 public class MerkleNode {
     private final String hash;

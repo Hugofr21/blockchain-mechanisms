@@ -1,5 +1,13 @@
 # Strtuc project
-## Arquietura objectica: Architetura Clean 
+
+## Arquietura objectica: Architetura Clean
+- Clean Architecture guarantees that business logic is pure and immutable, isolated from networking, persistence or UI.
+- Domain‑driven packaging (entities, valueobject, policy) reflects the ubiquitous language of a blockchain‑auction node.
+- Use‑case layer (application.usecase) is the only place where behavior lives; it talks to the outside through ports (application.port).
+- Adapters translate between the outside world (Kademlia, DHT, CLI, binary payloads) and ports – they are the only classes that depend on external libraries.
+- Infrastructure hosts concrete implementations (caching, hybrid logical clock, crypto providers) that are swappable without touching the core.
+- Gateway & Server are thin bootstrap/entry-point layers that wire everything together.
+
 ```text
 project-root
 │
@@ -63,6 +71,10 @@ project-root
 │  │  └─ server
 │  │     └─ CommandHandler.java
 │  │
+│  ├─ provider
+│  │  ├─ IEventDispatcher.java
+│  │  └─ IKademliaIController
+│  │
 │  ├─ outbound
 │  │  ├─ network
 │  │  │  ├─ kademlia
@@ -90,6 +102,8 @@ project-root
 │     └─ MessageMapper.java
 │
 ├─ infrastructure
+│  ├─ auction
+│  ├─ blockchain
 │  ├─ network
 │  │  ├─ p2p
 │  │  │  ├─ ConnectionHandler.java

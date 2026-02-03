@@ -1,6 +1,6 @@
 package org.graph.domain.entities.node;
 
-import org.graph.domain.entities.valueobject.utils.HashUtils;
+import org.graph.domain.valueobject.utils.HashUtils;
 
 import java.io.Serializable;
 import java.math.BigInteger;

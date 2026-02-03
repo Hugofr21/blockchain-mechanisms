@@ -1,4 +1,4 @@
-package org.graph.domain.application.usecase.blockchain.block;
+package org.graph.application.usecase.blockchain.block;
 
 import org.graph.domain.entities.transaction.Transaction;
 

@@ -1,6 +1,6 @@
 package org.graph.domain.entities.transaction;
 
-import org.graph.domain.entities.valueobject.utils.HashUtils;
+import org.graph.domain.valueobject.utils.HashUtils;
 import org.graph.adapter.outbound.network.message.auction.AuctionPayload;
 
 import java.io.Serializable;

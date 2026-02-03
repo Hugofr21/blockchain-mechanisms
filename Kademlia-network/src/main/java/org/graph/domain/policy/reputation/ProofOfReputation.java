@@ -1,6 +1,6 @@
-package org.graph.domain.entities.policy.reputation;
+package org.graph.domain.policy.reputation;
 
-import org.graph.domain.entities.policy.EventType;
+import org.graph.domain.policy.EventType;
 
 public class ProofOfReputation {
     private double currentProofOfReputation = 0.0;

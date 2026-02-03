@@ -1,6 +1,6 @@
 package org.graph.adapter.outbound.network.kademlia;
 
-import org.graph.domain.application.usecase.provider.IReputationsManager;
+import org.graph.application.usecase.provider.IReputationsManager;
 import org.graph.domain.entities.node.Node;
 
 import java.math.BigInteger;

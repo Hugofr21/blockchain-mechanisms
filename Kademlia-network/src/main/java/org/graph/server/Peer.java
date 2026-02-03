@@ -1,14 +1,14 @@
 package org.graph.server;
 
-import org.graph.domain.application.usecase.blockchain.BlockEventManger;
-import org.graph.domain.application.usecase.blockchain.ChainSyncManager;
-import org.graph.domain.application.usecase.reputation.ReputationsManager;
+import org.graph.application.usecase.blockchain.BlockEventManger;
+import org.graph.application.usecase.blockchain.ChainSyncManager;
+import org.graph.application.usecase.reputation.ReputationsManager;
 import org.graph.adapter.inbound.network.NetworkEvent;
 import org.graph.infrastructure.network.MinerOrchestrator;
 import org.graph.infrastructure.network.ServerHandle;
 import org.graph.infrastructure.network.neigbour.NeighboursConnections;
 import org.graph.adapter.outbound.network.kademlia.RoutingTable;
-import org.graph.domain.application.mining.MiningResult;
+import org.graph.application.usecase.mining.MiningResult;
 import org.graph.domain.entities.node.Node;
 import org.graph.gateway.NetworkGateway;
 import org.graph.infrastructure.crypt.KeysInfrastructure;

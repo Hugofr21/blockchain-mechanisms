@@ -1,7 +1,7 @@
 package org.graph.infrastructure.network;
 
-import org.graph.domain.application.mining.MinerThread;
-import org.graph.domain.application.mining.MiningResult;
+import org.graph.application.usecase.mining.MinerThread;
+import org.graph.application.usecase.mining.MiningResult;
 
 import java.security.PublicKey;
 import java.util.ArrayList;

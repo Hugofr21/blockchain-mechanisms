@@ -1,4 +1,4 @@
-package org.graph.domain.application.usecase.provider;
+package org.graph.application.usecase.provider;
 
 import org.graph.domain.entities.transaction.Transaction;
 

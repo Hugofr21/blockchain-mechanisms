@@ -1,4 +1,4 @@
-package org.graph.domain.application.usecase.blockchain;
+package org.graph.application.usecase.blockchain;
 
 import org.graph.adapter.outbound.network.message.block.InventoryPayload;
 import org.graph.adapter.outbound.network.message.block.InventoryType;

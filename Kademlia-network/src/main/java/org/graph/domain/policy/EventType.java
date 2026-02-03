@@ -1,4 +1,4 @@
-package org.graph.domain.entities.policy;
+package org.graph.domain.policy;
 
 public enum EventType {
     PING_SUCCESS,

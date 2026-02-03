@@ -1,7 +1,7 @@
 package org.graph.gateway;
 
-import org.graph.domain.application.usecase.auction.AuctionEngine;
-import org.graph.domain.application.usecase.blockchain.BlockchainEngine;
+import org.graph.application.usecase.auction.AuctionEngine;
+import org.graph.application.usecase.blockchain.BlockchainEngine;
 import org.graph.adapter.outbound.network.message.block.InventoryPayload;
 import org.graph.adapter.outbound.network.message.block.InventoryType;
 import org.graph.adapter.provider.IEventDispatcher;

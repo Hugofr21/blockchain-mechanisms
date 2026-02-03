@@ -4,7 +4,7 @@ package org.graph.domain.entities.tree;
 import java.util.ArrayList;
 import java.util.List;
 import org.graph.domain.entities.transaction.Transaction;
-import org.graph.domain.entities.valueobject.utils.HashUtils;
+import org.graph.domain.valueobject.utils.HashUtils;
 
 public class MerkleTree {
     private MerkleNode root;

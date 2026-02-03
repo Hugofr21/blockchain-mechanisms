@@ -1,7 +1,7 @@
-package org.graph.domain.application.mining;
+package org.graph.application.usecase.mining;
 
 
-import org.graph.domain.entities.valueobject.utils.HashUtils;
+import org.graph.domain.valueobject.utils.HashUtils;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;

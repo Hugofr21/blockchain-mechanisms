@@ -3,7 +3,7 @@ package org.graph.adapter.inbound.network;
 import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.adapter.utils.MessageUtils;
 import org.graph.adapter.utils.SerializationUtils;
-import org.graph.domain.entities.policy.EventType;
+import org.graph.domain.policy.EventType;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.node.Node;

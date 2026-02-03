@@ -139,3 +139,21 @@ Devido à latência da rede e à ausência de um coordenador central, dois ou ma
 
 ---  
 
+## Diagrma compoemntes 
+
+### Visão de Sistema – System Context
+Principais atores / sistemas externos
+![DIagrma do conecto system](./docs/diagram/component/c1.png)
+
+## Diagrama de Containers – Container Diagram
+Containers (camadas lógicas)
+![DIagrma do conecto system](./docs/diagram/component/c2.png)
+
+## Diagrama de Componentes – Component Diagram
+Principais componentes (por container)
+![DIagrma do conecto system](./docs/diagram/component/c3.png)
+
+
+## Modelo de Domínio – Domain Model
+Entidades & Value Objects
+![DIagrma do conecto system](./docs/diagram/component/c4.png)

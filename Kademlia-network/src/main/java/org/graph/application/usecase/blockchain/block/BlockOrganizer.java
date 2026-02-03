@@ -1,8 +1,8 @@
-package org.graph.domain.application.usecase.blockchain.block;
+package org.graph.application.usecase.blockchain.block;
 
 
 import org.graph.domain.entities.block.Block;
-import org.graph.domain.application.usecase.blockchain.BlockchainEngine;
+import org.graph.application.usecase.blockchain.BlockchainEngine;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -1,4 +1,4 @@
-package org.graph.domain.application.mining;
+package org.graph.application.usecase.mining;
 
 import java.math.BigInteger;
 

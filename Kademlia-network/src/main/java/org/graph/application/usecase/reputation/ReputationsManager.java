@@ -1,8 +1,8 @@
-package org.graph.domain.application.usecase.reputation;
+package org.graph.application.usecase.reputation;
 
-import org.graph.domain.application.usecase.provider.IReputationsManager;
-import org.graph.domain.entities.policy.EventType;
-import org.graph.domain.entities.policy.reputation.ProofOfReputation;
+import org.graph.application.usecase.provider.IReputationsManager;
+import org.graph.domain.policy.EventType;
+import org.graph.domain.policy.reputation.ProofOfReputation;
 
 import java.math.BigInteger;
 import java.util.Map;

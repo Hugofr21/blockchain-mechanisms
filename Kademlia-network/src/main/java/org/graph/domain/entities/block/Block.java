@@ -1,7 +1,7 @@
 package org.graph.domain.entities.block;
 
-import org.graph.domain.application.mining.MinerThreadBlock;
-import org.graph.domain.application.mining.MiningResultBlock;
+import org.graph.application.usecase.mining.MinerThreadBlock;
+import org.graph.application.usecase.mining.MiningResultBlock;
 import org.graph.domain.entities.transaction.Transaction;
 import org.graph.domain.entities.tree.MerkleTree;
 
@@ -159,12 +159,6 @@ public class Block implements Serializable {
         return true;
     }
 
-
-
-    private boolean checkDifficulty(String hash, int difficulty) {
-        String target = new String(new char[difficulty]).replace('\0', '0');
-        return hash.startsWith(target);
-    }
 
     @Override
     public String toString() {
