@@ -1,0 +1,91 @@
+@startuml P2P_Node_Components
+skinparam componentStyle rectangle
+skinparam component {
+  BackgroundColor #F9F9F9
+  BorderColor #AAAAAA
+}
+skinparam defaultTextAlignment center
+
+package "Network Edge" <<Boundary>> {
+    [NetworkGateway] as GW <<Component>>
+    note right of GW
+        gateway.network.NetworkGateway
+        Receives inbound messages (INV, GET_BLOCK, BLOCK)
+        Sends outbound messages
+    end note
+}
+
+package "Security Layer" <<Boundary>> {
+    [MessageSanitizer] as SAN <<Component>>
+    note right of SAN
+        adapter.inbound.MessageSanitizer
+        Basic format validation, size limits,
+        protocol version check
+    end note
+
+    [SecurityValidator] as VAL <<Component>>
+    note right of VAL
+        adapter.inbound.SecurityValidator
+        • PoW verification
+        • Signature / ECDSA check
+        • Replay‑attack detection
+        • Rate‑limit / Reputation scoring
+    end note
+}
+
+package "Adapter Services" <<Boundary>> {
+    [BlockProcessor]   as PROC   <<Component>>
+    note right of PROC
+        adapter.outbound.BlockProcessor
+        (maps to use‑case BlockEventManager)
+    end note
+
+    [Ledger]            as CHAIN  <<Component>>
+    note right of CHAIN
+        adapter.outbound.Ledger
+        Holds the current blockchain state
+    end note
+
+    [OrphanPool]        as ORPHAN <<Component>>
+    note right of ORPHAN
+        adapter.outbound.OrphanPool
+        Stores blocks without a known parent
+    end note
+
+    [SyncManager]       as SYNC   <<Component>>
+    note right of SYNC
+        adapter.outbound.SyncManager
+        Requests missing parents, triggers sync
+    end note
+
+    [MetricsCollector] as METRICS <<Component>>
+    note right of METRICS
+        adapter.outbound.MetricsCollector
+        Pushes data to monitoring
+    end note
+}
+
+GW --> SAN : inbound raw bytes
+SAN --> VAL : sanitized Message
+VAL --> PROC : validated Message
+PROC --> CHAIN   : tryAdd(block)
+PROC --> ORPHAN  : storeOrphan(block)
+PROC --> SYNC    : requestMissingParent(hash)
+PROC --> METRICS : recordProcessing()
+PROC --> GW      : response(BlockStateRemote)
+
+GW --> SAN : outbound Message (INV, BLOCK, REJECT)
+SAN --> VAL : outbound validation (sign, proof)
+VAL --> METRICS : recordSecurityEvent()
+
+node "Peers (P2P network)" as PEERS
+node "DHT Storage" as DHT
+node "Hybrid Logical Clock" as CLOCK
+node "Monitoring / Metrics DB" as MON
+
+GW --> PEERS : P2P messages (TCP/UDP)
+PROC --> DHT : store / fetch block & metadata
+PROC --> CLOCK : request HLC (timestamp)
+METRICS --> MON : push metrics
+
+@enduml

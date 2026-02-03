@@ -19,10 +19,12 @@ public record MinerThreadBlock(int threadId, int startNonce, int nonceRange, Str
     @Override
     public MiningResultBlock call() {
         String target = new String(new char[difficulty]).replace('\0', '0');
-        int endNonce = startNonce + nonceRange;
+        long endNonce = startNonce + nonceRange;
         long attempts = 0;
 
         for (int nonce = startNonce; nonce < endNonce && !found.get(); nonce++) {
+            if (attempts % 10000 == 0 && found.get()) return null;
+
             attempts++;
             String hash = HashUtils.calculateSha256(data + nonce);
 
@@ -31,9 +33,6 @@ public record MinerThreadBlock(int threadId, int startNonce, int nonceRange, Str
                 return new MiningResultBlock(nonce, hash, threadId, attempts);
             }
 
-            if (attempts % 10000 == 0 && found.get()) {
-                return null;
-            }
         }
 
         return null;

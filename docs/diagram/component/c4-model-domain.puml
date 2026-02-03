@@ -1,0 +1,112 @@
+@startuml
+title Blockchain Core Model – Block, Transaction & Auction
+
+
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam arrowColor #444444
+skinparam arrowFontSize 11
+skinparam defaultTextAlignment center
+
+
+skinparam package {
+    BackgroundColor<<entities>>   #E8F5E9   ' light green
+    BackgroundColor<<valueobj>>   #FFF9C4   ' pastel yellow
+    BackgroundColor<<crypt>>      #E3F2FD   ' very light blue
+    BorderColor                 #BBBBBB
+    FontColor                   Black
+}
+
+package "domain.entities" <<entities>> {
+    class Block <<entity>> {
+        - blockNumber : int
+        - cachedHash   : String
+    }
+    class BlockHeader <<valueobject>> {
+        - previousHash : String
+        - merkleRoot   : String
+        - timestamp    : long
+        - nonce        : long
+        - difficulty   : int
+    }
+    class Transaction <<entity>> {
+        - txId      : String
+        - sender    : PublicKey   ' defined in crypt package
+        - signature : byte[]
+    }
+
+    package "auctions" {
+        class AuctionState <<entity>> {
+            - auctionId : String
+            - minPrice  : BigDecimal
+            - endTime   : long
+        }
+        class Bid <<entity>> {
+            - auctionId : String
+            - bidPrice  : BigDecimal
+            - bidderId  : BigInteger
+        }
+    }
+}
+
+package "domain.valueobject" <<valueobj>> {
+    class MerkleTree <<valueobject>> {
+        + getRootHash(transactions : List<Transaction>) : String
+    }
+
+    class AuctionPayload <<record>> {
+        - operation : AuctionOpType
+        - data      : String   ' There can be several encapsulated objects.
+    }
+
+    enum AuctionOpType <<enum>> {
+        OP_CREATE
+        OP_BID
+        OP_CANCEL
+    }
+}
+
+
+package "domain.crypt" <<crypt>> {
+    class PublicKey <<valueobject>> {
+        - encoded : byte[]
+    }
+    class KeyPair <<valueobject>> {
+        - publicKey  : PublicKey
+        - privateKey : byte[]
+    }
+    class HashUtils <<utility>> {
+        + sha256(bytes : byte[]) : byte[]
+    }
+}
+
+
+' Block composes a single BlockHeader
+Block "1" *-- "1" BlockHeader : composes
+
+' Block aggregates 0..* Transactions (a block may be empty in a genesis state)
+Block "1" *-- "0..*" Transaction : contains
+
+' Transaction carries a single (record) payload – composition
+Transaction "1" *-- "1" AuctionPayload : carries
+
+' AuctionPayload optionally references an AuctionState (when OP_CREATE) or a Bid (when OP_BID)
+AuctionPayload o-- "0..1" AuctionState : when OP_CREATE
+AuctionPayload o-- "0..1" Bid          : when OP_BID
+
+' AuctionState keeps a history of bids – composition (bidHistory)
+AuctionState "1" *-- "0..*" Bid : bidHistory
+
+' Block uses MerkleTree to compute the root hash (dependency, not ownership)
+Block ..> MerkleTree : uses to compute root hash
+MerkleTree ..> Transaction : hashes
+
+' Transaction references the cryptographic PublicKey type
+Transaction --> PublicKey : sender public key
+
+' Utility HashUtils is used internally by MerkleTree (dependency)
+MerkleTree ..> HashUtils : uses SHA‑256
+
+AuctionOpType ..* AuctionPayload : has
+@enduml

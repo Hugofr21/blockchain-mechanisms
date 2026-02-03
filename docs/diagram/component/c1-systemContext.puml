@@ -1,0 +1,16 @@
+@startuml P2P_Node_Context
+!define C4P
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+Person(peer, "Peer Node", "Another node in the P2P network")
+System(p2pNode, "P2P Node", "Nodes participating in the blockchain")
+System_Ext(dht, "Distributed Hash Table (DHT)", "Persistent block storage")
+System_Ext(clock, "Hybrid logical clock service", "Provides logical timestamps")
+System_Ext(monitor, "Metrics / Monitoring", "Collects performance and security metrics")
+
+Rel(peer, p2pNode, "Message (INV, GET_BLOCK, BLOCK, REJECT)", "TCP/UDP")
+Rel(p2pNode, dht, "Read / Write Block & State")
+Rel(p2pNode, clock, "Current HLC request")
+Rel(p2pNode, monitor, "Push metrics")
+
+@enduml

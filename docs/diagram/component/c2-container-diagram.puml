@@ -1,0 +1,38 @@
+@startuml P2P_Node_Containers
+!define C4P
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+
+skinparam component {
+    <<gateway>>   BackgroundColor #B3E5FC FontColor Black
+    <<security>>  BackgroundColor #D1C4E9 FontColor Black
+    <<adapter>>   BackgroundColor #FFEB3B FontColor Black
+    <<app>>       BackgroundColor #C8E6C9 FontColor Black
+    <<infra>>     BackgroundColor #CFD8DC FontColor Black
+    <<storage>>   BackgroundColor #FFCDD2 FontColor Black
+    <<metrics>>   BackgroundColor #B2EBF2 FontColor Black
+}
+
+System(p2pNode, "P2P Node")
+
+Container(gateway, "NetworkGateway", "Java", "gateway")
+Container(security, "Security Layer", "Java", "security")
+Container(adapter, "Adapter Services", "Java", "adapter")
+Container(app, "Application Core", "Java", "app")
+Container(infra, "Infrastructure", "Java", "infra")
+Container(storage, "Storage (Cache/DHT)", "Java", "storage")
+Container(metrics, "Metrics & Monitoring", "Java", "metrics")
+
+Rel(p2pNode, gateway, "Connection")
+Rel(gateway, security, "raw bytes")
+Rel(security, adapter, "sanitized / validated Message")
+Rel(adapter, app, "Domain Events")
+Rel(app, infra, "Repository calls (BlockchainRepository, NetworkPort, …)")
+Rel(app, storage, "Persist Block / State")
+Rel(infra, storage, "Cache / DHT operations")
+Rel(gateway, metrics, "push processing metrics")
+
+' Rel(gateway, security, "raw bytes", #555555)   ' dark‑gray line
+' Rel(security, adapter, "sanitized / validated Message", #777777)
+
+@enduml

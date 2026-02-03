@@ -17,7 +17,6 @@ public record MinerThread(
         AtomicBoolean found
 ) implements Callable<MiningResult> {
 
-
     @Override
     public MiningResult call() throws Exception {
         try {
