@@ -186,3 +186,5 @@ Descrever e organizar os casos de teste implementados para validar as principais
   Implementar um *challenge‑response* baseado em **Proof‑of‑Validation** para garantir que somente nós autenticados possam ingressar na rede.
 
 ---
+
+

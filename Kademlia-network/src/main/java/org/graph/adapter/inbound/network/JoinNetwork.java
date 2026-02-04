@@ -33,7 +33,7 @@ public record JoinNetwork(Peer myPeer) {
             socket = new Socket();
             socket.connect(new InetSocketAddress(bootstrapHost, bootstrapPort), 5_000);
 
-            ConnectionHandler handler = new ConnectionHandler(socket, myPeer, myPeer.getLogger());
+            ConnectionHandler handler = new ConnectionHandler(socket, myPeer, myPeer.getLogger(), myPeer.getGlobalScheduler());
             handler.initStreams();
 
 

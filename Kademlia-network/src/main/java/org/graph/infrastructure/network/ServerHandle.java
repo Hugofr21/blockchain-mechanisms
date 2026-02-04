@@ -53,7 +53,7 @@ public class ServerHandle implements Runnable {
 
             socket.setSoTimeout(HANDSHAKE_TIMEOUT_MS);
 
-            ConnectionHandler handler = new ConnectionHandler(socket, myPeer, mLogger);
+            ConnectionHandler handler = new ConnectionHandler(socket, myPeer, mLogger, myPeer.getGlobalScheduler());
 
             handler.initStreams();
 

@@ -130,7 +130,7 @@ public final class Handshake {
                     socket.connect(new InetSocketAddress(host, port), 3000);
 
 
-                    ConnectionHandler newHandler = new ConnectionHandler(socket, myself, myself.getLogger());
+                    ConnectionHandler newHandler = new ConnectionHandler(socket, myself, myself.getLogger(), myself.getGlobalScheduler());
                     newHandler.initStreams();
 
                     Optional<Node> handshakeResult = doHandshake(

@@ -41,16 +41,13 @@ public class ConnectionHandler implements Runnable {
     private Logger logger;
     private volatile boolean running;
     private Node remoteNode;
-    private final ConcurrentMap<UUID, CompletableFuture<Message>> pendingResponses;
-    private final ExecutorService messageProcessor;
+    private BrokerEvent mBrokerEvent;
 
-    public ConnectionHandler(Socket socket, Peer myPeer, Logger mLogger) {
+    public ConnectionHandler(Socket socket, Peer myPeer, Logger mLogger, BrokerEvent brokerEvent) {
         this.socket = socket;
         this.myPeer = myPeer;
         this.logger = mLogger;
         this.running = true;
-        this.pendingResponses = new ConcurrentHashMap<>();
-        this.messageProcessor = Executors.newVirtualThreadPerTaskExecutor();
     }
 
     public Peer getPeer() { return myPeer;}
@@ -98,7 +95,16 @@ public class ConnectionHandler implements Runnable {
                         continue;
                     }
 
-                    processAsync(message);
+                    if (message.getTimestamp() != null) {
+                        myPeer.getHybridLogicalClock().update(message.getTimestamp());
+                    }
+
+                    if (myPeer.getGlobalScheduler() != null) {
+                        myPeer.getGlobalScheduler().submit(message, this);
+                    } else {
+                        // Fallback se não quiseres usar a fila global
+                        dispatch(message);
+                    }
 
                 } catch (EOFException e) {
                     logger.info("Peer closed connection.");
@@ -117,17 +123,6 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
-    private void processAsync(Message message) {
-        messageProcessor.submit(() -> {
-            try {
-                // O dispatch agora corre numa thread separada
-                dispatch(message);
-            } catch (Exception e) {
-                logger.severe("Error processing message async: " + e.getMessage());
-                e.printStackTrace();
-            }
-        });
-    }
 
     public void initStreams() throws IOException {
         if (inputStream != null && outputStream != null) return;
@@ -135,7 +130,7 @@ public class ConnectionHandler implements Runnable {
         if (inputStream == null) inputStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
     }
 
-    private void dispatch(Message message) {
+   public void dispatch(Message message) {
         switch (message.getType()) {
             case PING -> handlePing(message.getPayload());
             case PONG -> handlePong(message.getPayload());

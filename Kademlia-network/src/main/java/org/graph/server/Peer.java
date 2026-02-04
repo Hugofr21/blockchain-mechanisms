@@ -4,6 +4,7 @@ import org.graph.application.usecase.blockchain.BlockEventManger;
 import org.graph.application.usecase.blockchain.ChainSyncManager;
 import org.graph.application.usecase.reputation.ReputationsManager;
 import org.graph.adapter.inbound.network.NetworkEvent;
+import org.graph.infrastructure.network.BrokerEvent;
 import org.graph.infrastructure.network.MinerOrchestrator;
 import org.graph.infrastructure.network.ServerHandle;
 import org.graph.infrastructure.network.neigbour.NeighboursConnections;
@@ -40,11 +41,13 @@ public class Peer {
     private NetworkEvent networkEvent;
     private ChainSyncManager mChainSyncManager;
     private ReputationsManager reputationsManager;
+    private BrokerEvent mBrokerEvent;
 
     public Peer(int port){
         this.keys = new KeysInfrastructure(this, port);
         this.hybridLogicalClock = new HybridLogicalClock();
         this.networkGateway = new NetworkGateway(this);
+        this.mBrokerEvent =  new BrokerEvent();
 
         MiningResult proofOfWork = null;
         try {
@@ -86,6 +89,7 @@ public class Peer {
     public NetworkEvent getNetworkEvent(){return networkEvent;}
     public KademliaNetwork getMkademliaNetwork( ) {return mkademliaNetwork;}
     public ReputationsManager getReputationsManager(){return reputationsManager;}
+    public BrokerEvent getGlobalScheduler() {return mBrokerEvent;}
 
     private void createdFileLog(Node myself){
         try {
@@ -135,5 +139,4 @@ public class Peer {
             System.out.println("[ERROR] to the shutdown server: " + e.getMessage());
         }
     }
-
 }
