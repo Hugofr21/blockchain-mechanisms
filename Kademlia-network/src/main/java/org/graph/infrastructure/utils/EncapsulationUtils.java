@@ -1,7 +1,8 @@
-package org.graph.adapter.utils;
+package org.graph.infrastructure.utils;
 
 import org.graph.adapter.outbound.network.message.node.FindNodePayload;
 import org.graph.adapter.outbound.network.message.node.NodeListPayload;
+import org.graph.adapter.utils.Base64Utils;
 
 import java.math.BigInteger;
 

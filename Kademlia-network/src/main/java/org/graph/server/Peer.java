@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 import static org.graph.adapter.utils.Constants.*;
+import static org.graph.server.utils.Constants.HOST;
 
 
 public class Peer {

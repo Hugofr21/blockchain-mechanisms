@@ -11,9 +11,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-/*
- * Neste class demos compara com routable porque objetivo desta gerir thread e sockets activos
- */
+/**
+ * Esta classe pode ser comparada a um componente routable, pois seu objetivo
+ * principal é gerenciar threads e sockets ativos, coordenando a utilização
+ * concorrente de recursos de comunicação. Ela atua no controle do ciclo de
+ * vida das conexões e da execução paralela, garantindo uso eficiente dos
+ * recursos e estabilidade no processamento.
+ **/
+
 public class NeighboursConnections {
     private final Map<BigInteger, Long> lastTimestamp;
     public final Map<BigInteger, ConnectionEntry> nodesActives;

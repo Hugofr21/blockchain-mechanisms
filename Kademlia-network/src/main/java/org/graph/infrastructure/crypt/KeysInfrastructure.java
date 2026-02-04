@@ -13,8 +13,8 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.graph.adapter.utils.Constants.ALGORITHM_CURVE;
-import static org.graph.adapter.utils.Constants.ALGORITHM_INSTANCE;
+import static org.graph.infrastructure.utils.Constants.ALGORITHM_CURVE;
+import static org.graph.infrastructure.utils.Constants.ALGORITHM_INSTANCE;
 
 public class KeysInfrastructure {
     private KeyPairPeer ownKeyPair;

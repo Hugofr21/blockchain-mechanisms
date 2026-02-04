@@ -1,6 +1,7 @@
 package org.graph.adapter.utils;
 
 import org.graph.domain.entities.message.Message;
+import org.graph.infrastructure.utils.SerializationUtils;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

@@ -2,7 +2,7 @@ package org.graph.adapter.outbound.network.kademlia;
 
 import org.graph.infrastructure.storage.cache.LRUCache;
 import org.graph.adapter.utils.MessageUtils;
-import org.graph.adapter.utils.SerializationUtils;
+import org.graph.infrastructure.utils.SerializationUtils;
 import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;

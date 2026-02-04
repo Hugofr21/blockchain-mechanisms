@@ -3,7 +3,7 @@ package org.graph.gateway.block;
 import org.graph.adapter.outbound.network.message.block.BlockPayload;
 import org.graph.adapter.outbound.network.message.block.InventoryPayload;
 import org.graph.adapter.outbound.network.message.block.InventoryType;
-import org.graph.adapter.utils.SerializationUtils;
+import org.graph.infrastructure.utils.SerializationUtils;
 import org.graph.gateway.provider.MessageStrategy;
 import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.domain.entities.block.Block;

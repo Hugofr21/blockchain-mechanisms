@@ -5,7 +5,7 @@ import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.domain.entities.message.Message;
 import org.graph.gateway.provider.MessageStrategy;
 
-import org.graph.adapter.utils.SerializationUtils;
+import org.graph.infrastructure.utils.SerializationUtils;
 
 public class ChainStatusResponseStrategy implements MessageStrategy {
     @Override

@@ -6,12 +6,12 @@ import org.graph.adapter.outbound.network.message.node.FindNodePayload;
 import org.graph.adapter.outbound.network.message.node.NodeInfoPayload;
 import org.graph.adapter.outbound.network.message.node.NodeListPayload;
 import org.graph.adapter.utils.Base64Utils;
-import org.graph.adapter.utils.EncapsulationUtils;
+import org.graph.infrastructure.utils.EncapsulationUtils;
 import org.graph.adapter.utils.MessageUtils;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.node.Node;
-import org.graph.adapter.utils.SerializationUtils;
+import org.graph.infrastructure.utils.SerializationUtils;
 import org.graph.gateway.block.*;
 import org.graph.server.Peer;
 
@@ -21,18 +21,20 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.*;
 import java.util.logging.Logger;
 
 import static org.graph.adapter.utils.Constants.*;
 import static org.graph.adapter.utils.MessageUtils.readMessage;
 import static org.graph.adapter.utils.MessageUtils.sendMessage;
 
-/*
-   Presitente demos gudar na fila caso dnao podemos precessar nomentomnto
-   Assicrone seem bloquear para oepraçoes de leitura e de escripta desencupalekmto tremporal
- */
+/**
+ * As mensagens são persistidas em fila quando não podem ser processadas
+ * imediatamente, garantindo durabilidade e evitando perda de eventos.
+ * O processamento é assíncrono, não bloqueante para operações de leitura
+ * e escrita, promovendo desacoplamento temporal entre produtores e
+ * consumidores e aumentando a eficiência sob carga.
+ **/
+
 public class ConnectionHandler implements Runnable {
     private Socket socket;
     private Peer myPeer;
@@ -52,6 +54,13 @@ public class ConnectionHandler implements Runnable {
 
     public Peer getPeer() { return myPeer;}
     public Node getRemoteNode() {return remoteNode;}
+    public void setRemoteNode(Node bootstrapNode) {
+        remoteNode = bootstrapNode;
+    }
+    public Socket getSocket() {
+        return socket;
+    }
+
     public DataOutputStream getOutputStream() {
         if (outputStream == null) {
             try {
@@ -283,11 +292,4 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
-    public void setRemoteNode(Node bootstrapNode) {
-        remoteNode = bootstrapNode;
-    }
-
-    public Socket getSocket() {
-        return socket;
-    }
 }

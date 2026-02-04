@@ -1,4 +1,4 @@
-package org.graph.adapter.utils;
+package org.graph.infrastructure.utils;
 
 import java.io.*;
 

@@ -7,7 +7,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * BrokerEvent implementa o padrão Mediator com o objetivo de coordenar a
+ * @implSpec BrokerEvent implementa o padrão Mediator com o objetivo de coordenar a
  * publicação e a recepção de eventos de forma ordenada, garantindo a
  * entrega sequencial dentro de cada canal segundo uma lógica de prioridade
  * crescente (menor para maior). O componente administra regras de
