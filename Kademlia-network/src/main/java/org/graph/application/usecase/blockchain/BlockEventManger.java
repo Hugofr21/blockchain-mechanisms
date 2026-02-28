@@ -2,6 +2,7 @@ package org.graph.application.usecase.blockchain;
 
 import org.graph.adapter.outbound.network.message.block.InventoryPayload;
 import org.graph.adapter.outbound.network.message.block.InventoryType;
+import org.graph.domain.policy.EventType;
 import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.adapter.provider.IEventDispatcher;
 import org.graph.domain.entities.block.Block;
@@ -84,6 +85,12 @@ public class BlockEventManger {
             case ADDED -> {
                 System.out.println("[SYNC] Bloco " + block.getNumberBlock() + " Added! Spreading the word...");
                 propagateInv(block, source);
+                if (source.getRemoteNode() != null) {
+                    gateway.getMyself().getReputationsManager().reportEvent(
+                            source.getRemoteNode().getNodeId().value(),
+                            EventType.VALID_BLOCK
+                    );
+                }
             }
 
             case MISSING_PARENT -> {
@@ -98,7 +105,15 @@ public class BlockEventManger {
 
             }
 
-            case INVALID -> System.err.println("[SYNC] Invalid block of " + source.getRemoteNode().getPort());
+            case INVALID -> {
+                System.err.println("[SYNC] Invalid block of " + source.getRemoteNode().getPort());
+                if (source.getRemoteNode() != null) {
+                    gateway.getMyself().getReputationsManager().reportEvent(
+                            source.getRemoteNode().getNodeId().value(),
+                            EventType.INVALID_BLOCK
+                    );
+                }
+            }
 
             case EXISTS -> {
                 System.out.println("[DEBUG] This block to find inside chain " + block.getCurrentBlockHash());

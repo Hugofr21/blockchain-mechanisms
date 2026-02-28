@@ -34,6 +34,7 @@ public class NetworkGateway {
         return blockchainEngine;
     }
     public AuctionEngine getAuctionEngine() {return auctionEngine;}
+    public Peer getMyself(){return myself;}
 
     public void setNetworkDependencies(IEventDispatcher dispatcher, Peer myself) {
         this.dispatcher = dispatcher;

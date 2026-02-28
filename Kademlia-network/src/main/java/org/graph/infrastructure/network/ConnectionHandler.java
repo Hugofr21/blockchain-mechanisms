@@ -6,6 +6,8 @@ import org.graph.adapter.outbound.network.message.node.FindNodePayload;
 import org.graph.adapter.outbound.network.message.node.NodeInfoPayload;
 import org.graph.adapter.outbound.network.message.node.NodeListPayload;
 import org.graph.adapter.utils.Base64Utils;
+import org.graph.domain.policy.EventType;
+import org.graph.domain.valueobject.cryptography.PublicKeyPeer;
 import org.graph.infrastructure.utils.EncapsulationUtils;
 import org.graph.adapter.utils.MessageUtils;
 import org.graph.domain.entities.message.Message;
@@ -111,7 +113,6 @@ public class ConnectionHandler implements Runnable {
                     if (myPeer.getGlobalScheduler() != null) {
                         myPeer.getGlobalScheduler().submit(message, this);
                     } else {
-                        // Fallback se não quiseres usar a fila global
                         dispatch(message);
                     }
 
@@ -208,24 +209,51 @@ public class ConnectionHandler implements Runnable {
 
     private void handleFindNode(Object rawPayload) {
         try {
-           BigInteger remoteId =  EncapsulationUtils.encapsulationNodeId(rawPayload);
+            BigInteger remoteId = EncapsulationUtils.encapsulationNodeId(rawPayload);
             List<Node> closestNodes = myPeer.getRoutingTable().findClosestNodesProximity(remoteId, NODE_K);
+
+            if (closestNodes.isEmpty()) {
+                System.out.println("[FIND_NODE] AVISO: Routing Table não encontrou vizinhos próximos.");
+            }
+
             List<NodeInfoPayload> rawList = closestNodes.stream()
-                    .map(n -> new NodeInfoPayload(
-                            new FindNodePayload(Base64Utils.encode(n.getNodeId().value().toByteArray())),
-                            n.getHost(),
-                            n.getPort()
-                    ))
+                    .map(n -> {
+                        byte[] keyBytes = null;
+                        PublicKeyPeer pkPeer = myPeer.getIsKeysInfrastructure()
+                                .getNeighborPublicKeyByPeerId(n.getNodeId().value());
+
+                        if (pkPeer != null && pkPeer.getKey() != null) {
+                            keyBytes = pkPeer.getKey().getEncoded();
+                        }
+
+                        if (keyBytes == null) {
+                            System.out.println("[DHT] ERRO CRÍTICO: Vizinho " + n.getPort() + " existe na tabela mas sem Public Key. Ignorado.");
+                            return null;
+                        }
+
+                        String idBase64 = Base64Utils.encode(n.getNodeId().value().toByteArray());
+                        FindNodePayload idPayload = new FindNodePayload(idBase64);
+
+                        return new NodeInfoPayload(
+                                idPayload,
+                                n.getHost(),
+                                n.getPort(),
+                                n.getNonce(),
+                                keyBytes,
+                                n.getNETWORK_DIFFICULTY()
+                        );
+                    })
+                    .filter(java.util.Objects::nonNull)
                     .toList();
+
             NodeListPayload container = new NodeListPayload(rawList);
             Message response = new Message(MessageType.RESPONSE_NODES, container, myPeer.getHybridLogicalClock());
             MessageUtils.sendMessage(getOutputStream(), response);
             getOutputStream().flush();
 
-            System.out.println("[FIND_NODE] I sent a list with " + closestNodes.size() + " NEIGHBOURS.");
+            logger.severe("[FIND_NODE] Respondi com " + rawList.size() + " vizinhos.");
 
         } catch (Exception e) {
-            System.out.println("[ERROR] Error processing FIND_NODE: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -237,6 +265,13 @@ public class ConnectionHandler implements Runnable {
 
         if (container != null) {
             List<NodeInfoPayload> list = container.nodes();
+
+            if (!list.isEmpty() && this.remoteNode != null) {
+                myPeer.getReputationsManager().reportEvent(
+                        this.remoteNode.getNodeId().value(),
+                        EventType.FIND_NODE_USEFUL
+                );
+            }
 
             for (NodeInfoPayload info : list) {
                 processSingleNodeInfo(info);

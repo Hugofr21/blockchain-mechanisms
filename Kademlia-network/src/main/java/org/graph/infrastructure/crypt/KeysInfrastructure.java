@@ -125,37 +125,6 @@ public class KeysInfrastructure {
         System.out.println("Node save: " + peerId);
     }
 
-    public void updateOwnPeerIdAndSave(BigInteger newPeerId) throws Exception {
-        if (ownKeyPair == null) {
-            throw new IllegalStateException("Keys not loaded yet!");
-        }
-
-        if (!ownKeyPair.getPeerId().equals(newPeerId)) {
-            System.out.println("Node change to " + ownKeyPair.getPeerId() + " from " + newPeerId);
-            ownKeyPair.setPeerId(newPeerId);
-            keyStorageManager.saveOwnKeyPair(ownKeyPair);
-        }
-    }
-
-
-
-    public void addNeighborPublicKey(BigInteger peerId, String publicKeyBase64) throws Exception {
-        byte[] keyBytes = Base64Utils.decodeToBytes(publicKeyBase64);
-        KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_INSTANCE, "BC");
-        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
-        java.security.PublicKey pubKey = keyFactory.generatePublic(keySpec);
-
-        PublicKeyPeer neighborKey = new PublicKeyPeer(pubKey);
-        neighborKey.setPeerId(peerId);
-        String fingerprint = neighborKey.getFingerprint();
-
-        neighborPublicKeys.put(fingerprint, neighborKey);
-        fingerprintToPeerId.put(fingerprint, peerId);
-
-        keyStorageManager.saveNeighborPublicKey(neighborKey);
-        System.out.println("Neighbor added - Fingerprint: " + fingerprint + ", PeerId: " + peerId);
-    }
-
 
     public void addNeighborPublicKey(BigInteger peerId, PublicKey publicKey) throws Exception {
         PublicKeyPeer neighborKey = new PublicKeyPeer(publicKey);
@@ -215,6 +184,32 @@ public class KeysInfrastructure {
                 .map(Map.Entry::getKey)
                 .findFirst()
                 .orElse(null);
+    }
+
+    /**
+     * Recupera a Chave Pública de um vizinho dado o seu PeerID (BigInteger).
+     * Útil quando recebes um ID na rede e precisas de validar assinaturas.
+     * * @param peerId O ID do nó (BigInteger)
+     * @return PublicKeyPeer se encontrado, ou null se não conhecemos este vizinho.
+     */
+    public PublicKeyPeer getNeighborPublicKeyByPeerId(BigInteger peerId) {
+        // 1. Procurar o Fingerprint associado a este PeerID
+        String fingerprint = getFingerprintByPeerId(peerId);
+
+        if (fingerprint != null) {
+            // 2. Usar o Fingerprint para obter o objeto PublicKeyPeer
+            return neighborPublicKeys.get(fingerprint);
+        }
+
+        // Se não encontrarmos pelo mapa auxiliar, podemos tentar varrer o mapa principal
+        // (Fallback de segurança caso os mapas fiquem dessincronizados)
+        for (PublicKeyPeer keyPeer : neighborPublicKeys.values()) {
+            if (keyPeer.getPeerId() != null && keyPeer.getPeerId().equals(peerId)) {
+                return keyPeer;
+            }
+        }
+
+        return null;
     }
 
     /**

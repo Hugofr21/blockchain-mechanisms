@@ -6,6 +6,7 @@ import org.graph.server.Peer;
 import org.graph.domain.entities.node.Node;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -50,11 +51,11 @@ public class MenuUtils {
     }
 
 
-
     private static void showMyPeerInfo(Peer peer) {
         System.out.println("\n=== Info of Peer ===");
         System.out.println("My self: " + peer.getMyself());
     }
+
 
     private static void showNeighboursMenu(Peer peer) {
         System.out.println("\n=== Kademlia DHT & Network Menu ===");
@@ -94,7 +95,35 @@ public class MenuUtils {
                 break;
             case 2:
                 System.out.print("Digit the ID of node: ");
-                String nodeId = scanner.nextLine();
+                BigInteger nodeId = scanner.nextBigInteger();
+                List<Node> closest = peer.getMkademliaNetwork().findNode(nodeId);
+                System.out.println("\n[DHT] Result - K-Closest Nodes found:");
+                if (closest.isEmpty()) {
+                    System.out.println(" >> No nodes found.");
+                } else {
+                    // Cabeçalho da tabela
+                    System.out.printf("%-15s | %-6s | %-15s | %s%n", "Host", "Port", "ID (Short)", "XOR Distance");
+                    System.out.println("---------------------------------------------------------------");
+
+                    for (Node n : closest) {
+
+                        // Calcula a distância para mostrar quão perto o nó está do alvo
+                        BigInteger dist = n.getNodeId().distanceBetweenNode(nodeId);
+
+                        String shortId = n.getNodeId().value().toString();
+                        if (shortId.length() > 10) shortId = shortId.substring(0, 10) + "...";
+
+                        String shortDist = dist.toString();
+                        if (shortDist.length() > 10) shortDist = shortDist.substring(0, 10) + "...";
+
+                        System.out.printf("%-15s | %-6d | %-15s | %s%n",
+                                n.getHost(),
+                                n.getPort(),
+                                shortId,
+                                shortDist
+                        );
+                    }
+                }
 
                 System.out.println("Functionality not implemented..");
                 break;

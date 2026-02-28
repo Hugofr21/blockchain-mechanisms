@@ -6,10 +6,7 @@ import org.graph.domain.entities.node.Node;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.PriorityQueue;
+import java.util.*;
 
 import static org.graph.adapter.utils.Constants.ID_BITS;
 
@@ -60,31 +57,52 @@ public class RoutingTable {
       // 2. Calcula Trust (t)
       // 3. Calcula New Distance (ND) conforme Eq. (1) do artigo [cite: 370]
     */
-    public synchronized List<Node> findClosestNodesProximity(BigInteger targetNode, int count) {
-        PriorityQueue<NodeMetric> closest = new PriorityQueue<>(
-                Comparator.comparing(NodeMetric::newDistance)
-        );
+   public synchronized List<Node> findClosestNodesProximity(BigInteger targetNode, int count) {
+       // PriorityQueue para ordenar pela métrica S/Kademlia (Distância Ajustada)
+       PriorityQueue<NodeMetric> closest = new PriorityQueue<>(
+               Comparator.comparing(NodeMetric::newDistance)
+       );
 
-        for (KBucket bucket : buckets) {
-            for (Node node : bucket.getNodes()) {
+       // Set para evitar duplicados (O(1) lookup)
+       // Usamos o BigInteger (ID) como chave de unicidade
+       Set<BigInteger> processedIds = new HashSet<>();
 
-                BigInteger xorDist = node.getNodeId().distanceBetweenNode(targetNode);
+       for (KBucket bucket : buckets) {
+           for (Node node : bucket.getNodes()) {
+               BigInteger nodeId = node.getNodeId().value();
 
+               // 1. FILTRAGEM DEFENSIVA: Evita nós duplicados na resposta
+               if (processedIds.contains(nodeId)) {
+                   continue;
+               }
+               processedIds.add(nodeId);
 
-                double trust = reputationProvider.getTrustFactor(targetNode);
+               // Evita adicionar-nos a nós mesmos na lista de routing
+               // (Assumindo que tens acesso ao myselfId, senão remove este if)
+               // if (nodeId.equals(myselfId)) continue;
 
-                double nd = calculateSKademliaMetric(xorDist, trust);
+               // 2. CÁLCULO DA MÉTRICA
+               BigInteger xorDist = node.getNodeId().distanceBetweenNode(targetNode);
 
-                closest.offer(new NodeMetric(node, nd));
-            }
-        }
+               // CORREÇÃO CRÍTICA: O Trust Factor deve ser do NÓ VIZINHO, não do ALVO.
+               // Se usares targetNode, o trust é constante para todos no loop, anulando a eq. (1).
+               double trust = reputationProvider.getTrustFactor(nodeId);
 
-        List<Node> result = new ArrayList<>();
-        for (int i = 0; i < count && !closest.isEmpty(); i++) {
-            result.add(closest.poll().node());
-        }
-        return result;
-    }
+               // 3. Aplica a Eq. (1) do S/Kademlia
+               double nd = calculateSKademliaMetric(xorDist, trust);
+
+               closest.offer(new NodeMetric(node, nd));
+           }
+       }
+
+       // Extração dos Top-K resultados
+       List<Node> result = new ArrayList<>();
+       for (int i = 0; i < count && !closest.isEmpty(); i++) {
+           result.add(closest.poll().node());
+       }
+
+       return result;
+   }
 
     // nd = od * b + (1-b) * 1/t
     // Onde:od (Old Distance): Distância XOR.

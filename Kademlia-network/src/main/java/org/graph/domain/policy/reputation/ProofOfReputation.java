@@ -24,6 +24,8 @@ public class ProofOfReputation {
             case PING_FAIL -> weightPingFail;
             case INVALID_DATA -> weightInvalidData;
             case INVALID_BLOCK -> weightInvalidBlock;
+            case VALID_TRANSACTION -> +10;
+            case VALID_BLOCK -> +50;
             default -> 0.0;
         };
 

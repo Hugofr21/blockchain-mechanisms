@@ -84,4 +84,12 @@ public class TransactionOrganizer {
             System.out.println("[POOL] Cleaning completed. Remaining tasks: " + pendingTransactions.size());
         }
     }
+
+
+    public Transaction getTransactionById(String hashHex) {
+        return pendingTransactions.stream()
+                .filter(tx -> tx.getTxId().equals(hashHex))
+                .findFirst()
+                .orElse(null);
+    }
 }

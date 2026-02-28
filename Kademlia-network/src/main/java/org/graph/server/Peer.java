@@ -7,7 +7,7 @@ import org.graph.adapter.inbound.network.NetworkEvent;
 import org.graph.infrastructure.network.BrokerEvent;
 import org.graph.infrastructure.network.MinerOrchestrator;
 import org.graph.infrastructure.network.ServerHandle;
-import org.graph.infrastructure.network.neigbour.NeighboursConnections;
+import org.graph.infrastructure.network.neighbor.NeighboursConnections;
 import org.graph.adapter.outbound.network.kademlia.RoutingTable;
 import org.graph.application.usecase.mining.MiningResult;
 import org.graph.domain.entities.node.Node;

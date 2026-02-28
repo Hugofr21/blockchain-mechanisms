@@ -153,8 +153,6 @@ public final class Handshake {
 
                         myself.getRoutingTable().addNode(verifiedNode);
 
-//                        myself.getRoutingTable().updateNode(verifiedNode);
-
                         new Thread(newHandler).start();
 
                         System.out.println("[TOPOLOGY] Node verified and added: " + verifiedNode.getNodeId());

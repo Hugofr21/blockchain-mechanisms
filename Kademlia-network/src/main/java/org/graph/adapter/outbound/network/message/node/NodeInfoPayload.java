@@ -5,5 +5,8 @@ import java.io.Serializable;
 public record NodeInfoPayload(
         FindNodePayload nodeId,
         String host,
-        int port
-) implements Serializable { }
+        int port,
+        long nonce,
+        byte[] publicKey,
+        int difficulty
+) implements Serializable {}
