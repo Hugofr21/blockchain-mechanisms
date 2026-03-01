@@ -56,11 +56,12 @@ public class AuctionEngine implements BlockListener {
     private final Map<String, AuctionState> ledger;
     private final Map<String, List<Bid>> pendingBids;
     private final TransactionsPublished serviceTransactions;
-
+    private final ConcurrentHashMap<String, Long> userNonces;
     public AuctionEngine(TransactionsPublished serviceTransactions) {
         this.ledger = new ConcurrentHashMap<>();
         this.pendingBids = new ConcurrentHashMap<>();
         this.serviceTransactions = serviceTransactions;
+        this.userNonces = new ConcurrentHashMap<>();
     }
 
     public Map<String, AuctionState> getWorldState() {
@@ -72,6 +73,11 @@ public class AuctionEngine implements BlockListener {
         for (Transaction tx : block.getTransactions()) {
             try {
                 processTransactionRemote(tx, block.getHeader().getTimestamp());
+                String idKey =  tx.getSenderId().toString(16);
+                long current =  userNonces.getOrDefault(idKey,0L);
+                if (tx.getNonce() > current) {
+                    userNonces.put(idKey, tx.getNonce());
+                }
             } catch (Exception e) {
                 System.err.println("[AUCTION ENGINEER ERROR] Tx " + tx.getTxId().substring(0,8) + ": " + e.getMessage());
             }
@@ -155,6 +161,24 @@ public class AuctionEngine implements BlockListener {
         }
     }
 
+    /**
+     * Obtém o PRÓXIMO nonce válido para um utilizador.
+     * Consulta o estado consolidado e soma 1.
+     */
+    public synchronized long getNextNonce(BigInteger ownerId) {
+        String idKey = ownerId.toString(16);
+        return userNonces.getOrDefault(idKey, 0L) + 1;
+    }
+
+    /**
+     * Valida se uma transação (recebida da rede) tem um nonce válido (estritamente superior).
+     * Isto deve ser chamado pela Mempool ANTES de aceitar a transação.
+     */
+    public boolean isValidNonce(Transaction tx) {
+        String idKey = tx.getSenderId().toString(16);
+        long currentNonce = userNonces.getOrDefault(idKey, 0L);
+        return tx.getNonce() > currentNonce;
+    }
 
     public void createdLocalAuctions(BigDecimal startPrice, Peer myself) {
         long durationMillis = 24L * 60L * 60L * 1000L;
@@ -170,11 +194,15 @@ public class AuctionEngine implements BlockListener {
         );
 
         AuctionPayload payload = AuctionPayload.create("New Auction", newAuction);
+        long nonce = getNextNonce(myself.getMyself().getNodeId().value());
+
         Transaction tx = new Transaction(
                 TransactionType.AUCTION_CREATED,
                 myself.getIsKeysInfrastructure().getOwnerPublicKey(),
                 payload,
-                myself.getMyself().getNodeId().value()
+                myself.getMyself().getNodeId().value(),
+                nonce,
+                myself.getHybridLogicalClock().getPhysicalClock()
         );
 
         signAndSubmit(tx, myself);
@@ -192,11 +220,14 @@ public class AuctionEngine implements BlockListener {
         );
 
         AuctionPayload payload = AuctionPayload.bid(newBid);
+        long nonce = getNextNonce(myself.getMyself().getNodeId().value());
         Transaction tx = new Transaction(
                 TransactionType.BID,
                 myself.getIsKeysInfrastructure().getOwnerPublicKey(),
                 payload,
-                myself.getMyself().getNodeId().value()
+                myself.getMyself().getNodeId().value(),
+                nonce,
+                myself.getHybridLogicalClock().getPhysicalClock()
         );
 
         signAndSubmit(tx, myself);

@@ -28,6 +28,7 @@ public class NetworkGateway {
         this.securityValidator = new SecurityValidator();
         this.auctionEngine = new AuctionEngine(this.blockchainEngine);
         this.blockchainEngine.addBlockListener(this.auctionEngine);
+        this.blockchainEngine.setNonceProvider(this.auctionEngine::getNextNonce);
     }
 
     public BlockchainEngine getBlockchainEngine() {

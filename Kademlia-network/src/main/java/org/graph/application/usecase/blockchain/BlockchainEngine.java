@@ -13,6 +13,7 @@ import org.graph.server.Peer;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * A classe BlockchainEngine constitui o núcleo lógico do sistema de blockchain deste projeto,
@@ -74,6 +75,10 @@ public class BlockchainEngine implements TransactionsPublished {
         
     }
 
+    public void setNonceProvider(Function<BigInteger, Long> provider) {
+        this.mTransactionOrganizer.setNonceProvider(provider);
+    }
+
     private void startMiningWatchdog() {
         Thread watchdog = new Thread(() -> {
             while (true) {
@@ -128,7 +133,7 @@ public class BlockchainEngine implements TransactionsPublished {
         }
 
         List<Transaction> genesisTx = new ArrayList<>();
-        genesisTx.add(new Transaction(TransactionType.REGULAR_TRANSFER));
+        genesisTx.add(new Transaction(TransactionType.REGULAR_TRANSFER, myself.getHybridLogicalClock().getPhysicalClock()));
         Block genesis = new Block(1, 0, "0", genesisTx, currentDifficulty);
         genesis.mineBlock(currentDifficulty, numThreads);
 

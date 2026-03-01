@@ -1,6 +1,11 @@
 package org.graph.gateway.validator;
 
+import org.graph.adapter.utils.CryptoUtils;
 import org.graph.domain.entities.block.Block;
+import org.graph.domain.entities.transaction.Transaction;
+
+import java.util.HashSet;
+import java.util.Set;
 
 
 /**
@@ -13,6 +18,7 @@ import org.graph.domain.entities.block.Block;
  * pelo sistema e que os valores de mineração utilizados para identificação
  * não foram adulterados.
  */
+
 public class SecurityValidator {
 
     public boolean validateBlockchain(Block block, int currentDifficulty) {
@@ -20,11 +26,27 @@ public class SecurityValidator {
             return false;
         }
 
+        // validate pow
         if (isPoWValid(block.getCurrentBlockHash(), currentDifficulty)) {
             System.err.println("[DEBUG] PoW invalid: " + block.getCurrentBlockHash());
             System.err.println("[DEBUG] Expected starts with: " + getTarget(currentDifficulty));
             return false;
         }
+
+        Set<String> blockIds = new HashSet<>();
+        for (Transaction tx : block.getTransactions()) {
+
+            // valid signature
+//            if (!CryptoUtils.verifySignature(tx.getSender(), tx.getDataSign(), tx.getSignature())) {
+//               return false;
+//            }
+
+            // duplication transaction remote
+            if (!blockIds.add(tx.getTxId())){
+                return false;
+            }
+        }
+
 
         return true;
     }

@@ -16,25 +16,26 @@ public class Transaction implements Serializable {
     private AuctionPayload data;
     private final long timestamp;
     private byte[] signature;
+    private long nonce;
 
-    public Transaction(TransactionType type, PublicKey sender, AuctionPayload data, BigInteger ownerId) {
+    public Transaction(TransactionType type, PublicKey sender, AuctionPayload data, BigInteger ownerId, long nonce, long timestamp) {
         this.type = type;
         this.sender = sender;
         this.data = data;
-        this.timestamp = System.currentTimeMillis();
+        this.timestamp =  timestamp ;
         this.ownerId = ownerId;
+        this.nonce = nonce;
         this.txId = HashUtils.calculateSha256(getDataSign());
     }
 
-    public Transaction(TransactionType type) {
+    public Transaction(TransactionType type, long timestamp) {
         this.type = type;
-        this.timestamp = System.currentTimeMillis();
-        String data = String.format("%s%d",
-                type.toString(),
-                timestamp
-        );
-        this.txId = HashUtils.calculateSha256(data);
+        this.timestamp = timestamp;
+        this.nonce = 0;
+        this.txId = HashUtils.calculateSha256(getDataSign());
     }
+
+
 
     public String getTxId() {
         return txId;
@@ -56,15 +57,21 @@ public class Transaction implements Serializable {
         return timestamp;
     }
 
-    public String getDataSign(){
-        return String.format("%s%s%s%d%s",
+    public String getDataSign() {
+        String senderStr = (sender != null) ? Base64.getEncoder().encodeToString(sender.getEncoded()) : "SYSTEM";
+        String ownerStr = (ownerId != null) ? ownerId.toString() : "0";
+        String dataStr = (data != null) ? data.toString() : "";
+
+        return String.format("%s%s%s%d%s%d",
                 type.toString(),
-                Base64.getEncoder().encodeToString(sender.getEncoded()),
-                data.toString(),
+                senderStr,
+                dataStr,
                 timestamp,
-                ownerId
+                ownerStr,
+                nonce
         );
     }
+
     public BigInteger getSenderId() {
         return ownerId;
     }
@@ -72,6 +79,15 @@ public class Transaction implements Serializable {
     public void setSignature(byte[] signature) {
         this.signature = signature;
     }
+
+    public long getNonce() {
+        return nonce;
+    }
+
+    public byte[] getSignature() {
+        return signature;
+    }
+
     @Override
     public String toString() {
         String timeStr = new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date(timestamp));
