@@ -2,7 +2,13 @@
 
 **Implementação de uma blockchain distribuída para suportar leilões (auctions) e licitações**, com mecanismo de mineração e estratégias de mitigação de vetores de ataque.
 
----  
+---
+
+# Table of contents
+
+1. [Tolerance Mechanism](./docs/toleranceMechanism/README.md)
+2. [Replication](./docs/replication/README.md)
+3. [Prova de Posse (Proof‑of‑Possession – PoP)](./docs/proofofPossession/README.MD)
 
 ## 1. Introdução
 
@@ -14,9 +20,10 @@ Este projecto tem como objetivo criar **um conjunto de nós P2P** capazes de:
 
 A solução foi desenvolvida em **Java 21** (compatível com versões anteriores) e usa apenas bibliotecas nativas da JDK (para criptografia) e **PlantUML** para os diagramas de arquitetura.
 
----  
+---
 
-## 2. Visão geral da arquitectura  
+## 2. Visão geral da arquitectura
+
 Este projecto é estruturado segundo os princípios da **Clean Architecture**, tendo como núcleo central o domínio, onde são representadas as entidades fundamentais do sistema. Neste domínio residem os objectos que modelam os conceitos essenciais, nomeadamente blocos, transacções e nós, sendo estas entidades independentes de qualquer preocupação relacionada com infraestrutura, transporte ou persistência.
 
 ## Camada de Serviços de Aplicação
@@ -31,21 +38,39 @@ A camada de infraestrutura trata das preocupações técnicas externas ao domín
 
 A camada de gateway desempenha um papel crítico na fronteira do sistema, sendo responsável pela transformação dos dados recebidos em formato bruto para objectos compreensíveis pelas camadas internas. Esta camada converte dados recebidos sob a forma de bytes na construção de objectos de domínio ou de transferência, que são posteriormente encaminhados para os adaptadores apropriados. No contexto deste projecto, os dados são transmitidos em formato JSON, com o conteúdo codificado em Base64, exigindo uma desserialização rigorosa antes de qualquer processamento lógico.
 
----  
+---
 
 ## 3. Modelo de ameaças (Threat Model)
 
-| Vetor de ataque                                 | Impacto potencial | Contramedida implementada |
-|-----------------------------------------------|-------------------|---------------------------|
-| **Replay / replay‑nonce**                       | Mensagens reutilizadas para saltar etapas de handshake ou de sincronização. | Cada mensagem inclui **nonce** e **timestamp**; o `SecurityValidator` rejeita mensagens fora da janela de tempo (±5 s). |
-| **Sybil / identidade falsa**                  | Um nó cria múltiplas identidades para manipular o consenso. | O **NodeId** é gerado a partir de um *proof‑of‑work* ligado ao par de chaves (PK). O PoW impede a criação massiva de identidades. |
-| **Double‑spend (transação duplicada)**         | Uma licitação é incluída em dois blocos diferentes. | Antes de aceitar uma transação, o `BlockProcessor` verifica se o *txId* já existe no *ledger* ou no *orphan pool*. |
-| **DDoS / flood de mensagens**                | Sobrecarga de recursos e perda de mensagens. | Limitação de taxa (`Rate‑limit`) no `SecurityValidator`, e mecanismo de **back‑pressure** nas filas internas do `ConnectionHandler`. |
-| **Man‑in‑the‑middle (MITM)**                  | Interceptação dos canais de troca de chaves. | As chaves públicas são trocadas apenas dentro da mensagem `HELLO`, que já está assinada e inclui a PoW; qualquer alteração invalida a assinatura. |
-| **Eavesdropping (escuta passiva)**            | Leitura de mensagens não‑confidenciais. | Todo o tráfego de controlo (`HELLO`, `GET_STATUS`, `FIND_NODE`) é criptografado usando **ECDH** para gerar uma sessão AES‑GCM. |
-| **Corrupt payload (buffer overflow)**          | Dados danificados que podem travar o nó. | Cada mensagem tem um **campo de tamanho** fixo; o `MessageUtils` descarta pacotes cujo tamanho exceda o limite configurado (default 2 MiB). |
+| Vetor de ataque                                   | Impacto potencial                                                            | Contramedida implementada                                                                                                                                                                |
+| ------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Replay / replay‑nonce**                  | Mensagens reutilizadas para pular etapas de handshake ou de sincronização. | Cada mensagem inclui*nonce* e  *timestamp* ; o `SecurityValidator` rejeita mensagens fora da janela de tempo (±5 s).                                                             |
+| **Sybil / identidade falsa**                | Criação de múltiplas identidades para manipular o consenso.               | `NodeId` gerado a partir de *proof‑of‑work* ligado ao par de chaves (PK). O PoW impede a criação massiva de identidades.                                                         |
+| **Double‑spend (transação duplicada)**   | Uma licitação é incluída em dois blocos diferentes.                      | `BlockProcessor` verifica se o *txId* já existe no *ledger* ou no  *orphan pool* .                                                                                              |
+| **DDoS / flood de mensagens**               | Sobrecarga de recursos e perda de mensagens.                                 | Limitação de taxa (`Rate‑limit`) no `SecurityValidator`, e *back‑pressure* nas filas internas do `ConnectionHandler`.                                                        |
+| **Man‑in‑the‑middle (MITM)**             | Interceptação dos canais de troca de chaves.                               | As chaves públicas são trocadas apenas dentro da mensagem `HELLO`, que já está assinada e inclui a PoW; qualquer alteração invalida a assinatura.                                |
+| **Eavesdropping (escuta passiva)**          | Leitura de mensagens não‑confidenciais.                                    | Tráfego de controle (`HELLO`, `GET_STATUS`, `FIND_NODE`) é criptografado usando **ECDH** → AES‑GCM.                                                                      |
+| **Corrupt payload (buffer overflow)**       | Dados danificados que podem travar o nó.                                    | Cada mensagem tem um**campo de tamanho** fixo; o `MessageUtils` descarta pacotes cujo tamanho exceda o limite configurado (default 2 MiB).                                      |
+| **Identidade falsificada / Bid injection** | Lances criados por atores que não detêm a chave do licitante.              | **Proof‑of‑Possession (PoP)**: cada lance inclui assinatura ECDSA verificável; transações sem PoP são rejectadas.                                                            |
+| **Eclipse attack**                          | Vizinhos mal‑intencionados isolam o nó.                                    | Kademlia garante**k = 20** contactos aleatórios por bucket; políticas de *refresh* evitam concentração de vizinhos.                                                          |
+| **Selfish mining**                          | Minerar em segredo para ganhar vantagem.                                     | Diferença de dificuldade reajustada a cada**N** blocos; penalização reduz recompensa de nós que atrasam a propagação (`BLOCK_LATENCY`).                                    |
+| **Routing table poisoning**                 | Inserção de pares falsos.                                                  | Cada entrada da tabela tem que ser verificada por `SecurityValidator` (PoW + assinatura `HELLO`).                                                                                    |
+| **Replay de blocos antigos**                | Re‑inserção de blocos já confirmados.                                    | Cada bloco possui `height`; blocos com `height < currentHeight‑5` são rejeitados.                                                                                                  |
+| **DoS de mensagens INV**                    | Flood de anúncios de blocos.                                                | Rate‑limit de `INV` a **10 msg/s** por vizinho.                                                                                                                                |
+| **Race conditions em Pub/Sub**              | Publicações simultâneas podem gerar estados conflitantes.                 | Operações de subscrição tornam‑se**Read‑Modify‑Write** com *merge* e  *TTL* ; o `SubscriptionScheduler` garante renovação periódica e purga de entradas expiradas. |
 
----  
+## Estratégia de testes
+
+| Cenário de teste                                | Descrição                                                                         | Resultado esperado                                                                                                                                          |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Desligamento de nós (fault tolerance)** | Desconectar aleatoriamente 30 % dos nós durante a execução de leilões.         | O leilão continua, as subscrições expiradas são removidas e novos nós podem assinar.                                                                   |
+| **Ataque Eclipse a um nó**                | Um atacante tenta preencher todos os buckets de um nó alvo com identidades falsas. | O nó ainda descobre nós externos após o*refresh* e mantém sua lista de subscritores íntegra.                                                         |
+| **Ataque Sybil**                           | Injetar 50 identidades falsas na rede.                                              | A PoW na geração do `NodeId` impede que mais do que o limite configurado (por ex. 5) sejam aceitos; as transações dessas identidades são rejeitadas. |
+| **Simulação de leilão descentralizado** | Criar um leilão, 10 participantes enviam lances simultâneos.                      | Todos os lances são incluídos em blocos válidos, a assinatura (PoP) é verificada e o vencedor é corretamente determinado.                              |
+| **Renovação de subscrições (TTL)**     | Um nó subscreve a um leilão, depois de 2 min fica inativo; o TTL = 5 min.       | Após 5 min, a entrada do nó desaparece da DHT e não recebe mais notificações.                                                                         |
+| **Proof‑of‑Possession**                  | Enviar um lance com assinatura inválida.                                           | O `BlockProcessor` rejeita a transação e registra evento de segurança.                                                                                 |
+| **Bloqueio de mensagens oversized**        | Enviar mensagem com payload > 2 MiB.                                               | O `MessageUtils` responde com `ERROR(EXCEEDS_MAX_SIZE)` e descarta o pacote.                                                                            |
+| **Replay de bloco antigo**                 | Propagar bloco com `height` inferior ao atual em 6.                               | Os nós rejeitam o bloco; o ledger permanece consistente.                                                                                                   |
 
 ## 4. Resolução dos problemas apontados
 
@@ -70,9 +95,9 @@ A camada de gateway desempenha um papel crítico na fronteira do sistema, sendo 
 
 1. **Proof‑of‑Work incluído no NodeId** – comprova investimento computacional.
 2. **Reputation score** – começa em `0.5` e evolui com:
-    * `PING_SUCCESS` (latência baixa)
-    * `FIND_NODE_USEFUL` (fornece nós úteis)
-    * `BLOCK_VALID` (envia blocos válidos)
+   * `PING_SUCCESS` (latência baixa)
+   * `FIND_NODE_USEFUL` (fornece nós úteis)
+   * `BLOCK_VALID` (envia blocos válidos)
 3. **Blacklist** – nós com score < `0.1` são ignorados e a sua informação incide em um *penalty* na rede.
 
 ### 4.5. Gestão de mensagens demasiado grandes (buffer overflow)
@@ -89,13 +114,13 @@ A camada de gateway desempenha um papel crítico na fronteira do sistema, sendo 
 
 ### 4.7. Vetores de ataque pós‑autenticação & mitigação
 
-| Vetor pós‑auth  | Medida de mitigação |
-|----------------|---------------------|
-| **Eclipse attack** – vizinhos mal‑intencionados isolam o nó | O algoritmo Kademlia garante que cada nodo conhece **k = 20** contactos aleatórios em cada bucket; políticas de *refresh* evitam a concentração de vizinhos. |
-| **Selfish mining** – minerar em segredo para ganhar vantagem | A dificuldade de PoW é reajustada a cada **N** blocos; o algoritmo de penalização reduz a recompensa de nós que atrasam a propagação (`BLOCK_LATENCY`). |
-| **Routing table poisoning** – inserção de pares falsos | Cada entrada da tabela tem que ser verificada pelo `SecurityValidator` (PoW + assinatura do `HELLO`). |
-| **Replay de blocos antigos** | Cada bloco possui um `height`; blocos com `height` menor que o **currentHeight‑5** são rejeitados. |
-| **DoS de mensagens INV** | Rate‑limit de `INV` a **10 msg/s** por vizinho. |
+| Vetor pós‑auth                                                     | Medida de mitigação                                                                                                                                                     |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Eclipse attack** – vizinhos mal‑intencionados isolam o nó | O algoritmo Kademlia garante que cada nodo conhece**k = 20** contactos aleatórios em cada bucket; políticas de *refresh* evitam a concentração de vizinhos. |
+| **Selfish mining** – minerar em segredo para ganhar vantagem  | A dificuldade de PoW é reajustada a cada**N** blocos; o algoritmo de penalização reduz a recompensa de nós que atrasam a propagação (`BLOCK_LATENCY`).      |
+| **Routing table poisoning** – inserção de pares falsos      | Cada entrada da tabela tem que ser verificada pelo `SecurityValidator` (PoW + assinatura do `HELLO`).                                                                 |
+| **Replay de blocos antigos**                                   | Cada bloco possui um `height`; blocos com `height` menor que o **currentHeight‑5** são rejeitados.                                                            |
+| **DoS de mensagens INV**                                       | Rate‑limit de `INV` a **10 msg/s** por vizinho.                                                                                                                 |
 
 ### 4.8. Mecanismo de propagação de blocos
 
@@ -117,8 +142,8 @@ A camada de gateway desempenha um papel crítico na fronteira do sistema, sendo 
 * Cada `NodeId` é incluído em todas as mensagens `HELLO`.
 * O `SecurityValidator` recalcula o hash no recebimento e verifica a igualdade; qualquer manipulação resulta em rejeição.
 
-
 ### 4.11. Race codictiosn Auactiosn ao Pub/Sub
+
 Em ambientes distribuídos que combinam Pub/Sub com a camada de descoberta/armazenamento Kademlia, os nós frequentemente executam ciclos Read‑Modify‑Write (RMW) sobre recursos compartilhados (por exemplo, leilões). Cada nó pode:
 
 1) Ler o estado atual de um recurso.
@@ -126,65 +151,59 @@ Em ambientes distribuídos que combinam Pub/Sub com a camada de descoberta/armaz
 3) Escrever a nova versão de volta ao DHT.
 
 Devido à latência da rede e à ausência de um coordenador central, dois ou mais nós podem publicar simultaneamente alterações que, embora referenciem o mesmo recurso, possuam identificadores de operação diferentes. O resultado são mensagens duplicadas ou versões conflitantes nos assinantes.
+
 - Condições de corrida: duas publicações concorrentes podem chegar em ordem diferente nos consumidores, gerando estados inconsistentes.
 - Duplicação de eventos: o mesmo leilão pode ser entregue duas vezes, cada uma com um operationId distinto, provocando reprocessamento desnecessário e, possivelmente, decisões conflitantes (ex.: aceitação de dois lances diferentes para o mesmo instante).
+
 ### 4.12. Outros problemas típicos de sistemas distribuídos
 
-| Problema | Solução |
-|----------|----------|
-| **Partição de rede (network split)** | O algoritmo de consenso permite *forks* temporárias; o nó mantém o **fork mais longo** (GHOST) e reconcilia assim que a partição termina. |
-| **Clock drift** | Uso de **Hybrid Logical Clock** (HLC) em vez de timestamps puros. |
-| **Persistência de dados** | Cada bloco é gravado em **Append‑Only Log** (arquivo `chain.log`), com *fsync* garantido a cada *epoch* de 10 blocos. |
-| **Escalabilidade da DHT** | Buckets Kademlia são mantidos com tamanho máximo de 20; limpeza automática de nós inativos a cada 5 min. |
+| Problema                                     | Solução                                                                                                                                             |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Partição de rede (network split)** | O algoritmo de consenso permite*forks* temporárias; o nó mantém o **fork mais longo** (GHOST) e reconcilia assim que a partição termina. |
+| **Clock drift**                        | Uso de**Hybrid Logical Clock** (HLC) em vez de timestamps puros.                                                                                |
+| **Persistência de dados**             | Cada bloco é gravado em**Append‑Only Log** (arquivo `chain.log`), com *fsync* garantido a cada *epoch* de 10 blocos.                    |
+| **Escalabilidade da DHT**              | Buckets Kademlia são mantidos com tamanho máximo de 20; limpeza automática de nós inativos a cada 5 min.                                         |
 
----  
+---
 
-## Diagrma compoemntes 
+## Diagrma compoemntes
 
 ### Visão de Sistema – System Context
+
 Principais atores / sistemas externos
 ![DIagrma do conecto system](./docs/diagram/component/c1.png)
 
 ## Diagrama de Containers – Container Diagram
+
 Containers (camadas lógicas)
 ![DIagrma do conecto system](./docs/diagram/component/c2.png)
 
 ## Diagrama de Componentes – Component Diagram
+
 Principais componentes (por container)
 ![DIagrma do conecto system](./docs/diagram/component/c3.png)
 
-
 ## Modelo de Domínio – Domain Model
+
 Entidades & Value Objects
 ![DIagrma do conecto system](./docs/diagram/component/c4.png)
 
 # Testing Phase
 
 ## Goals
+
 Descrever e organizar os casos de teste implementados para validar as principais propriedades do sistema descentralizado (tolerância a falhas, segurança contra ataques e funcionalidade de leilões).
 
 ---
 
 ## Test Scenarios
 
-- [x] **Desligamento de nós (fault tolerance)**  
-  Simular a indisponibilidade de alguns nós e verificar se o sistema continua operando corretamente, mantendo a **preservação de dados imutáveis**.
-
-- [ ] **Ataque Eclipse a um nó**  
-  Um nó tenta isolar outros nós da rede, testando a resiliência do mecanismo de descoberta e das rotas de comunicação.
-
-- [ ] **Ataque Sybil**  
-  Tentar inserir identidades falsas que sobrescrevam ou corrompam o estado do ledger, verificando a capacidade do protocolo de detectar e rejeitar esses nós.
-
-- [x] **Simulação de leilão descentralizado**  
-  Executar um leilão onde os participantes podem criar e registrar novos objetos/ativos no ledger.
-
-- [x] **Demonstração do projeto descentralizado**  
-  Mostrar a interação entre nós, a rede P2P e os contratos inteligentes em um cenário real de uso.
-
-- [x] **Autenticação entre nós (Proof‑of‑Validation)**  
+- [X] **Desligamento de nós (fault tolerance)**Simular a indisponibilidade de alguns nós e verificar se o sistema continua operando corretamente, mantendo a **preservação de dados imutáveis**.
+- [ ] **Ataque Eclipse a um nó**Um nó tenta isolar outros nós da rede, testando a resiliência do mecanismo de descoberta e das rotas de comunicação.
+- [ ] **Ataque Sybil**Tentar inserir identidades falsas que sobrescrevam ou corrompam o estado do ledger, verificando a capacidade do protocolo de detectar e rejeitar esses nós.
+- [X] **Simulação de leilão descentralizado**Executar um leilão onde os participantes podem criar e registrar novos objetos/ativos no ledger.
+- [X] **Demonstração do projeto descentralizado**Mostrar a interação entre nós, a rede P2P e os contratos inteligentes em um cenário real de uso.
+- [X] **Autenticação entre nós (Proof‑of‑Validation)**
   Implementar um *challenge‑response* baseado em **Proof‑of‑Validation** para garantir que somente nós autenticados possam ingressar na rede.
 
 ---
-
-
