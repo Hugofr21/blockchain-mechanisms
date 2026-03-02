@@ -234,6 +234,21 @@ public class AuctionCaseUse implements BlockListener {
     }
 
     public void placeBidRequest(String auctionId, BigDecimal bidValue, Peer myself) {
+        AuctionState auctionState = ledger.get(auctionId);
+
+        if (auctionState == null) {
+            throw new IllegalArgumentException("Error: The specified auction does not exist in the local ledger.");
+        }
+
+        if (!auctionState.isOpen() || System.currentTimeMillis() > auctionState.getEndTimestamp()) {
+            throw new IllegalStateException("Error: The auction is closed. No new bids are accepted.");
+        }
+
+        if (bidValue.compareTo(auctionState.getCurrentHighestBid()) <= 0) {
+            throw new IllegalArgumentException("Business error: The bid value (" + bidValue +
+                    ") must be strictly greater than the current maximum value (" + auctionState.getCurrentHighestBid() + ").");
+        }
+
         Bid newBid = new Bid(
                 auctionId,
                 bidValue,
@@ -241,8 +256,13 @@ public class AuctionCaseUse implements BlockListener {
                 myself.getMyself().getNodeId().value()
         );
 
+        if (auctionState.getBidHistory().contains(newBid)) {
+            throw new IllegalStateException("Erro: Este lance exato já se encontra registado.");
+        }
+
         AuctionPayload payload = AuctionPayload.bid(newBid);
         long nonce = reserveNextNonce(myself.getMyself().getNodeId().value());
+
         Transaction tx = new Transaction(
                 TransactionType.BID,
                 myself.getIsKeysInfrastructure().getOwnerPublicKey(),
@@ -253,10 +273,7 @@ public class AuctionCaseUse implements BlockListener {
         );
 
         signAndSubmit(tx, myself);
-
-
         subscribeToAuction(auctionId, myself);
-
         notifySubscribersOfNewBid(auctionId, tx, myself);
     }
 

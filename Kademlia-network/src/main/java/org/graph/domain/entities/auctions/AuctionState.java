@@ -5,7 +5,9 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 public class AuctionState implements Serializable {
@@ -15,7 +17,7 @@ public class AuctionState implements Serializable {
     private final BigInteger ownerId;
     private final BigDecimal minPrice;
     private final long endTimestamp;
-    private final List<Bid> bidHistory;
+    private final Set<Bid> bidHistory;
     private BigDecimal currentHighestBid;
     private BigInteger currentWinnerId;
     private boolean isOpen;
@@ -29,7 +31,7 @@ public class AuctionState implements Serializable {
         this.currentHighestBid = minPrice;
         this.currentWinnerId = null;
         this.isOpen = true;
-        this.bidHistory = new ArrayList<>();
+        this.bidHistory = new HashSet<Bid>();
     }
 
     public boolean isOpen() { return isOpen; }
@@ -38,10 +40,10 @@ public class AuctionState implements Serializable {
     public String getAuctionId() { return auctionId; }
     public BigInteger getOwnerId() { return ownerId; }
     public BigDecimal getMinPrice() { return minPrice; }
-    public List<Bid> getBidHistory() {return bidHistory; }
+    public Set<Bid> getBidHistory() {return bidHistory; }
 
     public void addSuccessfulBid(Bid bid) {
-        if (bid != null && !this.bidHistory.contains(bid)) {
+        if (bid != null && this.bidHistory.add(bid)) {
             this.bidHistory.add(bid);
             this.currentHighestBid = bid.bidPrice();
             this.currentWinnerId = bid.newBidderId();

@@ -1,8 +1,12 @@
 package org.graph.server.utils;
 
 
+import org.graph.adapter.outbound.network.message.auction.AuctionPayload;
+import org.graph.domain.entities.auctions.Bid;
 import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.auctions.AuctionState;
+import org.graph.domain.entities.transaction.Transaction;
+import org.graph.domain.entities.transaction.TransactionType;
 import org.graph.domain.valueobject.utils.HashUtils;
 import org.graph.server.Peer;
 import org.graph.domain.entities.node.Node;
@@ -68,7 +72,8 @@ public class MenuUtils {
         System.out.println("\n=== Security Test Environment ===");
         System.out.println("1) Simulate Sybil Attack (Fake Identity Injection)");
         System.out.println("2) Simulate Eclipse Attack (IP Saturation)");
-        System.out.println("3) Return");
+        System.out.println("3) Security Test: Simulate Duplicate Bids (Replay Attack)");
+        System.out.println("4) Return");
         System.out.print("Choose the attack vector: ");
 
         int choice = scanner.nextInt();
@@ -77,10 +82,60 @@ public class MenuUtils {
         switch (choice) {
             case 1: simulateSybilAttack(peer); break;
             case 2: simulateEclipseAttack(peer); break;
-            case 3: return;
+            case 3: simulateDuplicateBidAttack(peer); break;
+            case 4: return;
             default: System.out.println("Invalid option.");
 
         }
+    }
+
+    public static void simulateDuplicateBidAttack(Peer peer) {
+        System.out.print("\nAuction ID (Hash): ");
+        String auctionId = scanner.nextLine().trim();
+
+        new Thread(() -> {
+            try {
+                System.out.println("\n[SIMULATION] Starting Attack Vector: Duplicate Submission (Replay Attack) in auction: " + auctionId);
+
+                var auctionEngine = peer.getNetworkGateway().getAuctionEngine();
+                BigDecimal maliciousBidValue = new BigDecimal("1500");
+
+               Bid maliciousBid = new Bid(
+                        auctionId,
+                        maliciousBidValue,
+                        System.currentTimeMillis(),
+                        peer.getMyself().getNodeId().value()
+                );
+
+               AuctionPayload payload = AuctionPayload.bid(maliciousBid);
+                long nonce = auctionEngine.reserveNextNonce(peer.getMyself().getNodeId().value());
+
+                Transaction maliciousTx = new Transaction(
+                        TransactionType.BID,
+                        peer.getIsKeysInfrastructure().getOwnerPublicKey(),
+                        payload,
+                        peer.getMyself().getNodeId().value(),
+                        nonce,
+                        peer.getHybridLogicalClock().getPhysicalClock()
+                );
+
+                String data = maliciousTx.getDataSign();
+                byte[] signature = peer.getIsKeysInfrastructure().signMessage(data);
+                maliciousTx.setSignature(signature);
+
+                System.out.println("[SIMULATION] Forged transaction.TxID: " + maliciousTx.getTxId());
+                System.out.println("[SIMULATION] Firing 10 identical simultaneous injections...");
+
+                for (int i = 0; i < 10; i++) {
+                    System.out.println("[SIMULATION] Injecting duplicate load (Instance " + (i + 1) + ")");
+                    peer.getNetworkGateway().getBlockchainEngine().submitTransaction(maliciousTx);
+                }
+
+                System.out.println("[SIMULATION] Payload delivered. Waiting for block mining to verify state machine idempotency.");
+            } catch (Exception e) {
+                System.err.println("[CRITICAL ERROR] Simulation thread failed: " + e.getMessage());
+            }
+        }).start();
     }
 
     private static void simulateEclipseAttack(Peer peer) {
