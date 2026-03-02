@@ -454,9 +454,12 @@ public class KademliaNetwork implements IKademliaIController {
                     }
                 }
 
-
-                try (Socket socket = new Socket()) {
+                Socket socket = null;
+                try  {
+                    socket = new Socket();
                     socket.connect(new InetSocketAddress(target.getHost(), target.getPort()), 3000);
+
+
                     socket.setSoTimeout(3000);
 
                     DataInputStream in = new DataInputStream(socket.getInputStream());
@@ -471,6 +474,19 @@ public class KademliaNetwork implements IKademliaIController {
 
                     MessageUtils.sendMessage(out, request);
                     System.out.println("[GOSSIP] Notification sent via new connection to: " + target.getPort());
+
+                    socket.setSoTimeout(0);
+
+                    ConnectionHandler newHandler = new ConnectionHandler(socket, myself, myself.getLogger(), myself.getGlobalScheduler());
+                    myself.getNeighboursManager().addConnection(target, newHandler);
+
+                }catch (Exception e) {
+                    System.err.println("[GOSSIP] Falha de comunicação com " + target.getPort() + ": " + e.getMessage());
+                    if (socket != null && !socket.isClosed()) {
+                        try {
+                            socket.close();
+                        } catch (Exception ignored) {}
+                    }
                 }
 
             } catch (Exception e) {
