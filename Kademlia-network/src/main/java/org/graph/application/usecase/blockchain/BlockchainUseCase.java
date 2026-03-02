@@ -6,8 +6,8 @@ import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.transaction.Transaction;
 import org.graph.domain.entities.transaction.TransactionType;
 import org.graph.domain.valueobject.cryptography.Pair;
-import org.graph.application.usecase.blockchain.block.BlockOrganizer;
-import org.graph.application.usecase.blockchain.block.TransactionOrganizer;
+import org.graph.application.usecase.blockchain.block.BlockRule;
+import org.graph.application.usecase.blockchain.block.TransactionRule;
 import org.graph.server.Peer;
 
 import java.math.BigInteger;
@@ -53,19 +53,19 @@ import java.util.function.Function;
  * falhas de consenso.
 **/
 
-public class BlockchainEngine implements TransactionsPublished {
+public class BlockchainUseCase implements TransactionsPublished {
     private final int numThreads;
     private final int currentDifficulty;
-    private final TransactionOrganizer mTransactionOrganizer;
-    private final BlockOrganizer mBlockOrganizer;
+    private final TransactionRule mTransactionRule;
+    private final BlockRule mBlockRule;
     private final List<BlockListener> listeners;
     private long lastTxTime;
     private static final long MAX_WAIT_TIME_MS = 2000;
     private Peer myself;
 
-    public BlockchainEngine(int difficulty, int maxTx, Peer myself) {
-        this.mTransactionOrganizer = new TransactionOrganizer(maxTx);
-        this.mBlockOrganizer = new BlockOrganizer(this);
+    public BlockchainUseCase(int difficulty, int maxTx, Peer myself) {
+        this.mTransactionRule = new TransactionRule(maxTx);
+        this.mBlockRule = new BlockRule(this);
         this.numThreads = Runtime.getRuntime().availableProcessors();
         this.currentDifficulty = difficulty;
         this.listeners = new ArrayList<>();
@@ -76,7 +76,7 @@ public class BlockchainEngine implements TransactionsPublished {
     }
 
     public void setNonceProvider(Function<BigInteger, Long> provider) {
-        this.mTransactionOrganizer.setNonceProvider(provider);
+        this.mTransactionRule.setNonceProvider(provider);
     }
 
     private void startMiningWatchdog() {
@@ -86,7 +86,7 @@ public class BlockchainEngine implements TransactionsPublished {
                     Thread.sleep(500);
 
                     synchronized (this) {
-                        int pending = mTransactionOrganizer.getPendingCount();
+                        int pending = mTransactionRule.getPendingCount();
                         long timeDiff = System.currentTimeMillis() - lastTxTime;
 
                         if (pending > 0 && timeDiff > MAX_WAIT_TIME_MS) {
@@ -104,11 +104,11 @@ public class BlockchainEngine implements TransactionsPublished {
     }
 
 
-    public TransactionOrganizer getTransactionOrganizer() {
-        return mTransactionOrganizer;
+    public TransactionRule getTransactionOrganizer() {
+        return mTransactionRule;
     }
-    public BlockOrganizer getBlockOrganizer() {
-        return mBlockOrganizer;
+    public BlockRule getBlockOrganizer() {
+        return mBlockRule;
     }
 
     public void addBlockListener(BlockListener listener) {
@@ -127,8 +127,8 @@ public class BlockchainEngine implements TransactionsPublished {
     }
 
     public void createGenesisBlock() {
-        if (mBlockOrganizer.getChainHeight() >= 0) {
-            System.out.println("[INIT] Blockchain já inicializada. Genesis ignorado.");
+        if (mBlockRule.getChainHeight() >= 0) {
+            System.out.println("[BLOCK_GENESIS] Blockchain already initialized. Genesis ignored.");
             return;
         }
 
@@ -137,27 +137,27 @@ public class BlockchainEngine implements TransactionsPublished {
         Block genesis = new Block(1, 0, "0", genesisTx, currentDifficulty);
         genesis.mineBlock(currentDifficulty, numThreads);
 
-        mBlockOrganizer.addLocalBlock(genesis);
+        mBlockRule.addLocalBlock(genesis);
     }
 
     public void addTransaction(Transaction tx) {
         // TODO: verify Signature
         if (tx == null) {
-            System.err.println("[SEC] Transação inválida rejeitada.");
+            System.err.println("[BLOCK_TRANSACTION] Invalid transaction rejected.");
             return;
         }
 
-        mTransactionOrganizer.addTransaction(tx);
+        mTransactionRule.addTransaction(tx);
         this.lastTxTime = System.currentTimeMillis();
 
-        if (mTransactionOrganizer.shouldCreateBlock()) {
-            System.out.println("\n[MINER] Mempool cheio. Iniciando mineração...");
+        if (mTransactionRule.shouldCreateBlock()) {
+            System.out.println("\n[MINER] Mempool full. Mining started...");
             createNewBlock();
         }
     }
 
     public void createNewBlock() {
-        List<Transaction> transactions = mTransactionOrganizer.getTransactionsForBlock();
+        List<Transaction> transactions = mTransactionRule.getTransactionsForBlock();
 
         if (transactions == null || transactions.isEmpty()) {
             System.out.println("[INFO] No pending transactions");
@@ -169,8 +169,8 @@ public class BlockchainEngine implements TransactionsPublished {
         Block newBlock = new Block(1,getInfoBlock().key() , getInfoBlock().value(), transactions, currentDifficulty);
         newBlock.mineBlock(currentDifficulty, numThreads);
 
-        mTransactionOrganizer.cleanPool(transactions);
-        mBlockOrganizer.addLocalBlock(newBlock);
+        mTransactionRule.cleanPool(transactions);
+        mBlockRule.addLocalBlock(newBlock);
 
         this.lastTxTime = System.currentTimeMillis();
         notifyListeners(newBlock);
@@ -186,11 +186,11 @@ public class BlockchainEngine implements TransactionsPublished {
         System.out.println("Current Block: " + block);
         Thread.sleep(100);
         notifyListeners(block);
-        return mBlockOrganizer.receiveBlock(block);
+        return mBlockRule.receiveBlock(block);
     }
 
     private Pair<Integer, String> getInfoBlock (){
-        Block parentBlock = mBlockOrganizer.getLastBlock();
+        Block parentBlock = mBlockRule.getLastBlock();
 
         String previousHash;
         int newHeight;

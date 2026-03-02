@@ -1,8 +1,8 @@
 package org.graph.application.usecase.reputation;
 
 import org.graph.application.usecase.provider.IReputationsManager;
-import org.graph.domain.policy.EventType;
-import org.graph.domain.policy.reputation.ProofOfReputation;
+import org.graph.domain.policy.EventTypePolicy;
+import org.graph.domain.policy.reputation.ProofOfReputationPolicy;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -43,21 +43,21 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 
 public class ReputationsManager implements IReputationsManager {
-    private Map<BigInteger, ProofOfReputation> reputationMap;
+    private Map<BigInteger, ProofOfReputationPolicy> reputationMap;
 
     public ReputationsManager(){
         this.reputationMap = new ConcurrentHashMap<>();
     }
 
-    public ProofOfReputation getProofOfReputation(BigInteger nodeId){
-        return reputationMap.computeIfAbsent(nodeId, k -> new ProofOfReputation());
+    public ProofOfReputationPolicy getProofOfReputation(BigInteger nodeId){
+        return reputationMap.computeIfAbsent(nodeId, k -> new ProofOfReputationPolicy());
     }
 
 
-    public void reportEvent(BigInteger nodeId, EventType event){
-        ProofOfReputation proof = getProofOfReputation(nodeId);
+    public void reportEvent(BigInteger nodeId, EventTypePolicy event){
+        ProofOfReputationPolicy proof = getProofOfReputation(nodeId);
         double newScore = proof.recordEvent(event);
-        if (event == EventType.INVALID_BLOCK || event == EventType.PING_FAIL) {
+        if (event == EventTypePolicy.INVALID_BLOCK || event == EventTypePolicy.PING_FAIL) {
             System.out.printf("[REPUTATION] Node %s penalized (%s). Novo Score: %.2f%n", nodeId, event, newScore);
         }
 
@@ -74,7 +74,7 @@ public class ReputationsManager implements IReputationsManager {
 
 
     public void applyDecayAll(BigInteger nodeId){
-        reputationMap.values().forEach(ProofOfReputation::applyDecay);
+        reputationMap.values().forEach(ProofOfReputationPolicy::applyDecay);
     }
 
 

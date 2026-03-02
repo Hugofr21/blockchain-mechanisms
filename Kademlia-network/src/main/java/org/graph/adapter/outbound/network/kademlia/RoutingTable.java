@@ -58,37 +58,24 @@ public class RoutingTable {
       // 3. Calcula New Distance (ND) conforme Eq. (1) do artigo [cite: 370]
     */
    public synchronized List<Node> findClosestNodesProximity(BigInteger targetNode, int count) {
-       // PriorityQueue para ordenar pela métrica S/Kademlia (Distância Ajustada)
        PriorityQueue<NodeMetric> closest = new PriorityQueue<>(
                Comparator.comparing(NodeMetric::newDistance)
        );
 
-       // Set para evitar duplicados (O(1) lookup)
-       // Usamos o BigInteger (ID) como chave de unicidade
        Set<BigInteger> processedIds = new HashSet<>();
 
        for (KBucket bucket : buckets) {
            for (Node node : bucket.getNodes()) {
                BigInteger nodeId = node.getNodeId().value();
 
-               // 1. FILTRAGEM DEFENSIVA: Evita nós duplicados na resposta
                if (processedIds.contains(nodeId)) {
                    continue;
                }
                processedIds.add(nodeId);
 
-               // Evita adicionar-nos a nós mesmos na lista de routing
-               // (Assumindo que tens acesso ao myselfId, senão remove este if)
-               // if (nodeId.equals(myselfId)) continue;
-
-               // 2. CÁLCULO DA MÉTRICA
                BigInteger xorDist = node.getNodeId().distanceBetweenNode(targetNode);
 
-               // CORREÇÃO CRÍTICA: O Trust Factor deve ser do NÓ VIZINHO, não do ALVO.
-               // Se usares targetNode, o trust é constante para todos no loop, anulando a eq. (1).
                double trust = reputationProvider.getTrustFactor(nodeId);
-
-               // 3. Aplica a Eq. (1) do S/Kademlia
                double nd = calculateSKademliaMetric(xorDist, trust);
 
                closest.offer(new NodeMetric(node, nd));
@@ -120,14 +107,7 @@ public class RoutingTable {
 
     public synchronized boolean removeNode(Node node) {
         if (node == null) return false;
-
         int bucketIndex = getBucketIndex(node);
-
-        boolean removed = buckets.get(bucketIndex).removeNode(node);
-
-        if (removed) {
-            System.out.println("[ROUTING] Nó removido da tabela: " + node.getNodeId());
-        }
-        return removed;
+        return  buckets.get(bucketIndex).removeNode(node);
     }
 }

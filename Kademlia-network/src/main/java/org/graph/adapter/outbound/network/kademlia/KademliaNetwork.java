@@ -1,12 +1,14 @@
 package org.graph.adapter.outbound.network.kademlia;
 
+import org.graph.adapter.inbound.network.Handshake;
 import org.graph.adapter.outbound.network.message.node.NodeInfoPayload;
 import org.graph.adapter.outbound.network.message.node.NodeListPayload;
 import org.graph.adapter.utils.CryptoUtils;
 import org.graph.domain.entities.auctions.AuctionState;
 import org.graph.domain.entities.node.NodeId;
 import org.graph.domain.entities.transaction.Transaction;
-import org.graph.domain.policy.EventType;
+import org.graph.domain.policy.EventTypePolicy;
+import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.infrastructure.storage.cache.LRUCache;
 import org.graph.adapter.utils.MessageUtils;
 import org.graph.infrastructure.utils.EncapsulationUtils;
@@ -22,6 +24,7 @@ import org.graph.infrastructure.storage.StorageDHT;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.math.BigInteger;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.security.PublicKey;
 import java.util.*;
@@ -105,9 +108,7 @@ public class KademliaNetwork implements IKademliaIController {
 
     @Override
     public List<Node> findNode(BigInteger targetId) {
-        // ... (Cache e verificações locais mantêm-se iguais) ...
 
-        // Inicialização da Shortlist
         TreeSet<Node> shortlist = new TreeSet<>(Comparator.comparing(
                 n -> n.getNodeId().distanceBetweenNode(targetId)
         ));
@@ -120,7 +121,6 @@ public class KademliaNetwork implements IKademliaIController {
 
         boolean madeProgress = true;
 
-        // === LOOP ITERATIVO ===
         while (madeProgress && !shortlist.isEmpty()) {
             madeProgress = false;
 
@@ -135,50 +135,43 @@ public class KademliaNetwork implements IKademliaIController {
                 queried.add(node.getNodeId().value());
 
                 Message findMsg = new Message(MessageType.FIND_NODE, targetId, myself.getHybridLogicalClock());
-                Object res = sendRPC(node, findMsg);
+                Object res = sendRPCAsync(node, findMsg);
 
                 if (res == null) {
-                     myself.getReputationsManager().reportEvent(node.getNodeId().value(), EventType.PING_FAIL);
+                     myself.getReputationsManager().reportEvent(node.getNodeId().value(), EventTypePolicy.PING_FAIL);
                     continue;
                 }
 
-                NodeListPayload receiveListNode = EncapsulationUtils.encapsulationListNodes(res);
+                NodeListPayload receiveListNode = EncapsulationUtils.decapsulationListNodes(res);
 
                 if (receiveListNode == null) {
-                    System.err.println("[DHT] Payload inválido de " + node.getPort());
+                    System.err.println("[DHT_FIND_NODE] Invalid payload of " + node.getPort());
                     continue;
                 }
 
                 List<NodeInfoPayload> list = receiveListNode.nodes();
 
-                // 3. REPUTAÇÃO (Implementação do teu requisito)
-                // Se o nó nos devolveu uma lista útil, aumentamos a reputação dele
                 if (!list.isEmpty()) {
                     myself.getReputationsManager().reportEvent(
                             node.getNodeId().value(),
-                            EventType.FIND_NODE_USEFUL
+                            EventTypePolicy.FIND_NODE_USEFUL
                     );
                 }
 
-                // Lista para guardar os nós validados nesta iteração
                 List<Node> returnedNodes = new ArrayList<>();
 
-                // 4. PROCESSAMENTO E VALIDAÇÃO (Lógica do processSingleNodeInfo)
                 for (NodeInfoPayload info : list) {
                     try {
-                        // A. Extrair a Chave Pública
+
                         PublicKey remotePk = CryptoUtils.getPublicKeyFromBytes(info.publicKey());
                         if (remotePk == null) continue;
 
-                        // B. Extrair o ID anunciado
-                        BigInteger claimedId = EncapsulationUtils.encapsulationNodeId(info.nodeId());
+                        BigInteger claimedId = EncapsulationUtils.decapsulationNodeId(info.nodeId());
                         if (claimedId == null) continue;
 
-                        // Ignorar se for o nosso próprio ID
                         if (claimedId.equals(myself.getMyself().getNodeId().value())) continue;
 
-                        // C. Reconstruir o Objeto Node
-                        // Usamos o construtor que aceita a PublicKey para recalcular o ID internamente (Segurança)
+
                         Node candidateNode = new Node(
                                 info.host(),
                                 info.port(),
@@ -187,36 +180,31 @@ public class KademliaNetwork implements IKademliaIController {
                                 info.difficulty()
                         );
 
-                        // D. VALIDAÇÃO DE INTEGRIDADE (O ID recalculado bate com o anunciado?)
                         if (!candidateNode.getNodeId().value().equals(claimedId)) {
-                            System.err.println("[SEC] ID Mismatch! Anunciado: " + claimedId + " vs Calculado: " + candidateNode.getNodeId().value());
+                            System.err.println("[DHT_FIND_NODE] ID Mismatch! Announced: " + claimedId + " vs Calculated: " + candidateNode.getNodeId().value());
                             continue;
                         }
 
-                        // E. VALIDAÇÃO S/KADEMLIA (Prova de Trabalho)
+
                         if (!NodeId.isValidNode(candidateNode, remotePk)) {
-                            System.err.println("[SEC] PoW Inválido para " + info.host());
+                            System.err.println("[DHT_FIND_NODE] Invalid PoW for " + info.host());
                             continue;
                         }
 
-                        // F. SUCESSO - Adicionar à lista temporária
+
                         returnedNodes.add(candidateNode);
 
-                        // NOTA: Ao contrário do 'handleResponseNode' (passivo), aqui NÃO fazemos
-                        // Handshake imediato (connectAndVerify). Só faremos Handshake se o 'shortlist'
-                        // selecionar este nó para ser consultado na próxima volta do loop 'while' via 'sendRPC'.
-
                     } catch (Exception e) {
-                        System.err.println("[DHT] Erro ao processar nó candidato: " + e.getMessage());
+                        System.err.println("[DHT_FIND_NODE] Error processing candidate node: " + e.getMessage());
                     }
                 }
 
-                // 5. ATUALIZAR ESTADO (Shortlist e Routing Table)
+
                 for (Node received : returnedNodes) {
-                    // Aprendizagem passiva: Adiciona à tabela de roteamento
+
                     myself.getRoutingTable().addNode(received);
 
-                    // Adiciona à shortlist se for novo e ainda não consultado
+
                     if (!shortlist.contains(received) && !queried.contains(received.getNodeId().value())) {
                         shortlist.add(received);
                         madeProgress = true;
@@ -224,7 +212,7 @@ public class KademliaNetwork implements IKademliaIController {
                 }
             }
 
-            // Manter tamanho da shortlist controlado
+
             while (shortlist.size() > NODE_K * 2) {
                 shortlist.pollLast();
             }
@@ -339,7 +327,7 @@ public class KademliaNetwork implements IKademliaIController {
 
                 Message request = new Message(MessageType.FIND_VALUE, key, myself.getHybridLogicalClock());
 
-                Object response = sendRPC(node, request);
+                Object response = sendRPCAsync(node, request);
 
                 if (response == null) continue;
 
@@ -390,7 +378,7 @@ public class KademliaNetwork implements IKademliaIController {
     @Override
     public boolean ping(Node target) {
         Message pingMsg = new Message(MessageType.PING, "PING", myself.getHybridLogicalClock());
-        Object res = sendRPC(target, pingMsg);
+        Object res = sendRPCAsync(target, pingMsg);
         return res != null;
     }
 
@@ -435,42 +423,61 @@ public class KademliaNetwork implements IKademliaIController {
                 continue;
             }
 
-            new Thread(() -> {
-                sendRPC(node, storeMsg);
-                System.out.println("[DHT] Replica to: " + node.getPort());
-            }).start();
+            sendRPCAsync(node, storeMsg);
+            System.out.println("[DHT] Replica request sent to: " + node.getPort());
         }
     }
 
-    private Object sendRPC(Node target, Message request) {
-
+    /**
+     * Envia uma mensagem RPC para um nó de destino de forma assíncrona ("Request e Response").
+     * Ideal para mensagens de Gossip/Notificação em que o remetente não tem de esperar
+     * por uma resposta com dados, evitando o bloqueio de threads no fluxo principal.
+     *
+     * @return
+     */
+    public Object sendRPCAsync(Node target, Message request) {
         if (target.getNodeId().equals(myself.getMyself().getNodeId())) return null;
 
-        try (Socket socket = new Socket(target.getHost(), target.getPort())) {
-
-            socket.setSoTimeout(5000);
-
-            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-            DataInputStream in = new DataInputStream(socket.getInputStream());
+        new Thread(() -> {
+            try {
+                ConnectionHandler handler = myself.getNeighboursManager()
+                        .getNeighbourById(target.getNodeId().value());
 
 
-            MessageUtils.sendMessage(out, request);
-            System.out.println("To send message!");
-            Message response = MessageUtils.readMessage(in);
-            System.out.println("To send read Message!");
-
-            if (response != null) {
-                if (response.getTimestamp() != null) {
-                    myself.getHybridLogicalClock().update(response.getTimestamp());
+                if (handler != null && !handler.getSocket().isClosed()) {
+                    try {
+                        MessageUtils.sendMessage(handler.getOutputStream(), request);
+                        System.out.println("[GOSSIP] Notification sent via open tunnel to: " + target.getPort());
+                        return;
+                    } catch (Exception ex) {
+                        System.out.println("[GOSSIP] Tunnel opened to " + target.getPort() + " failed (Ghost). Trying to find a new connection...");
+                    }
                 }
 
-                return response.getPayload();
-            }
-            return null;
 
-        } catch (Exception e) {
-             System.out.println("[DHT] Node " + target.getPort() + " not response.");
-            return null;
-        }
+                try (Socket socket = new Socket()) {
+                    socket.connect(new InetSocketAddress(target.getHost(), target.getPort()), 3000);
+                    socket.setSoTimeout(3000);
+
+                    DataInputStream in = new DataInputStream(socket.getInputStream());
+                    DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+                    Optional<Node> handshakeResult = Handshake.doHandshake(myself, in, out);
+
+                    if (handshakeResult.isEmpty()) {
+                        System.out.println("[GOSSIP] Abort. Handshake rejected by " + target.getPort());
+                        return;
+                    }
+
+                    MessageUtils.sendMessage(out, request);
+                    System.out.println("[GOSSIP] Notification sent via new connection to: " + target.getPort());
+                }
+
+            } catch (Exception e) {
+
+                System.out.println("[GOSSIP] Failed to send notification to " + target.getPort() + " (Node Offline?).");
+            }
+        }).start();
+        return null;
     }
 }

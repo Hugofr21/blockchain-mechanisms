@@ -3,7 +3,7 @@ package org.graph.adapter.inbound.network;
 import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.adapter.utils.MessageUtils;
 import org.graph.infrastructure.utils.SerializationUtils;
-import org.graph.domain.policy.EventType;
+import org.graph.domain.policy.EventTypePolicy;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.node.Node;
@@ -14,6 +14,7 @@ import org.graph.server.Peer;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.security.PublicKey;
@@ -76,7 +77,7 @@ public final class Handshake {
 
         Node newNode = new Node(remote.host(),remote.port(), remote.id(), remote.nonce(), remote.networkDifficulty());
         myself.getReputationsManager().getProofOfReputation(newNode.getNodeId().value());
-//        System.out.println("[HANDSHAKE] Create new node: " + newNode);
+
 
         if (!validateRemoteIdentity(remote ,newNode)) {
             logger.severe("Handshake validation failed (PoW or signature).");
@@ -124,45 +125,50 @@ public final class Handshake {
 
     public static void connectAndVerify(String host, int port, Peer myself) {
         new Thread(() -> {
+            Socket socket = null;
             try {
+                socket = new Socket();
+                socket.connect(new InetSocketAddress(host, port), 3000);
 
-                try (Socket socket = new Socket()) {
-                    socket.connect(new InetSocketAddress(host, port), 3000);
+                socket.setSoTimeout(5000);
 
+                ConnectionHandler newHandler = new ConnectionHandler(socket, myself, myself.getLogger(), myself.getGlobalScheduler());
+                newHandler.initStreams();
 
-                    ConnectionHandler newHandler = new ConnectionHandler(socket, myself, myself.getLogger(), myself.getGlobalScheduler());
-                    newHandler.initStreams();
+                Optional<Node> handshakeResult = doHandshake(
+                        myself,
+                        newHandler.getInputStream(),
+                        newHandler.getOutputStream()
+                );
 
-                    Optional<Node> handshakeResult = doHandshake(
-                            myself,
-                            newHandler.getInputStream(),
-                            newHandler.getOutputStream()
+                if (handshakeResult.isPresent()) {
+                    Node verifiedNode = handshakeResult.get();
+
+                    newHandler.setRemoteNode(verifiedNode);
+
+                    myself.getReputationsManager().reportEvent(
+                            verifiedNode.getNodeId().value(),
+                            EventTypePolicy.PING_SUCCESS
                     );
 
-                    if (handshakeResult.isPresent()) {
-                        Node verifiedNode = handshakeResult.get();
+                    myself.getRoutingTable().addNode(verifiedNode);
 
+                    socket.setSoTimeout(0);
 
-                        newHandler.setRemoteNode(verifiedNode);
+                    myself.getNeighboursManager().addConnection(verifiedNode, newHandler);
 
-                        myself.getReputationsManager().reportEvent(
-                                verifiedNode.getNodeId().value(),
-                                EventType.PING_SUCCESS
-                        );
-                        myself.getNeighboursManager().addConnection(verifiedNode, newHandler);
-
-                        myself.getRoutingTable().addNode(verifiedNode);
-
-                        new Thread(newHandler).start();
-
-                        System.out.println("[TOPOLOGY] Node verified and added: " + verifiedNode.getNodeId());
-                    } else {
-                        System.err.println("[SECURITY] Handshake failed for " + host + ":" + port);
-                    }
+                    System.out.println("[TOPOLOGY] Node verified and added: " + verifiedNode.getNodeId());
+                } else {
+                    System.err.println("[SECURITY] Handshake failed for " + host + ":" + port);
+                    socket.close();
                 }
             } catch (Exception e) {
-                System.err.println("[NETWORK] Unreachable: " + host + ":" + port);
+                System.err.println("[NETWORK] Unreachable / Error processing " + host + ":" + port + " - " + e.getMessage());
+                if (socket != null && !socket.isClosed()) {
+                    try { socket.close(); } catch (IOException ignored) {}
+                }
             }
         }).start();
     }
+
 }

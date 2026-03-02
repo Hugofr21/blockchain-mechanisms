@@ -1,6 +1,6 @@
 package org.graph.domain.policy;
 
-public enum EventType {
+public enum EventTypePolicy {
     PING_SUCCESS,       // +1 (Manutenção básica)
     FIND_NODE_USEFUL,   // +5 (Ajudou na Routing Table)
     VALID_TRANSACTION,  // +10 (Enviou transação válida)

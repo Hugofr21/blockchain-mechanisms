@@ -1,8 +1,8 @@
 package org.graph.domain.policy.reputation;
 
-import org.graph.domain.policy.EventType;
+import org.graph.domain.policy.EventTypePolicy;
 
-public class ProofOfReputation {
+public class ProofOfReputationPolicy {
     private double currentProofOfReputation = 0.0;
     private double maxProofOfReputation = 1000.0;
     private double minProofOfReputation = -1000.0;
@@ -15,9 +15,9 @@ public class ProofOfReputation {
 
     private double decayFactor = 0.99;
 
-    public ProofOfReputation() {}
+    public ProofOfReputationPolicy() {}
 
-    public synchronized double recordEvent(EventType event) {
+    public synchronized double recordEvent(EventTypePolicy event) {
         double delta = switch (event) {
             case PING_SUCCESS -> weightPingSuccess;
             case FIND_NODE_USEFUL -> weightFindNodeUseful;
@@ -66,13 +66,16 @@ public class ProofOfReputation {
         return currentProofOfReputation;
     }
 
-    // Método crucial para o S-Kademlia: Retorna 't' para a fórmula
-    // Deve retornar um valor positivo para evitar problemas na divisão 1/t
-    // Normaliza para um valor positivo onde 0.0 (neutro) vira 1.0 ou similar
-    // Estratégia: Mapear [-1000, 1000] para (0, 2] ou similar, ou usar sigmoid
-    // Abordagem simples: Se score <= 0, trust é muito baixo (ex: 0.1). Se > 0, escala.
-    // Trust mínimo para nós desconhecidos ou ruins
-    // Exemplo: Score 100 -> Trust 2.0; Score 1000 -> Trust 11.0
+    /**
+     * Método crucial para o S-Kademlia: Retorna 't' para a fórmula
+     * Deve retornar um valor positivo para evitar problemas na divisão 1/t
+     * Normaliza para um valor positivo onde 0.0 (neutro) vira 1.0 ou similar
+     * Estratégia: Mapear [-1000, 1000] para (0, 2] ou similar, ou usar sigmoid
+     * Abordagem simples: Se score <= 0, trust é muito baixo (ex: 0.1). Se > 0, escala.
+     * Trust mínimo para nós desconhecidos ou ruins
+     * Exemplo: Score 100 -> Trust 2.0; Score 1000 -> Trust 11.0
+     *
+     **/
     public synchronized double getTrustFactor() {
 
         if (currentProofOfReputation <= 0) {

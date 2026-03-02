@@ -34,11 +34,11 @@ import java.math.BigInteger;
  * Kademlia.
  */
 
-public class ChainSyncManager {
+public class ChainSyncUseCase {
     private final NetworkGateway gateway;
     private final IEventDispatcher dispatcher;
     private Peer myself;
-    public ChainSyncManager(NetworkGateway gateway, IEventDispatcher dispatcher, Peer myself) {
+    public ChainSyncUseCase(NetworkGateway gateway, IEventDispatcher dispatcher, Peer myself) {
         this.gateway = gateway;
         this.dispatcher = dispatcher;
         this.myself = myself;

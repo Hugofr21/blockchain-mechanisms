@@ -7,14 +7,18 @@ import org.graph.adapter.utils.Base64Utils;
 import java.math.BigInteger;
 
 public final class  EncapsulationUtils {
-    public static BigInteger encapsulationNodeId(Object rawPayload){
+    public static BigInteger decapsulationNodeId(Object rawPayload){
         try {
-            // CASO 1: É uma String (Hexadecimal) - Vindo do NodeInfoPayload
+
+            if (rawPayload instanceof BigInteger) {
+                return (BigInteger) rawPayload;
+            }
+
+
             if (rawPayload instanceof String hexString) {
                 return new BigInteger(hexString, 16);
             }
 
-            // CASO 2: É um FindNodePayload (Base64) - Vindo de pedidos FIND_NODE
             FindNodePayload payloadObj = null;
 
             if (rawPayload instanceof FindNodePayload) {
@@ -24,6 +28,8 @@ public final class  EncapsulationUtils {
                 Object deserialized = SerializationUtils.deserialize(data);
                 if (deserialized instanceof FindNodePayload) {
                     payloadObj = (FindNodePayload) deserialized;
+                } else if (deserialized instanceof BigInteger) {
+                    return (BigInteger) deserialized;
                 }
             }
 
@@ -40,7 +46,7 @@ public final class  EncapsulationUtils {
         return null;
     }
 
-    public  static NodeListPayload  encapsulationListNodes(Object rawPayload){
+    public  static NodeListPayload  decapsulationListNodes(Object rawPayload){
 
         if (rawPayload instanceof NodeListPayload payload) {
             return payload;

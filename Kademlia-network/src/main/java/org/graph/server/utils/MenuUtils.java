@@ -44,10 +44,19 @@ public class MenuUtils {
                 case 2: showNeighboursMenu(peer);break;
                 case 3: showBlockchainMenu(peer);break;
                 case 4: showAuctionMenu(peer);break;
-                case 5: System.out.println("Exist..."); return;
+                case 5: environmentTest(peer); break;
+                case 6: shutDown(peer); return;
                 default: System.out.println("Option invalid!!");
             }
         }
+    }
+
+    private static void shutDown(Peer peer) {
+
+
+    }
+
+    private static void environmentTest(Peer peer) {
     }
 
 
@@ -219,7 +228,7 @@ public class MenuUtils {
     }
 
     private static void showAuctionMenu(Peer peer) {
-        System.out .println("\n=== Auction Market ===");
+        System.out.println("\n=== Auction Market ===");
         System.out.println("1) Create New Auction (Transaction)");
         System.out.println("2) Place Bid (Transaction)");
         System.out.println("3) List Active Auctions (Ledger)");
@@ -227,31 +236,47 @@ public class MenuUtils {
         System.out.println("0) Back");
 
         System.out.print("Choose: ");
-        int choice = Integer.parseInt(scanner.nextLine());
+
+        int choice;
+        try {
+            choice = Integer.parseInt(scanner.nextLine().trim());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Returning to menu...");
+            return;
+        }
 
         switch (choice) {
             case 1:
-                System.out .print("Item Description: ");
-                String desc = scanner.nextLine ();
+                System.out.print("Item Description: ");
+                String desc = scanner.nextLine();
 
-                System.out .print("Starting Price: ");
-                BigDecimal price = new BigDecimal(scanner .nextLine());
-
-//                System.out .print("Duration (seconds): ");
-//                long duration = Long.parseLong(scanner .nextLine());
+                System.out.print("Starting Price: ");
+                BigDecimal price;
+                try {
+                    // O trim() limpa espaços em branco e \n acidentais
+                    price = new BigDecimal(scanner.nextLine().trim());
+                } catch (NumberFormatException e) {
+                    System.err.println("[ERROR] Invalid price format! Must be a number. Aborting.");
+                    break; // Sai do case sem crashar
+                }
 
                 peer.getNetworkGateway().getAuctionEngine().createdLocalAuctions(price, peer);
                 break;
 
             case 2:
-
                 listActiveAuctions(peer);
 
                 System.out.print("\nAuction ID (Hash): ");
-                String auctionId = scanner.nextLine();
+                String auctionId = scanner.nextLine().trim();
 
                 System.out.print("Valor do Lance: ");
-                BigDecimal bidValue = new BigDecimal(scanner.nextLine());
+                BigDecimal bidValue;
+                try {
+                    bidValue = new BigDecimal(scanner.nextLine().trim());
+                } catch (NumberFormatException e) {
+                    System.err.println("[ERROR] Invalid bid format! Must be a number. Aborting.");
+                    break;
+                }
 
                 peer.getNetworkGateway().getAuctionEngine().placeBidRequest(auctionId, bidValue, peer);
                 break;

@@ -65,15 +65,13 @@ public class ServerHandle implements Runnable {
 
             if (handshake.isPresent()) {
                 Node remoteNode = handshake.get();
-
                 handler.setRemoteNode(remoteNode);
-
-                myPeer.getNeighboursManager().addConnection(remoteNode, handler);
-                myPeer.getRoutingTable().addNode(remoteNode);
 
                 socket.setSoTimeout(0);
 
-                new Thread(handler).start();
+                myPeer.getRoutingTable().addNode(remoteNode);
+
+                myPeer.getNeighboursManager().addConnection(remoteNode, handler);
                 success = true;
             } else {
                 mLogger.warning("Handshake rejected from " + socket.getRemoteSocketAddress());
@@ -87,12 +85,11 @@ public class ServerHandle implements Runnable {
         } finally {
             if (!success) {
                 try {
-                    if (!socket.isClosed()) socket.close();
+                    if (socket != null && !socket.isClosed()) socket.close();
                 } catch (IOException e) { /* ignorar */ }
             }
         }
     }
-
     public void shutdown() {
         try {
             if (server != null && !server.isClosed()) server.close();

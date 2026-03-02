@@ -1,7 +1,7 @@
 package org.graph.server;
 
-import org.graph.application.usecase.blockchain.BlockEventManger;
-import org.graph.application.usecase.blockchain.ChainSyncManager;
+import org.graph.application.usecase.blockchain.BlockEventUseCase;
+import org.graph.application.usecase.blockchain.ChainSyncUseCase;
 import org.graph.application.usecase.reputation.ReputationsManager;
 import org.graph.adapter.inbound.network.NetworkEvent;
 import org.graph.infrastructure.network.BrokerEvent;
@@ -38,9 +38,9 @@ public class Peer {
     private KademliaNetwork mkademliaNetwork;
     private HybridLogicalClock hybridLogicalClock;
     private NetworkGateway networkGateway;
-    private BlockEventManger mBlockEventManger;
+    private BlockEventUseCase mBlockEventUseCase;
     private NetworkEvent networkEvent;
-    private ChainSyncManager mChainSyncManager;
+    private ChainSyncUseCase mChainSyncManager;
     private ReputationsManager reputationsManager;
     private BrokerEvent mBrokerEvent;
 
@@ -66,8 +66,8 @@ public class Peer {
         this.neighboursManager = new NeighboursConnections(this);
         this.mkademliaNetwork = new KademliaNetwork(this);
         this.networkEvent = new NetworkEvent(this.neighboursManager, this.mLogger);
-        this.mBlockEventManger = new BlockEventManger(this.networkGateway, this.networkEvent);
-        this.mChainSyncManager = new ChainSyncManager(this.networkGateway, this.networkEvent,this);
+        this.mBlockEventUseCase = new BlockEventUseCase(this.networkGateway, this.networkEvent);
+        this.mChainSyncManager = new ChainSyncUseCase(this.networkGateway, this.networkEvent,this);
 
         try {
             keys.setOwnPeerIdAndSave(this.myself.getNodeId().value());
@@ -85,8 +85,8 @@ public class Peer {
     public RoutingTable getRoutingTable() { return routingTable; }
     public HybridLogicalClock getHybridLogicalClock() { return hybridLogicalClock; }
     public NetworkGateway getNetworkGateway() { return networkGateway; }
-    public ChainSyncManager getmChainSyncController(){ return mChainSyncManager;}
-    public BlockEventManger getBlockEventManger(){ return mBlockEventManger;}
+    public ChainSyncUseCase getmChainSyncController(){ return mChainSyncManager;}
+    public BlockEventUseCase getBlockEventManger(){ return mBlockEventUseCase;}
     public NetworkEvent getNetworkEvent(){return networkEvent;}
     public KademliaNetwork getMkademliaNetwork( ) {return mkademliaNetwork;}
     public ReputationsManager getReputationsManager(){return reputationsManager;}

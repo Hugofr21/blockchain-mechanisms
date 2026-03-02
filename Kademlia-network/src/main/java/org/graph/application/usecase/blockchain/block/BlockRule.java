@@ -2,7 +2,7 @@ package org.graph.application.usecase.blockchain.block;
 
 
 import org.graph.domain.entities.block.Block;
-import org.graph.application.usecase.blockchain.BlockchainEngine;
+import org.graph.application.usecase.blockchain.BlockchainUseCase;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,13 +10,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class BlockOrganizer {
+public class BlockRule {
     private Map<String, Block> blockMap;
     private Map<String, List<Block>> orphanBlocks;
     private Map<Integer, Block> organizedChain;
-    private BlockchainEngine mBlockchain;
+    private BlockchainUseCase mBlockchain;
 
-    public BlockOrganizer(BlockchainEngine blockchain) {
+    public BlockRule(BlockchainUseCase blockchain) {
         this.mBlockchain = blockchain;
         this.blockMap = new ConcurrentHashMap<>();
         this.orphanBlocks = new ConcurrentHashMap<>();

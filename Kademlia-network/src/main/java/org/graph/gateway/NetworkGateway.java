@@ -1,7 +1,7 @@
 package org.graph.gateway;
 
-import org.graph.application.usecase.auction.AuctionEngine;
-import org.graph.application.usecase.blockchain.BlockchainEngine;
+import org.graph.application.usecase.auction.AuctionCaseUse;
+import org.graph.application.usecase.blockchain.BlockchainUseCase;
 import org.graph.adapter.outbound.network.message.block.InventoryPayload;
 import org.graph.adapter.outbound.network.message.block.InventoryType;
 import org.graph.adapter.provider.IEventDispatcher;
@@ -16,25 +16,25 @@ import static org.graph.adapter.utils.Constants.MAX_TRANSACTIONS;
 import static org.graph.adapter.utils.Constants.NETWORK_DIFFICULTY;
 
 public class NetworkGateway {
-    private final BlockchainEngine blockchainEngine;
-    private final AuctionEngine auctionEngine;
+    private final BlockchainUseCase blockchainUseCase;
+    private final AuctionCaseUse auctionCaseUse;
     private final SecurityValidator securityValidator;
     private IEventDispatcher dispatcher;
     private Peer myself;
 
     public NetworkGateway(Peer myself) {
         this.myself = myself;
-        this.blockchainEngine = new BlockchainEngine(NETWORK_DIFFICULTY , MAX_TRANSACTIONS, myself);
+        this.blockchainUseCase = new BlockchainUseCase(NETWORK_DIFFICULTY , MAX_TRANSACTIONS, myself);
         this.securityValidator = new SecurityValidator();
-        this.auctionEngine = new AuctionEngine(this.blockchainEngine);
-        this.blockchainEngine.addBlockListener(this.auctionEngine);
-        this.blockchainEngine.setNonceProvider(this.auctionEngine::getNextNonce);
+        this.auctionCaseUse = new AuctionCaseUse(this.blockchainUseCase);
+        this.blockchainUseCase.addBlockListener(this.auctionCaseUse);
+        this.blockchainUseCase.setNonceProvider(this.auctionCaseUse::getExpectedLedgerNonce);
     }
 
-    public BlockchainEngine getBlockchainEngine() {
-        return blockchainEngine;
+    public BlockchainUseCase getBlockchainEngine() {
+        return blockchainUseCase;
     }
-    public AuctionEngine getAuctionEngine() {return auctionEngine;}
+    public AuctionCaseUse getAuctionEngine() {return auctionCaseUse;}
     public Peer getMyself(){return myself;}
 
     public void setNetworkDependencies(IEventDispatcher dispatcher, Peer myself) {
@@ -78,19 +78,19 @@ public class NetworkGateway {
             return BlockStateRemote.INVALID;
         }
 
-        if (blockchainEngine.getBlockOrganizer().contains(block.getCurrentBlockHash())) {
+        if (blockchainUseCase.getBlockOrganizer().contains(block.getCurrentBlockHash())) {
             return BlockStateRemote.EXISTS;
         }
 
         try {
-            blockchainEngine.receiveBlockFromPeer(block);
+            blockchainUseCase.receiveBlockFromPeer(block);
         } catch (Exception e) {
             System.err.println("[GATEWAY] Error processing block: " + e.getMessage());
             return BlockStateRemote.INVALID;
         }
 
         if (block.getNumberBlock() > 0 &&
-                !blockchainEngine.getBlockOrganizer().isParentInChain(block.getHeader().getPreviousBlockHash())) {
+                !blockchainUseCase.getBlockOrganizer().isParentInChain(block.getHeader().getPreviousBlockHash())) {
 
             return BlockStateRemote.MISSING_PARENT;
         }

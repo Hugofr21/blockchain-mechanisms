@@ -1,6 +1,5 @@
 package org.graph.gateway.validator;
 
-import org.graph.adapter.utils.CryptoUtils;
 import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.transaction.Transaction;
 
@@ -43,6 +42,7 @@ public class SecurityValidator {
 
             // duplication transaction remote
             if (!blockIds.add(tx.getTxId())){
+                System.err.println("[DEBUG] Invalid transaction ID: " + tx.getTxId());
                 return false;
             }
         }

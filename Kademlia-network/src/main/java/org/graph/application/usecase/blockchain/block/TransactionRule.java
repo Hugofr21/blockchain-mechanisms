@@ -8,9 +8,8 @@ import java.util.function.Function;
 /*
     Mitigar atack replay
     duplicatiosn de transactions
-
  */
-public class TransactionOrganizer {
+public class TransactionRule {
     private Set<Transaction> transactions;
     private Set<Transaction> pendingTransactions;
     private List<String> completedTransactions;
@@ -18,7 +17,7 @@ public class TransactionOrganizer {
     private Object lock;
     private Function<BigInteger, Long> currentNonceProvider;
 
-    public TransactionOrganizer(int maxTransactionsPending) {
+    public TransactionRule(int maxTransactionsPending) {
         this.transactions = new HashSet<Transaction>();
         this.pendingTransactions = new LinkedHashSet<>();
         this.completedTransactions = new ArrayList<>();
@@ -38,9 +37,14 @@ public class TransactionOrganizer {
                 return;
             }
 
-            long expectedNextNonce = currentNonceProvider.apply(transaction.getSenderId());
-            if (transaction.getNonce() < expectedNextNonce){
-                System.out.println("[SECURITY_INFO] Transaction duplicate ignore, possible attack replay: " + transaction);
+            if (currentNonceProvider != null) {
+                long expectedNextNonce = currentNonceProvider.apply(transaction.getSenderId());
+                if (transaction.getNonce() < expectedNextNonce) {
+                    System.err.println("[SECURITY] Replay Attack ignorado! Nonce " + transaction.getNonce() + " < " + expectedNextNonce);
+                    return;
+                }
+            } else {
+                System.out.println("[WARN] Nonce Provider não inicializado. Transação pendente em risco.");
             }
 
             boolean added = pendingTransactions.add(transaction);
@@ -60,19 +64,36 @@ public class TransactionOrganizer {
 
     public List<Transaction> getTransactionsForBlock() {
         synchronized (lock) {
-            if (pendingTransactions.isEmpty()) return null;
+            if (pendingTransactions.isEmpty() || currentNonceProvider == null) return null;
+
             List<Transaction> candidateTxs = new ArrayList<>();
-            List<Transaction> sortedPool = new ArrayList<>();
+            List<Transaction> sortedPool = new ArrayList<>(pendingTransactions);
             sortedPool.sort(Comparator.comparingLong(Transaction::getNonce));
 
-            for (Transaction tx : sortedPool) {
-                long expectedNonce = currentNonceProvider.apply(tx.getSenderId());
-                if (tx.getNonce() == expectedNonce) {
-                    candidateTxs.add(tx);
-                }
-                if (candidateTxs.size() >= maxTransactionsPending) break;
+            Map<BigInteger, Long> localExpectedNonces = new HashMap<>();
+            List<Transaction> staleTxs = new ArrayList<>();
 
+            for (Transaction tx : sortedPool) {
+
+                long expectedNonce = localExpectedNonces.computeIfAbsent(
+                        tx.getSenderId(),
+                        id -> currentNonceProvider.apply(id)
+                );
+
+                if (tx.getNonce() < expectedNonce) {
+                    staleTxs.add(tx);
+                } else if (tx.getNonce() == expectedNonce) {
+                    candidateTxs.add(tx);
+                    localExpectedNonces.put(tx.getSenderId(), expectedNonce + 1);
+                }
+
+                if (candidateTxs.size() >= maxTransactionsPending) break;
             }
+
+            for (Transaction stale : staleTxs) {
+                pendingTransactions.remove(stale);
+            }
+
             return candidateTxs;
         }
     }
@@ -95,19 +116,20 @@ public class TransactionOrganizer {
     public void cleanPool(List<Transaction> minedTxs) {
         synchronized (lock) {
             for (Transaction tx : minedTxs) {
-
                 pendingTransactions.remove(tx);
                 completedTransactions.add(tx.getTxId());
             }
-            System.out.println("[POOL] Cleaning completed. Remaining tasks: " + pendingTransactions.size());
+            System.out.println("[POOL] Limpeza concluída. Restantes: " + pendingTransactions.size());
         }
     }
 
 
     public Transaction getTransactionById(String hashHex) {
-        return pendingTransactions.stream()
-                .filter(tx -> tx.getTxId().equals(hashHex))
-                .findFirst()
-                .orElse(null);
+        synchronized (lock) {
+            return pendingTransactions.stream()
+                    .filter(tx -> tx.getTxId().equals(hashHex))
+                    .findFirst()
+                    .orElse(null);
+        }
     }
 }

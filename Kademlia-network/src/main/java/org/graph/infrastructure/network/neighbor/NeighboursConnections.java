@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -22,10 +25,12 @@ import java.util.stream.Collectors;
 public class NeighboursConnections {
     private final Map<BigInteger, Long> lastTimestamp;
     public final Map<BigInteger, ConnectionEntry> nodesActives;
+    private final ExecutorService ioThreadPool;
 
     public NeighboursConnections(Peer myself) {
         this.lastTimestamp = new ConcurrentHashMap<>();
         this.nodesActives = new ConcurrentHashMap<>();
+        this.ioThreadPool = Executors.newCachedThreadPool();
     }
 
 
@@ -87,9 +92,15 @@ public class NeighboursConnections {
      */
     public void addConnection(Node node, ConnectionHandler handler) {
         BigInteger id = node.getNodeId().value();
-        nodesActives.put(id, new ConnectionEntry(node, handler));
+        ConnectionEntry oldEntry = nodesActives.put(id, new ConnectionEntry(node, handler));
+        if (oldEntry != null && oldEntry.handler() != null) {
+            System.out.println("[CONNECTION MANAGER] Fechando ligação antiga e zombie para o nó: " + id);
+            oldEntry.handler().closeConnection();
+        }
+
         updateTimestamp(id);
-        System.out.println("[HEARTBEAT] Nó registado para monitorização: " + id);
+        ioThreadPool.submit(handler);
+        System.out.println("[HEARTBEAT] Nó registado para monitorização contínua: " + id);
     }
 
     /**
@@ -110,6 +121,17 @@ public class NeighboursConnections {
 
         if (entry != null && entry.handler() != null) {
             entry.handler().closeConnection();
+        }
+    }
+
+    public void shutdown() {
+        ioThreadPool.shutdown();
+        try {
+            if (!ioThreadPool.awaitTermination(2, TimeUnit.SECONDS)) {
+                ioThreadPool.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            ioThreadPool.shutdownNow();
         }
     }
 }

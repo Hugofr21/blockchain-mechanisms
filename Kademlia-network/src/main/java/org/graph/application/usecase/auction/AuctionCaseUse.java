@@ -3,6 +3,9 @@ package org.graph.application.usecase.auction;
 import org.graph.application.usecase.provider.BlockListener;
 import org.graph.application.usecase.provider.TransactionsPublished;
 import org.graph.domain.entities.block.Block;
+import org.graph.domain.entities.message.Message;
+import org.graph.domain.entities.message.MessageType;
+import org.graph.domain.entities.node.Node;
 import org.graph.domain.entities.transaction.Transaction;
 import org.graph.domain.entities.transaction.TransactionType;
 import org.graph.domain.entities.auctions.AuctionState;
@@ -52,16 +55,19 @@ import java.util.concurrent.ConcurrentHashMap;
  * errada e deve ser descartada.
  */
 
-public class AuctionEngine implements BlockListener {
+public class AuctionCaseUse implements BlockListener {
     private final Map<String, AuctionState> ledger;
     private final Map<String, List<Bid>> pendingBids;
     private final TransactionsPublished serviceTransactions;
     private final ConcurrentHashMap<String, Long> userNonces;
-    public AuctionEngine(TransactionsPublished serviceTransactions) {
+    private final ConcurrentHashMap<String, Long> pendingUserNonces;
+
+    public AuctionCaseUse(TransactionsPublished serviceTransactions) {
         this.ledger = new ConcurrentHashMap<>();
         this.pendingBids = new ConcurrentHashMap<>();
         this.serviceTransactions = serviceTransactions;
         this.userNonces = new ConcurrentHashMap<>();
+        this.pendingUserNonces = new ConcurrentHashMap<>();
     }
 
     public Map<String, AuctionState> getWorldState() {
@@ -72,30 +78,49 @@ public class AuctionEngine implements BlockListener {
     public void onBlockCommitted(Block block) {
         for (Transaction tx : block.getTransactions()) {
             try {
+                // 1. Processa a lógica de negócio (se aplicável)
                 processTransactionRemote(tx, block.getHeader().getTimestamp());
-                String idKey =  tx.getSenderId().toString(16);
-                long current =  userNonces.getOrDefault(idKey,0L);
-                if (tx.getNonce() > current) {
-                    userNonces.put(idKey, tx.getNonce());
+
+                // 2. CORREÇÃO: Só atualiza o Nonce se a transação tiver um remetente (OwnerId)
+                if (tx.getSenderId() != null) {
+                    String idKey = tx.getSenderId().toString(16);
+                    long current = userNonces.getOrDefault(idKey, 0L);
+                    if (tx.getNonce() > current) {
+                        userNonces.put(idKey, tx.getNonce());
+                    }
                 }
             } catch (Exception e) {
-                System.err.println("[AUCTION ENGINEER ERROR] Tx " + tx.getTxId().substring(0,8) + ": " + e.getMessage());
+                System.err.println("[AUCTION ENGINEER ERROR] Tx " +
+                        (tx.getTxId() != null ? tx.getTxId().substring(0,8) : "null") +
+                        ": " + e.getMessage());
             }
         }
     }
 
     private void processTransactionRemote(Transaction tx, long blockTimestamp) throws Exception {
-        if (tx.getData() == null || !(tx.getData() instanceof AuctionPayload)) return;
+        // 1. DIAGNÓSTICO: O payload sobreviveu à viagem pela rede?
+        if (tx.getData() == null) {
+            System.err.println("[DEBUG-AUCTION] Ignorado: tx.getData() está NULL. (Falta 'implements Serializable' no AuctionPayload?)");
+            return;
+        }
+        if (!(tx.getData() instanceof AuctionPayload)) {
+            System.err.println("[DEBUG-AUCTION] Ignorado: Dados não são AuctionPayload. Tipo: " + tx.getData().getClass().getName());
+            return;
+        }
 
         AuctionPayload payload = (AuctionPayload) tx.getData();
 
-
         if (payload.getOperation() == AuctionOpType.CREATE) {
-            String newAuctionId = tx.getTxId();
-
-            if (ledger.containsKey(newAuctionId)) return;
-
             AuctionState remoteStateInfo = payload.getAuctionStateRemote();
+
+            // 2. CORREÇÃO CRÍTICA: O ID do leilão é o ID que vem dentro do state, NÃO o ID da transação!
+            String newAuctionId = remoteStateInfo.getAuctionId();
+
+            if (ledger.containsKey(newAuctionId)) {
+                System.out.println("[AUCTION ENGINEER] Leilão já existe localmente, ignorando duplicação.");
+                return;
+            }
+
             AuctionState newState = new AuctionState(
                     newAuctionId,
                     tx.getSenderId(),
@@ -103,9 +128,8 @@ public class AuctionEngine implements BlockListener {
                     remoteStateInfo.getEndTimestamp()
             );
 
-
             ledger.put(newAuctionId, newState);
-            System.out.println("[AUCTION ENGINEER] OFFICIAL auction: " + newAuctionId);
+            System.out.println("[AUCTION ENGINEER] OFFICIAL auction registado no Ledger: " + newAuctionId);
 
             processOrphanBids(newAuctionId, newState);
 
@@ -116,11 +140,9 @@ public class AuctionEngine implements BlockListener {
             AuctionState state = ledger.get(auctionId);
 
             if (state != null) {
-
                 applyBidToState(state, bid, blockTimestamp);
             } else {
-
-//                System.out.println("[AUCTION ENGINEER] Bid received for unknown auction(" + bid.bidPrice() + "). Saving...");
+                System.out.println("[AUCTION ENGINEER] Bid recebido para leilão desconhecido. Guardado nos pendentes: " + auctionId);
                 pendingBids.computeIfAbsent(auctionId, k -> new ArrayList<>()).add(bid);
             }
         }
@@ -165,19 +187,19 @@ public class AuctionEngine implements BlockListener {
      * Obtém o PRÓXIMO nonce válido para um utilizador.
      * Consulta o estado consolidado e soma 1.
      */
-    public synchronized long getNextNonce(BigInteger ownerId) {
+    public synchronized long reserveNextNonce(BigInteger ownerId) {
         String idKey = ownerId.toString(16);
-        return userNonces.getOrDefault(idKey, 0L) + 1;
+        long confirmed = userNonces.getOrDefault(idKey, 0L);
+        long pending = pendingUserNonces.getOrDefault(idKey, 0L);
+        long nextNonce = Math.max(confirmed, pending) + 1;
+        pendingUserNonces.put(idKey, nextNonce);
+
+        return nextNonce;
     }
 
-    /**
-     * Valida se uma transação (recebida da rede) tem um nonce válido (estritamente superior).
-     * Isto deve ser chamado pela Mempool ANTES de aceitar a transação.
-     */
-    public boolean isValidNonce(Transaction tx) {
-        String idKey = tx.getSenderId().toString(16);
-        long currentNonce = userNonces.getOrDefault(idKey, 0L);
-        return tx.getNonce() > currentNonce;
+    public synchronized long getExpectedLedgerNonce(BigInteger ownerId) {
+        String idKey = ownerId.toString(16);
+        return userNonces.getOrDefault(idKey, 0L) + 1;
     }
 
     public void createdLocalAuctions(BigDecimal startPrice, Peer myself) {
@@ -194,7 +216,7 @@ public class AuctionEngine implements BlockListener {
         );
 
         AuctionPayload payload = AuctionPayload.create("New Auction", newAuction);
-        long nonce = getNextNonce(myself.getMyself().getNodeId().value());
+        long nonce = reserveNextNonce(myself.getMyself().getNodeId().value());
 
         Transaction tx = new Transaction(
                 TransactionType.AUCTION_CREATED,
@@ -207,8 +229,8 @@ public class AuctionEngine implements BlockListener {
 
         signAndSubmit(tx, myself);
 
-        BigInteger key = new BigInteger(entropyId, 16);
-        myself.getMkademliaNetwork().storage(key, newAuction);
+        subscribeToAuction(newAuction.getAuctionId(), myself);
+
     }
 
     public void placeBidRequest(String auctionId, BigDecimal bidValue, Peer myself) {
@@ -220,7 +242,7 @@ public class AuctionEngine implements BlockListener {
         );
 
         AuctionPayload payload = AuctionPayload.bid(newBid);
-        long nonce = getNextNonce(myself.getMyself().getNodeId().value());
+        long nonce = reserveNextNonce(myself.getMyself().getNodeId().value());
         Transaction tx = new Transaction(
                 TransactionType.BID,
                 myself.getIsKeysInfrastructure().getOwnerPublicKey(),
@@ -231,6 +253,11 @@ public class AuctionEngine implements BlockListener {
         );
 
         signAndSubmit(tx, myself);
+
+
+        subscribeToAuction(auctionId, myself);
+
+        notifySubscribersOfNewBid(auctionId, tx, myself);
     }
 
     private void signAndSubmit(Transaction tx, Peer myself) {
@@ -243,5 +270,42 @@ public class AuctionEngine implements BlockListener {
         } catch (Exception ex) {
             System.err.println("[AUCTION ENGINEER] Signature error: " + ex.getMessage());
         }
+    }
+
+    private void subscribeToAuction(String auctionId, Peer myself){
+        String topicId = HashUtils.calculateSha256("subscribers_" + auctionId);
+        BigInteger topicKey = new BigInteger(topicId, 16);
+        Set<Node> subscriberSet = new HashSet<>();
+        subscriberSet.add(myself.getMyself());
+        System.out.println("[PUB/SUB] Subscribing to auction: " + auctionId);
+        myself.getMkademliaNetwork().storage(topicKey, subscriberSet);
+    }
+
+
+    private void notifySubscribersOfNewBid(String auctionId, Transaction tx, Peer myself) {
+        new Thread(() -> {
+            try {
+                String topicId = HashUtils.calculateSha256("subscribers_" + auctionId);
+                BigInteger topicKey = new BigInteger(topicId, 16);
+                Object result = myself.getMkademliaNetwork().findValue(topicKey, Object.class);
+
+                if (result instanceof Set<?> subscribers) {
+                    System.out.println("[PUB/SUB] Encontrados " + subscribers.size() + " subscritores para notificar.");
+
+                    Message gossipMsg = new Message(MessageType.TRANSACTION, tx, myself.getHybridLogicalClock());
+
+                    for (Object obj : subscribers) {
+                        if (obj instanceof Node subscriberNode) {
+                            if (subscriberNode.getNodeId().equals(myself.getMyself().getNodeId())) {
+                                continue;
+                            }
+                            myself.getMkademliaNetwork().sendRPCAsync(subscriberNode, gossipMsg);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("[PUB/SUB] Falha ao notificar subscritores: " + e.getMessage());
+            }
+        }).start();
     }
 }

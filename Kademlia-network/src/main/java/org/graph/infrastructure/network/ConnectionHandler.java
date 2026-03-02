@@ -2,11 +2,15 @@ package org.graph.infrastructure.network;
 
 
 import org.graph.adapter.inbound.network.Handshake;
+import org.graph.adapter.outbound.network.message.auction.AuctionPayload;
 import org.graph.adapter.outbound.network.message.node.FindNodePayload;
 import org.graph.adapter.outbound.network.message.node.NodeInfoPayload;
 import org.graph.adapter.outbound.network.message.node.NodeListPayload;
 import org.graph.adapter.utils.Base64Utils;
-import org.graph.domain.policy.EventType;
+import org.graph.domain.entities.auctions.Bid;
+import org.graph.domain.entities.transaction.Transaction;
+import org.graph.domain.entities.transaction.TransactionType;
+import org.graph.domain.policy.EventTypePolicy;
 import org.graph.domain.valueobject.cryptography.PublicKeyPeer;
 import org.graph.infrastructure.utils.EncapsulationUtils;
 import org.graph.adapter.utils.MessageUtils;
@@ -154,16 +158,49 @@ public class ConnectionHandler implements Runnable {
             case GET_BLOCK -> new GetBlockStrategy().handle(message, this);
             case BLOCK -> new BlockStrategy().handle(message, this);
             case INV_DATA -> new InvStrategy().handle(message, this);
+            case TRANSACTION -> handleTransaction(message.getPayload());
             default -> logger.warning("Unhandled message type: " + message.getType());
         }
     }
 
+    private void handleTransaction(Object payload) {
+        try {
+            if (payload instanceof byte[]) {
+                payload = SerializationUtils.deserialize((byte[]) payload);
+            }
+
+            if (payload instanceof Transaction tx) {
+
+                if (tx.getType() == TransactionType.BID) {
+                    if (tx.getData() instanceof AuctionPayload p) {
+                        Bid bid = p.getBidRemote();
+                        System.out.println("\n======== Receive of the transaction: ========");
+                        System.out.println(" [PUB/SUB] NEW LANCE ON THE P2P NETWORK! ");
+                        System.out.println(" Auction: " + bid.auctionId().substring(0,8));
+                        System.out.println("Amount: " + bid.bidPrice() + " €");
+                        System.out.println("=============================================\n");
+                    }
+                }
+
+                myPeer.getNetworkGateway().getBlockchainEngine()
+                        .getTransactionOrganizer().addTransaction(tx);
+
+            } else {
+                logger.warning("[NETWORK] Expected Transaction, received: " +
+                        (payload != null ? payload.getClass().getName() : "null"));
+            }
+
+        } catch (Exception e) {
+            logger.severe("[NETWORK] Err critical an process transaction receive: " + e.getMessage());
+        }
+    }
 
     private void handleAck(Object payload) {
 
     }
 
     private void handleStorage(Object payload) {
+        System.out.println("Received storage packet: " + payload);
         try {
 
             if (payload instanceof byte[]) {
@@ -209,15 +246,23 @@ public class ConnectionHandler implements Runnable {
 
     private void handleFindNode(Object rawPayload) {
         try {
-            BigInteger remoteId = EncapsulationUtils.encapsulationNodeId(rawPayload);
+
+            BigInteger remoteId = EncapsulationUtils.decapsulationNodeId(rawPayload);
+
+            if (remoteId == null) {
+                System.err.println("[FIND_NODE] ERRO: ID desencapsulado é null. Pedido rejeitado.");
+                return;
+            }
+
             List<Node> closestNodes = myPeer.getRoutingTable().findClosestNodesProximity(remoteId, NODE_K);
 
             if (closestNodes.isEmpty()) {
-                System.out.println("[FIND_NODE] AVISO: Routing Table não encontrou vizinhos próximos.");
+                System.out.println("[FIND_NODE] WARNING: Routing table did not find nearest neighbors.");
             }
 
             List<NodeInfoPayload> rawList = closestNodes.stream()
                     .map(n -> {
+
                         byte[] keyBytes = null;
                         PublicKeyPeer pkPeer = myPeer.getIsKeysInfrastructure()
                                 .getNeighborPublicKeyByPeerId(n.getNodeId().value());
@@ -227,7 +272,7 @@ public class ConnectionHandler implements Runnable {
                         }
 
                         if (keyBytes == null) {
-                            System.out.println("[DHT] ERRO CRÍTICO: Vizinho " + n.getPort() + " existe na tabela mas sem Public Key. Ignorado.");
+                            System.out.println("[DHT] CRITICAL ERROR: Neighbor " + n.getPort() + " exists in the table but without a Public Key. Ignored.");
                             return null;
                         }
 
@@ -261,7 +306,7 @@ public class ConnectionHandler implements Runnable {
     private void handleResponseNode(Object rawPayload) {
         System.out.println("[DISCOVERY] I received a response from us.");
 
-        NodeListPayload container = EncapsulationUtils.encapsulationListNodes(rawPayload);
+        NodeListPayload container = EncapsulationUtils.decapsulationListNodes(rawPayload);
 
         if (container != null) {
             List<NodeInfoPayload> list = container.nodes();
@@ -269,7 +314,7 @@ public class ConnectionHandler implements Runnable {
             if (!list.isEmpty() && this.remoteNode != null) {
                 myPeer.getReputationsManager().reportEvent(
                         this.remoteNode.getNodeId().value(),
-                        EventType.FIND_NODE_USEFUL
+                        EventTypePolicy.FIND_NODE_USEFUL
                 );
             }
 
@@ -284,7 +329,7 @@ public class ConnectionHandler implements Runnable {
 
     private void processSingleNodeInfo(NodeInfoPayload info) {
         try {
-            BigInteger remoteId = EncapsulationUtils.encapsulationNodeId(info.nodeId());
+            BigInteger remoteId = EncapsulationUtils.decapsulationNodeId(info.nodeId());
             System.out.println("[DEBUG] Valid candidate ID: " + remoteId);
 
             if (remoteId.equals(myPeer.getMyself().getNodeId().value())) return;

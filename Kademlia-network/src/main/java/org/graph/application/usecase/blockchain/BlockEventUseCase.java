@@ -2,7 +2,7 @@ package org.graph.application.usecase.blockchain;
 
 import org.graph.adapter.outbound.network.message.block.InventoryPayload;
 import org.graph.adapter.outbound.network.message.block.InventoryType;
-import org.graph.domain.policy.EventType;
+import org.graph.domain.policy.EventTypePolicy;
 import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.adapter.provider.IEventDispatcher;
 import org.graph.domain.entities.block.Block;
@@ -42,11 +42,11 @@ import org.graph.gateway.block.BlockStateRemote;
  * ou armazenado temporariamente como bloco órfão.
  */
 
-public class BlockEventManger {
+public class BlockEventUseCase {
     private final NetworkGateway gateway;
     private final IEventDispatcher dispatcher;
 
-    public BlockEventManger(NetworkGateway gateway, IEventDispatcher dispatcher) {
+    public BlockEventUseCase(NetworkGateway gateway, IEventDispatcher dispatcher) {
         this.gateway = gateway;
         this.dispatcher = dispatcher;
     }
@@ -88,7 +88,7 @@ public class BlockEventManger {
                 if (source.getRemoteNode() != null) {
                     gateway.getMyself().getReputationsManager().reportEvent(
                             source.getRemoteNode().getNodeId().value(),
-                            EventType.VALID_BLOCK
+                            EventTypePolicy.VALID_BLOCK
                     );
                 }
             }
@@ -110,7 +110,7 @@ public class BlockEventManger {
                 if (source.getRemoteNode() != null) {
                     gateway.getMyself().getReputationsManager().reportEvent(
                             source.getRemoteNode().getNodeId().value(),
-                            EventType.INVALID_BLOCK
+                            EventTypePolicy.INVALID_BLOCK
                     );
                 }
             }
