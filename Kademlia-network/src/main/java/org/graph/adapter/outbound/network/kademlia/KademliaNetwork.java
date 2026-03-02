@@ -202,7 +202,7 @@ public class KademliaNetwork implements IKademliaIController {
 
                 for (Node received : returnedNodes) {
 
-                    myself.getRoutingTable().addNode(received);
+                    myself.getRoutingTable().addNode(received, myself);
 
 
                     if (!shortlist.contains(received) && !queried.contains(received.getNodeId().value())) {

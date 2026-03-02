@@ -151,7 +151,7 @@ public final class Handshake {
                             EventTypePolicy.PING_SUCCESS
                     );
 
-                    myself.getRoutingTable().addNode(verifiedNode);
+                    myself.getRoutingTable().addNode(verifiedNode, myself);
 
                     socket.setSoTimeout(0);
 

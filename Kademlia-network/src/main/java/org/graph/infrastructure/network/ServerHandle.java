@@ -69,7 +69,7 @@ public class ServerHandle implements Runnable {
 
                 socket.setSoTimeout(0);
 
-                myPeer.getRoutingTable().addNode(remoteNode);
+                myPeer.getRoutingTable().addNode(remoteNode, myPeer);
 
                 myPeer.getNeighboursManager().addConnection(remoteNode, handler);
                 success = true;

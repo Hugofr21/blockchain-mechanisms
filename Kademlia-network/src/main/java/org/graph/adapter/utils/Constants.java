@@ -2,6 +2,7 @@ package org.graph.adapter.utils;
 
 public class Constants {
     public static final int NETWORK_DIFFICULTY = 2;
+    public static final int MAX_GLOBAL_NODES_PER_IP = 2;
     public static final int MAX_TRANSACTIONS = 10;
     public static final int MAX_ALPHA = 3;
     public static final int NODE_K = 5;

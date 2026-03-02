@@ -199,8 +199,8 @@ Descrever e organizar os casos de teste implementados para validar as principais
 ## Test Scenarios
 
 - [X] **Desligamento de nós (fault tolerance)**Simular a indisponibilidade de alguns nós e verificar se o sistema continua operando corretamente, mantendo a **preservação de dados imutáveis**.
-- [ ] **Ataque Eclipse a um nó**Um nó tenta isolar outros nós da rede, testando a resiliência do mecanismo de descoberta e das rotas de comunicação.
-- [ ] **Ataque Sybil**Tentar inserir identidades falsas que sobrescrevam ou corrompam o estado do ledger, verificando a capacidade do protocolo de detectar e rejeitar esses nós.
+- [X] **Ataque Eclipse a um nó**Um nó tenta isolar outros nós da rede, testando a resiliência do mecanismo de descoberta e das rotas de comunicação.
+- [X] **Ataque Sybil**Tentar inserir identidades falsas que sobrescrevam ou corrompam o estado do ledger, verificando a capacidade do protocolo de detectar e rejeitar esses nós.
 - [X] **Simulação de leilão descentralizado**Executar um leilão onde os participantes podem criar e registrar novos objetos/ativos no ledger.
 - [X] **Demonstração do projeto descentralizado**Mostrar a interação entre nós, a rede P2P e os contratos inteligentes em um cenário real de uso.
 - [X] **Autenticação entre nós (Proof‑of‑Validation)**

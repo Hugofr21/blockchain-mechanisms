@@ -1,12 +1,16 @@
 package org.graph.server.utils;
 
+
 import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.auctions.AuctionState;
+import org.graph.domain.valueobject.utils.HashUtils;
 import org.graph.server.Peer;
 import org.graph.domain.entities.node.Node;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PublicKey;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -52,11 +56,147 @@ public class MenuUtils {
     }
 
     private static void shutDown(Peer peer) {
-
+        System.out.println("Shutting down...");
+        peer.getNeighboursManager().shutdown();
+        peer.stopPeer();
+        System.out.println("Shut down complete!");
+        System.exit(0);
 
     }
 
     private static void environmentTest(Peer peer) {
+        System.out.println("\n=== Security Test Environment ===");
+        System.out.println("1) Simulate Sybil Attack (Fake Identity Injection)");
+        System.out.println("2) Simulate Eclipse Attack (IP Saturation)");
+        System.out.println("3) Return");
+        System.out.print("Choose the attack vector: ");
+
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+
+        switch (choice) {
+            case 1: simulateSybilAttack(peer); break;
+            case 2: simulateEclipseAttack(peer); break;
+            case 3: return;
+            default: System.out.println("Invalid option.");
+
+        }
+    }
+
+    private static void simulateEclipseAttack(Peer peer) {
+        System.out.println("\n[SIMULATION] Starting Eclipse Attack Vector...");
+        System.out.println("[SIMULATION] Generating nodes with valid Proof of Work from target IP: 10.0.0.125...");
+
+        String attackIp = "10.0.0.125";
+        int acceptedCount = 0;
+        int rejectedCount = 0;
+        int difficulty = peer.getMyself().getNETWORK_DIFFICULTY();
+
+        for (int i = 0; i < 10; i++) {
+            try {
+                KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+                generator.initialize(2048);
+                KeyPair pair = generator.generateKeyPair();
+                PublicKey publicKey = pair.getPublic();
+
+                long nonce = 0;
+                BigInteger nodeId;
+                BigInteger target = BigInteger.ONE.shiftLeft(256 - difficulty);
+
+                while (true) {
+                    nodeId = HashUtils.calculateHashFromNodeId(publicKey, nonce);
+                    if (nodeId.compareTo(target) < 0) {
+                        break;
+                    }
+                    nonce++;
+                }
+
+                System.out.println("[SIMULATION] Forged identity " + i + " successfully mined (Nonce: " + nonce + ")");
+
+
+                Node attackNode = new Node(
+                        attackIp,
+                        8000 + i,
+                        nodeId,
+                        nonce,
+                        difficulty
+                );
+
+
+                peer.getIsKeysInfrastructure().addNeighborPublicKey(nodeId, publicKey);
+
+                boolean added = peer.getRoutingTable().addNode(attackNode, peer);
+
+                if (added) {
+                    acceptedCount++;
+                } else {
+                    rejectedCount++;
+                }
+
+            } catch (Exception e) {
+                System.err.println("[CRITICAL ERROR] Attack generator iteration failed: " + e.getMessage());
+            }
+        }
+
+
+        System.out.println("\n=== Security Assessment Report ===");
+        System.out.println("Hostile nodes admitted to the table: " + acceptedCount);
+        System.out.println("Hostile nodes rejected (IP Filter): " + rejectedCount);
+
+        if (acceptedCount <= 2) {
+            System.out.println("[SUCCESS] Eclipse defense operational. The topology prevented monopolization of the KBucket.");
+        } else {
+            System.err.println("[SERIOUS FAILURE] The spatial restriction failed. The attacker isolated the node from the legitimate network.");
+        }
+    }
+
+    private static void simulateSybilAttack(Peer peer) {
+        System.out.println("\n[SIMULATION] Starting Sybil Attack Vector...");
+        System.out.println("[SIMULATION] Attempting to inject 50 forged cryptographic identities (without Proof of Work)...");
+
+        int acceptedCount = 0;
+        int rejectedCount = 0;
+
+        for (int i = 0; i < 50; i++) {
+            try {
+                KeyPairGenerator generator = java.security.KeyPairGenerator.getInstance("RSA");
+                generator.initialize(2048);
+                KeyPair pair = generator.generateKeyPair();
+
+                java.math.BigInteger fakeId = new java.math.BigInteger(256, new java.util.Random());
+                long invalidNonce = 0;
+
+                org.graph.domain.entities.node.Node attackNode = new Node(
+                        "192.168.1." + i,
+                        9000 + i,
+                        fakeId,
+                        invalidNonce,
+                        peer.getMyself().getNETWORK_DIFFICULTY()
+                );
+
+                peer.getIsKeysInfrastructure().addNeighborPublicKey(fakeId, pair.getPublic());
+
+                boolean added = peer.getRoutingTable().addNode(attackNode, peer);
+
+                if (added) {
+                    acceptedCount++;
+                } else {
+                    rejectedCount++;
+                }
+            } catch (Exception e) {
+                System.err.println("[CRITICAL ERROR] Attack generator iteration failed: " + e.getMessage());
+            }
+        }
+
+        System.out.println("\n=== Security Assessment Report (Sybil) ===");
+        System.out.println("Hostile nodes admitted to the table: " + acceptedCount);
+        System.out.println("Hostile nodes rejected (PoW Filter): " + rejectedCount);
+
+        if (acceptedCount == 0) {
+            System.out.println("[SUCCESS] Sybil defense operational. The infrastructure blocked all forged identities.");
+        } else {
+            System.err.println("[SERIOUS FAILURE] Mathematical validation failed. The attacker polluted the routing table.");
+        }
     }
 
 
@@ -253,11 +393,10 @@ public class MenuUtils {
                 System.out.print("Starting Price: ");
                 BigDecimal price;
                 try {
-                    // O trim() limpa espaços em branco e \n acidentais
                     price = new BigDecimal(scanner.nextLine().trim());
                 } catch (NumberFormatException e) {
                     System.err.println("[ERROR] Invalid price format! Must be a number. Aborting.");
-                    break; // Sai do case sem crashar
+                    break;
                 }
 
                 peer.getNetworkGateway().getAuctionEngine().createdLocalAuctions(price, peer);

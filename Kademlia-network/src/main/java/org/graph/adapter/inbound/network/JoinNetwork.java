@@ -55,7 +55,7 @@ public record JoinNetwork(Peer myPeer) {
 
             handler.setRemoteNode(bootstrapNode);
             myPeer.getNeighboursManager().addConnection(bootstrapNode, handler);
-            myPeer.getRoutingTable().addNode(bootstrapNode);
+            myPeer.getRoutingTable().addNode(bootstrapNode, myPeer);
 
             new Thread(handler).start();
 

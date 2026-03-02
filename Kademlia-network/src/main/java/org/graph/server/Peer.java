@@ -127,7 +127,7 @@ public class Peer {
     }
 
 
-    private void stopPeer(){
+    public void stopPeer(){
         if (!running) return;
 
         running = false;
