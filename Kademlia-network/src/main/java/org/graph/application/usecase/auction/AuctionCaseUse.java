@@ -62,6 +62,7 @@ public class AuctionCaseUse implements BlockListener {
     private final ConcurrentHashMap<String, Long> userNonces;
     private final ConcurrentHashMap<String, Long> pendingUserNonces;
 
+
     public AuctionCaseUse(TransactionsPublished serviceTransactions) {
         this.ledger = new ConcurrentHashMap<>();
         this.pendingBids = new ConcurrentHashMap<>();
@@ -78,10 +79,7 @@ public class AuctionCaseUse implements BlockListener {
     public void onBlockCommitted(Block block) {
         for (Transaction tx : block.getTransactions()) {
             try {
-                // 1. Processa a lógica de negócio (se aplicável)
                 processTransactionRemote(tx, block.getHeader().getTimestamp());
-
-                // 2. CORREÇÃO: Só atualiza o Nonce se a transação tiver um remetente (OwnerId)
                 if (tx.getSenderId() != null) {
                     String idKey = tx.getSenderId().toString(16);
                     long current = userNonces.getOrDefault(idKey, 0L);
@@ -98,13 +96,12 @@ public class AuctionCaseUse implements BlockListener {
     }
 
     private void processTransactionRemote(Transaction tx, long blockTimestamp) throws Exception {
-        // 1. DIAGNÓSTICO: O payload sobreviveu à viagem pela rede?
+
         if (tx.getData() == null) {
-            System.err.println("[DEBUG-AUCTION] Ignorado: tx.getData() está NULL. (Falta 'implements Serializable' no AuctionPayload?)");
             return;
         }
         if (!(tx.getData() instanceof AuctionPayload)) {
-            System.err.println("[DEBUG-AUCTION] Ignorado: Dados não são AuctionPayload. Tipo: " + tx.getData().getClass().getName());
+            System.err.println("[DEBUG-AUCTION] Ignored: Data is not AuctionPayload. Type: " + tx.getData().getClass().getName());
             return;
         }
 
@@ -113,11 +110,10 @@ public class AuctionCaseUse implements BlockListener {
         if (payload.getOperation() == AuctionOpType.CREATE) {
             AuctionState remoteStateInfo = payload.getAuctionStateRemote();
 
-            // 2. CORREÇÃO CRÍTICA: O ID do leilão é o ID que vem dentro do state, NÃO o ID da transação!
             String newAuctionId = remoteStateInfo.getAuctionId();
 
             if (ledger.containsKey(newAuctionId)) {
-                System.out.println("[AUCTION ENGINEER] Leilão já existe localmente, ignorando duplicação.");
+                System.out.println("[AUCTION ENGINEER] Auction already exists locally, ignoring duplication.");
                 return;
             }
 
@@ -129,7 +125,7 @@ public class AuctionCaseUse implements BlockListener {
             );
 
             ledger.put(newAuctionId, newState);
-            System.out.println("[AUCTION ENGINEER] OFFICIAL auction registado no Ledger: " + newAuctionId);
+            System.out.println("[AUCTION ENGINEER] OFFICIAL auction registered in Ledger: " + newAuctionId);
 
             processOrphanBids(newAuctionId, newState);
 
@@ -142,7 +138,7 @@ public class AuctionCaseUse implements BlockListener {
             if (state != null) {
                 applyBidToState(state, bid, blockTimestamp);
             } else {
-                System.out.println("[AUCTION ENGINEER] Bid recebido para leilão desconhecido. Guardado nos pendentes: " + auctionId);
+                System.out.println("[AUCTION ENGINEER] Bid received for unknown auction. Saved in the following tags: " + auctionId);
                 pendingBids.computeIfAbsent(auctionId, k -> new ArrayList<>()).add(bid);
             }
         }
@@ -257,7 +253,7 @@ public class AuctionCaseUse implements BlockListener {
         );
 
         if (auctionState.getBidHistory().contains(newBid)) {
-            throw new IllegalStateException("Erro: Este lance exato já se encontra registado.");
+            throw new IllegalStateException("Error: This exact bid is already registered.");
         }
 
         AuctionPayload payload = AuctionPayload.bid(newBid);
@@ -307,7 +303,7 @@ public class AuctionCaseUse implements BlockListener {
                 Object result = myself.getMkademliaNetwork().findValue(topicKey, Object.class);
 
                 if (result instanceof Set<?> subscribers) {
-                    System.out.println("[PUB/SUB] Encontrados " + subscribers.size() + " subscritores para notificar.");
+                    System.out.println("[PUB/SUB] Found " + subscribers.size() + " subscribers to notify.");
 
                     Message gossipMsg = new Message(MessageType.TRANSACTION, tx, myself.getHybridLogicalClock());
 
@@ -321,7 +317,7 @@ public class AuctionCaseUse implements BlockListener {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("[PUB/SUB] Falha ao notificar subscritores: " + e.getMessage());
+                System.err.println("[PUB/SUB] Failed to notify subscribers: " + e.getMessage());
             }
         }).start();
     }

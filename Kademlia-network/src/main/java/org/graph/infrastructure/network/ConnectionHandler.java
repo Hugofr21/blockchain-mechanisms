@@ -49,9 +49,8 @@ public class ConnectionHandler implements Runnable {
     private Logger logger;
     private volatile boolean running;
     private Node remoteNode;
-    private BrokerEvent mBrokerEvent;
 
-    public ConnectionHandler(Socket socket, Peer myPeer, Logger mLogger, BrokerEvent brokerEvent) {
+    public ConnectionHandler(Socket socket, Peer myPeer, Logger mLogger) {
         this.socket = socket;
         this.myPeer = myPeer;
         this.logger = mLogger;

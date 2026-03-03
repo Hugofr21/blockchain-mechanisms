@@ -7,6 +7,7 @@ import org.graph.adapter.utils.MessageUtils;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.node.Node;
 import java.math.BigInteger;
+import java.net.SocketException;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -21,11 +22,25 @@ public class NetworkEvent implements IEventDispatcher {
 
     @Override
     public void sendUnicast(Message message, ConnectionHandler context) {
-        if (context == null || context.getOutputStream() == null) return;
+        if (context == null) {
+            logger.warning("[UNICAST] Aborted: Null ConnectionHandler.");
+            return;
+        }
+        if (context.getOutputStream() == null) {
+            logger.warning("[UNICAST] Aborted: OutputStream null for " + context.getRemoteNode().getHost());
+            return;
+        }
+
         try {
+            System.out.println("[DEBUG_UNICAST]: SENDING UNICAST MESSAGE");
             MessageUtils.sendMessage(context.getOutputStream(), message);
+        } catch (SocketException e) {
+            logger.warning("[UNICAST] Broken tunnel to " + context.getRemoteNode().getHost() + ". Removing connection.");
+            neighboursConnections.removeConnection(context.getRemoteNode().getNodeId().value());
         } catch (Exception e) {
-            logger.warning("[UNICAST] Failed to send to" + context.getRemoteNode().getHost());
+            logger.severe("[UNICAST] Fatal error to be sent to " + context.getRemoteNode().getHost() + ": " + e.toString());
+            e.printStackTrace();
+            neighboursConnections.removeConnection(context.getRemoteNode().getNodeId().value());
         }
     }
 
@@ -39,16 +54,25 @@ public class NetworkEvent implements IEventDispatcher {
         }
     }
 
+
+    /**
+     * Verifica no [ConnectionHandler] se o remoteNode não está null.
+     *
+     * Um socket deve estar aberto para permitir comunicação.
+     * Em caso de falha normal, a mensagem pode ficar perdida.
+     *
+     * Não realizamos aqui verificações de conexões contra a estrutura
+     * de broadcast, pois isso é tratado pelo mecanismo de heartbeat.
+     **/
     @Override
     public void broadcastExcept(Message message, Node excludeNode) {
         BigInteger excludeId = (excludeNode != null) ? excludeNode.getNodeId().value() : null;
         for (ConnectionHandler handler : neighboursConnections.getActivesNeighbors()) {
-            if (handler.getRemoteNode() != null) {
                 BigInteger currentId = handler.getRemoteNode().getNodeId().value();
-                if (excludeId == null || !currentId.equals(excludeId)) {
+                if (excludeId == null || !currentId.equals(excludeId)){
                     sendUnicast(message, handler);
                 }
-            }
+
         }
     }
 }

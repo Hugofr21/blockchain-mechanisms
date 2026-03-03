@@ -22,6 +22,8 @@ import java.util.Optional;
  * sends a FindNode message to locate nodes near its identifier;
  * validates and confirms the list of nodes received with the bootstrap node.
  */
+
+
 public record JoinNetwork(Peer myPeer) {
 
     public void attemptJoin(String bootstrapHost, int bootstrapPort) {
@@ -33,7 +35,7 @@ public record JoinNetwork(Peer myPeer) {
             socket = new Socket();
             socket.connect(new InetSocketAddress(bootstrapHost, bootstrapPort), 5_000);
 
-            ConnectionHandler handler = new ConnectionHandler(socket, myPeer, myPeer.getLogger(), myPeer.getGlobalScheduler());
+            ConnectionHandler handler = new ConnectionHandler(socket, myPeer, myPeer.getLogger());
             handler.initStreams();
 
 

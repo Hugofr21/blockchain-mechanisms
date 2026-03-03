@@ -26,6 +26,7 @@ import java.io.DataOutputStream;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.security.PublicKey;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -52,6 +53,7 @@ import static org.graph.adapter.utils.Constants.NODE_K;
  * segurança assumidas pelo protocolo e invalida os pressupostos de
  * comunicação segura entre nós.
  */
+
 public class KademliaNetwork implements IKademliaIController {
     private final Peer myself;
     private final StorageDHT storage;
@@ -443,57 +445,62 @@ public class KademliaNetwork implements IKademliaIController {
                 ConnectionHandler handler = myself.getNeighboursManager()
                         .getNeighbourById(target.getNodeId().value());
 
-
                 if (handler != null && !handler.getSocket().isClosed()) {
                     try {
                         MessageUtils.sendMessage(handler.getOutputStream(), request);
                         System.out.println("[GOSSIP] Notification sent via open tunnel to: " + target.getPort());
                         return;
                     } catch (Exception ex) {
-                        System.out.println("[GOSSIP] Tunnel opened to " + target.getPort() + " failed (Ghost). Trying to find a new connection...");
+                        System.err.println("[GOSSIP] Tunnel opened to " + target.getPort() + " failed (Ghost). Trying to find a new connection...");
                     }
                 }
 
-                Socket socket = null;
-                try  {
-                    socket = new Socket();
-                    socket.connect(new InetSocketAddress(target.getHost(), target.getPort()), 3000);
-
-
-                    socket.setSoTimeout(3000);
-
-                    DataInputStream in = new DataInputStream(socket.getInputStream());
-                    DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-
-                    Optional<Node> handshakeResult = Handshake.doHandshake(myself, in, out);
-
-                    if (handshakeResult.isEmpty()) {
-                        System.out.println("[GOSSIP] Abort. Handshake rejected by " + target.getPort());
-                        return;
-                    }
-
-                    MessageUtils.sendMessage(out, request);
-                    System.out.println("[GOSSIP] Notification sent via new connection to: " + target.getPort());
-
-                    socket.setSoTimeout(0);
-
-                    ConnectionHandler newHandler = new ConnectionHandler(socket, myself, myself.getLogger(), myself.getGlobalScheduler());
-                    myself.getNeighboursManager().addConnection(target, newHandler);
-
-                }catch (Exception e) {
-                    System.err.println("[GOSSIP] Falha de comunicação com " + target.getPort() + ": " + e.getMessage());
-                    if (socket != null && !socket.isClosed()) {
-                        try {
-                            socket.close();
-                        } catch (Exception ignored) {}
-                    }
-                }
 
             } catch (Exception e) {
-
-                System.out.println("[GOSSIP] Failed to send notification to " + target.getPort() + " (Node Offline?).");
+                System.err.println("[GOSSIP] Failed to send notification to " + target.getPort() + " (Node Offline?).");
             }
+
+
         }).start();
         return null;
+    }
+
+    private void tryConnection(Node target, Message request){
+        Socket socket = null;
+        try  {
+            myself.getNeighboursManager().removeConnection(target.getNodeId().value());
+
+            socket = new Socket();
+            socket.connect(new InetSocketAddress(target.getHost(), target.getPort()), 3000);
+
+
+            socket.setSoTimeout(3000);
+
+            DataInputStream in = new DataInputStream(socket.getInputStream());
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+            Optional<Node> handshakeResult = Handshake.doHandshake(myself, in, out);
+
+            if (handshakeResult.isEmpty()) {
+                System.out.println("[GOSSIP] Abort. Handshake rejected by " + target.getPort());
+                return;
+            }
+
+            MessageUtils.sendMessage(out, request);
+            System.out.println("[GOSSIP] Notification sent via new connection to: " + target.getPort());
+
+            socket.setSoTimeout(0);
+
+            ConnectionHandler newHandler = new ConnectionHandler(socket, myself, myself.getLogger());
+            myself.getNeighboursManager().addConnection(target, newHandler);
+
+        }catch (Exception e) {
+            System.err.println("[GOSSIP] Communication failure with " + target.getPort() + ": " + e.getMessage());
+            if (socket != null && !socket.isClosed()) {
+                try {
+                    socket.close();
+                } catch (Exception ignored) {}
+            }
+        }
     }
 }

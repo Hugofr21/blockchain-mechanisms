@@ -132,7 +132,7 @@ public final class Handshake {
 
                 socket.setSoTimeout(5000);
 
-                ConnectionHandler newHandler = new ConnectionHandler(socket, myself, myself.getLogger(), myself.getGlobalScheduler());
+                ConnectionHandler newHandler = new ConnectionHandler(socket, myself, myself.getLogger());
                 newHandler.initStreams();
 
                 Optional<Node> handshakeResult = doHandshake(

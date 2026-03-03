@@ -1,9 +1,8 @@
 package org.graph.infrastructure.storage;
 
-import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -30,85 +29,70 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 
 public class StorageDHT {
-    private Map<BigInteger, StoredValue> data;
-    private final ReentrantLock lock;
+    private final ConcurrentHashMap<BigInteger, StoredValue> data;
 
     public StorageDHT(){
-        this.data = new HashMap<>();
-        this.lock = new ReentrantLock();
+        this.data = new ConcurrentHashMap<>();
     }
 
     private record StoredValue(Object value, Class<?> type) {}
 
     public void put(BigInteger id, Object newValue) {
-        Objects.requireNonNull(id);
-        Objects.requireNonNull(newValue);
+        Objects.requireNonNull(id, "The key identifier cannot be null.");
+        Objects.requireNonNull(newValue, "The value to be stored cannot be null.");
 
-        lock.lock();
-        try {
-            StoredValue existing = data.get(id);
-
-            if (existing != null && existing.value() instanceof Set && newValue instanceof Set){
-                Set<Object> currentSet = (Set<Object>) existing.value();
-                Set<Object> newSet = (Set<Object>) newValue;
+        data.compute(id, (key, existing) -> {
+            if (existing != null && existing.value() instanceof Set<?> currentSet && newValue instanceof Set<?> newSet) {
 
                 Set<Object> mergedSet = new HashSet<>(currentSet);
                 mergedSet.addAll(newSet);
+                return new StoredValue(mergedSet, HashSet.class);
 
-                data.put(id, new StoredValue(mergedSet, HashSet.class));
+            } else if (newValue instanceof Set<?> newSet) {
+                return new StoredValue(new HashSet<>(newSet), HashSet.class);
+
             } else {
-                data.put(id, new StoredValue(newValue, newValue.getClass()));
+                return new StoredValue(newValue, newValue.getClass());
             }
-        } finally {
-            lock.unlock();
-        }
+        });
     }
 
     public <T> T get(BigInteger id, Class<T> clazz) {
-        lock.lock();
-        try {
-            StoredValue sv = data.get(id);
-            if (sv == null) return null;
+        StoredValue sv = data.get(id);
+        if (sv == null) return null;
 
-            if (!clazz.isAssignableFrom(sv.type)) {
-                System.err.println("[Storage] Type error: Expected " + clazz.getSimpleName() +
-                        " but found " + sv.type.getSimpleName());
-                return null;
-            }
-            return clazz.cast(sv.value);
-        } finally {
-            lock.unlock();
+        if (! clazz.isAssignableFrom(sv.type)) {
+            System.err.println("[Storage] Type inconsistency: Expected " +
+                    clazz.getSimpleName() + " but found " + sv.type.getSimpleName());
+
+            return null;
+
         }
+        return clazz.cast(sv.value);
     }
 
     public int size() {
-        lock.lock();
-        try { return data.size(); } finally { lock.unlock(); }
+        return data.size();
     }
 
     public Map<String, String> getAllDataSnapshot() {
-        lock.lock();
-        try {
-            Map<String, String> snapshot = new HashMap<>();
+        Map<String, String> snapshot = new HashMap<>();
 
-            for (Map.Entry<BigInteger, StoredValue> entry : data.entrySet()) {
-                String keyHex = entry.getKey().toString(16);
-                Object val = entry.getValue().value();
+        for (Map.Entry<BigInteger, StoredValue> entry : data.entrySet()) {
+            String keyHex = entry.getKey().toString(16);
+            Object val = entry.getValue().value();
 
-                String valStr;
-                if (val instanceof Set) {
-                    valStr = "[PUB/SUB List] Size: " + ((Set<?>) val).size();
-                } else if (val.getClass().getSimpleName().equals("Block")) {
-                    valStr = "[BLOCK] " + val.toString();
-                } else {
-                    valStr = val.toString();
-                }
-
-                snapshot.put(keyHex, valStr);
+            String valStr;
+            if (val instanceof Set) {
+                valStr = "[PUB/SUB List] Number of Subscribers: " + ((Set<?>) val).size();
+            } else if (val.getClass().getSimpleName().equals("Block")) {
+                valStr = "[BLOCK] " + val.toString();
+            } else {
+                valStr = val.toString();
             }
-            return snapshot;
-        } finally {
-            lock.unlock();
+
+            snapshot.put(keyHex, valStr);
         }
+        return snapshot;
     }
 }

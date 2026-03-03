@@ -26,10 +26,12 @@ public final class MessageUtils {
         return (Message) obj;
     }
 
-    public static  void sendMessage(DataOutputStream outputStream, Object object) throws IOException {
+    public static void sendMessage(DataOutputStream outputStream, Object object) throws IOException {
         byte[] data = SerializationUtils.serialize(object);
-        outputStream.writeInt(data.length);
-        outputStream.write(data);
-        outputStream.flush();
+        synchronized (outputStream) {
+            outputStream.writeInt(data.length);
+            outputStream.write(data);
+            outputStream.flush();
+        }
     }
 }
