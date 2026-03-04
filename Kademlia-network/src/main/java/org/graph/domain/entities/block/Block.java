@@ -44,7 +44,7 @@ public class Block implements Serializable {
     public void mineBlock(int difficulty, int numberThread) {
         long startTime = System.currentTimeMillis();
         AtomicBoolean found = new AtomicBoolean(false);
-
+        CompletionService<MiningResultBlock> completionService = new ExecutorCompletionService<>(minerPool);
         List<Future<MiningResultBlock>> futures = new ArrayList<>();
 
         long nonceRangePerThread = Long.MAX_VALUE / numberThread;
@@ -52,31 +52,27 @@ public class Block implements Serializable {
         for (int i = 0; i < numberThread; i++) {
             long startNonce = i * nonceRangePerThread;
             MinerThreadBlock miner = new MinerThreadBlock(
-                    i, (int) startNonce, (int) nonceRangePerThread,
+                    i, startNonce, nonceRangePerThread,
                     header.getPayloadForMining(), difficulty, found
             );
-            futures.add(minerPool.submit(miner));
+            futures.add(completionService.submit(miner));
         }
 
         MiningResultBlock result = null;
 
         try {
-            for (Future<MiningResultBlock> future : futures) {
-                try {
-
-                    MiningResultBlock r = future.get();
-                    if (r != null) {
-                        result = r;
-                        break;
-                    }
-                } catch (CancellationException e) {
-                    System.out.println("Miner thread has been canceled");
+            for (int i = 0; i < numberThread; i++) {
+                Future<MiningResultBlock> future = completionService.take();
+                MiningResultBlock r = future.get();
+                if (r != null) {
+                    result = r;
+                    break;
                 }
             }
         } catch (InterruptedException | ExecutionException e) {
-            System.out.println("Mining interrupted: " + e.getMessage());
+            System.out.println("Mining execution encountered an anomaly: " + e.getMessage());
+            Thread.currentThread().interrupt();
         } finally {
-
             for (Future<MiningResultBlock> f : futures) {
                 if (!f.isDone()) {
                     f.cancel(true);

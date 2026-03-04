@@ -1,4 +1,4 @@
 package org.graph.application.usecase.mining;
 
-public record MiningResultBlock(int nonce, String hash, int threadId, long attempts) {
+public record MiningResultBlock(long nonce, String hash, int threadId, long attempts) {
 }

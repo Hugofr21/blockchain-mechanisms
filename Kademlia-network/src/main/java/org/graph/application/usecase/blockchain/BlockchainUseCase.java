@@ -137,7 +137,11 @@ public class BlockchainUseCase implements TransactionsPublished {
         Block genesis = new Block(1, 0, "0", genesisTx, currentDifficulty);
         genesis.mineBlock(currentDifficulty, numThreads);
 
-        mBlockRule.addLocalBlock(genesis);
+        if (genesis.getCurrentBlockHash() != null) {
+            mBlockRule.addLocalBlock(genesis);
+        } else {
+            System.out.println("[BLOCK_GENESIS] Genesis block mining failed. Structural insertion aborted.");
+        }
     }
 
     public void addTransaction(Transaction tx) {

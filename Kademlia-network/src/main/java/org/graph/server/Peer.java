@@ -28,6 +28,7 @@ import static org.graph.server.utils.Constants.HOST;
 
 
 public class Peer {
+
     private ServerSocket server;
     private Node myself;
     private RoutingTable routingTable;
@@ -44,7 +45,7 @@ public class Peer {
     private ReputationsManager reputationsManager;
     private BrokerEvent mBrokerEvent;
 
-    public Peer(int port){
+    public Peer(int port) {
         this.keys = new KeysInfrastructure(this, port);
         this.hybridLogicalClock = new HybridLogicalClock();
         this.networkGateway = new NetworkGateway(this);

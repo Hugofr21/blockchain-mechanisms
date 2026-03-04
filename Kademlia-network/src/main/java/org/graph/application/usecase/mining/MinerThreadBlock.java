@@ -6,14 +6,12 @@ import org.graph.domain.valueobject.utils.HashUtils;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public record MinerThreadBlock(int threadId, int startNonce, int nonceRange, String data, int difficulty,
+public record MinerThreadBlock(int threadId, long startNonce, long nonceRange, String data, int difficulty,
                                AtomicBoolean found) implements Callable<MiningResultBlock> {
     public MinerThreadBlock {
-
         if (difficulty < 1) {
             throw new IllegalArgumentException("difficulty must be >= 1 (hex digits).");
         }
-
     }
 
     @Override
@@ -22,7 +20,7 @@ public record MinerThreadBlock(int threadId, int startNonce, int nonceRange, Str
         long endNonce = startNonce + nonceRange;
         long attempts = 0;
 
-        for (int nonce = startNonce; nonce < endNonce && !found.get(); nonce++) {
+        for (long nonce = startNonce; nonce < endNonce && !found.get(); nonce++) {
             if (attempts % 10000 == 0 && found.get()) return null;
 
             attempts++;
@@ -32,10 +30,7 @@ public record MinerThreadBlock(int threadId, int startNonce, int nonceRange, Str
                 found.set(true);
                 return new MiningResultBlock(nonce, hash, threadId, attempts);
             }
-
         }
-
         return null;
     }
-
 }

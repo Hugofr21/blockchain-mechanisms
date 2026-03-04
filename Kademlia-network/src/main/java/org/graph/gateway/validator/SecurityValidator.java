@@ -1,5 +1,6 @@
 package org.graph.gateway.validator;
 
+import org.graph.adapter.utils.CryptoUtils;
 import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.transaction.Transaction;
 
@@ -36,9 +37,9 @@ public class SecurityValidator {
         for (Transaction tx : block.getTransactions()) {
 
             // valid signature
-//            if (!CryptoUtils.verifySignature(tx.getSender(), tx.getDataSign(), tx.getSignature())) {
-//               return false;
-//            }
+            if (!CryptoUtils.verifySignature(tx.getSender(), tx.getDataSign(), tx.getSignature())) {
+               return false;
+            }
 
             // duplication transaction remote
             if (!blockIds.add(tx.getTxId())){
@@ -46,8 +47,6 @@ public class SecurityValidator {
                 return false;
             }
         }
-
-
         return true;
     }
 

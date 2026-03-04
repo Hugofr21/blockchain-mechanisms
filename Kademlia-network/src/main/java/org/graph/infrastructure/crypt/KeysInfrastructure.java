@@ -61,8 +61,6 @@ public class KeysInfrastructure {
 
     private void initializeKeys() throws Exception {
         boolean loaded = false;
-
-        // 1. Tenta carregar se o arquivo existir
         if (keyStorageManager.ownKeyPairExists()) {
             try {
                 this.ownKeyPair = keyStorageManager.loadOwnKeyPair();
@@ -72,7 +70,6 @@ public class KeysInfrastructure {
                 }
             } catch (Exception e) {
                 System.err.println("[WARN] Key file corrupted or incompatible. Generating new keys. Error: " + e.getMessage());
-                // Se falhar carregar, não pare. Deixe cair no bloco de criação abaixo.
             }
         }
 

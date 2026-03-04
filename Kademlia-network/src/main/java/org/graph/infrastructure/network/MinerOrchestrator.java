@@ -25,6 +25,11 @@ public class MinerOrchestrator {
 
         System.out.println("[INFO] Starting Mining process with difficulty " + NETWORK_DIFFICULTY + " on " + cores + " cores.");
 
+        if (publicKey == null) {
+            System.err.println("[ERROR] Public key is null");
+            System.exit(-1);
+        }
+
         for (int i = 0; i < cores; i++) {
             long startNonce = i * rangePerThread;
             tasks.add(new MinerThread(i, startNonce, rangePerThread, publicKey.getEncoded(), NETWORK_DIFFICULTY, found));
