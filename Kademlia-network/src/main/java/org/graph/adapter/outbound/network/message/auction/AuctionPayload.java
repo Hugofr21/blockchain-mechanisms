@@ -29,6 +29,19 @@ public class AuctionPayload implements Serializable {
         return p;
     }
 
+    public static AuctionPayload genesis() {
+        AuctionPayload p = new AuctionPayload();
+        p.operation = AuctionOpType.GENESIS;
+        return p;
+    }
+
+    public static AuctionPayload close(String auctionId) {
+        AuctionPayload p = new AuctionPayload();
+        p.operation = AuctionOpType.CLOSE;
+        p.itemDescription = auctionId;
+        return p;
+    }
+
     public AuctionState getAuctionStateRemote() {
         return auctionState;
     }
@@ -43,7 +56,9 @@ public class AuctionPayload implements Serializable {
 
     @Override
     public String toString() {
-        if (operation == AuctionOpType.CREATE) {
+        if (operation == AuctionOpType.GENESIS) {
+            return "[SYSTEM_DEFAULT: GENESIS] System Initialization";
+        } else if (operation == AuctionOpType.CREATE) {
             String desc = (itemDescription != null) ? itemDescription : "N/A";
             String price = (auctionState != null) ? String.valueOf(auctionState.getMinPrice()) : "?";
             return String.format("[OP: CREATE] Item: '%s' | Start: %s", desc, price);

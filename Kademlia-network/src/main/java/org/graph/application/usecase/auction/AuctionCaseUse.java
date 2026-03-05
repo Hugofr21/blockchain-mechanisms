@@ -141,6 +141,20 @@ public class AuctionCaseUse implements BlockListener {
                 System.out.println("[AUCTION ENGINEER] Bid received for unknown auction. Saved in the following tags: " + auctionId);
                 pendingBids.computeIfAbsent(auctionId, k -> new ArrayList<>()).add(bid);
             }
+        } else if (payload.getOperation() == AuctionOpType.CLOSE) {
+            String targetAuctionId = payload.getItemDescription();
+            AuctionState state = ledger.get(targetAuctionId);
+
+            if (state != null && state.isOpen()) {
+                boolean isTimeExpired = blockTimestamp >= state.getEndTimestamp();
+
+                if (isTimeExpired) {
+                    state.closeAuction();
+                }else {
+                    System.err.println("[AUCTION_CLOSED] The time not it has come to an end.");
+                }
+
+            }
         }
     }
 
@@ -199,7 +213,7 @@ public class AuctionCaseUse implements BlockListener {
     }
 
     public void createdLocalAuctions(BigDecimal startPrice, Peer myself) {
-        long durationMillis = 24L * 60L * 60L * 1000L;
+        long durationMillis = 2L * 60L * 1000L;
         long endTime = System.currentTimeMillis() + durationMillis;
 
         String entropyId = HashUtils.calculateSha256(myself.getMyself().getNodeId().value() + startPrice.toString() + endTime);
@@ -233,16 +247,19 @@ public class AuctionCaseUse implements BlockListener {
         AuctionState auctionState = ledger.get(auctionId);
 
         if (auctionState == null) {
-            throw new IllegalArgumentException("Error: The specified auction does not exist in the local ledger.");
+            System.err.println("Error: The specified auction does not exist in the local ledger.");
+            return;
         }
 
         if (!auctionState.isOpen() || System.currentTimeMillis() > auctionState.getEndTimestamp()) {
-            throw new IllegalStateException("Error: The auction is closed. No new bids are accepted.");
+            System.err.println("Error: The auction is closed. No new bids are accepted.");
+            return;
         }
 
         if (bidValue.compareTo(auctionState.getCurrentHighestBid()) <= 0) {
-            throw new IllegalArgumentException("Business error: The bid value (" + bidValue +
+            System.err.println("Business error: The bid value (" + bidValue +
                     ") must be strictly greater than the current maximum value (" + auctionState.getCurrentHighestBid() + ").");
+            return;
         }
 
         Bid newBid = new Bid(
@@ -253,7 +270,7 @@ public class AuctionCaseUse implements BlockListener {
         );
 
         if (auctionState.getBidHistory().contains(newBid)) {
-            throw new IllegalStateException("Error: This exact bid is already registered.");
+            System.err.println("Error: This exact bid is already registered.");
         }
 
         AuctionPayload payload = AuctionPayload.bid(newBid);
@@ -273,6 +290,39 @@ public class AuctionCaseUse implements BlockListener {
         notifySubscribersOfNewBid(auctionId, tx, myself);
     }
 
+    public void closeAuctionRequest(String auctionId, Peer myself) {
+        AuctionState auctionState = ledger.get(auctionId);
+
+        if (auctionState == null) {
+            throw new IllegalArgumentException("Error: Auction does not exist.");
+        }
+
+        if (!auctionState.isOpen()) {
+            throw new IllegalStateException("Error: Auction is already closed.");
+        }
+
+//        if (System.currentTimeMillis() < auctionState.getEndTimestamp()) {
+//            throw new IllegalStateException("Business error: Cannot close an auction before its deadline.");
+//        }
+
+        AuctionPayload payload = AuctionPayload.close(auctionId);
+        long nonce = reserveNextNonce(myself.getMyself().getNodeId().value());
+
+        Transaction tx = new Transaction(
+                TransactionType.AUCTION_CLOSED,
+                myself.getIsKeysInfrastructure().getOwnerPublicKey(),
+                payload,
+                myself.getMyself().getNodeId().value(),
+                nonce,
+                myself.getHybridLogicalClock().getPhysicalClock()
+        );
+
+        signAndSubmit(tx, myself);
+
+        notifySubscribersOfAuctionEvent(auctionId, tx, myself);
+
+    }
+
     private void signAndSubmit(Transaction tx, Peer myself) {
         try {
             String data = tx.getDataSign();
@@ -288,12 +338,24 @@ public class AuctionCaseUse implements BlockListener {
     private void subscribeToAuction(String auctionId, Peer myself){
         String topicId = HashUtils.calculateSha256("subscribers_" + auctionId);
         BigInteger topicKey = new BigInteger(topicId, 16);
-        Set<Node> subscriberSet = new HashSet<>();
-        subscriberSet.add(myself.getMyself());
-        System.out.println("[PUB/SUB] Subscribing to auction: " + auctionId);
-        myself.getMkademliaNetwork().storage(topicKey, subscriberSet);
-    }
 
+        System.out.println("[PUB/SUB] Fetching existing subscribers for: " + auctionId);
+        Object existingSubscribers = myself.getMkademliaNetwork().findValue(topicKey, Object.class);
+
+        Set<Node> subscriberSet;
+        if (existingSubscribers instanceof Set<?>) {
+            subscriberSet = (Set<Node>) existingSubscribers;
+        } else {
+            subscriberSet = new HashSet<>();
+        }
+
+        if (subscriberSet.add(myself.getMyself())) {
+            System.out.println("[PUB/SUB] Registering self in auction topic: " + auctionId);
+            myself.getMkademliaNetwork().storage(topicKey, subscriberSet);
+        } else {
+            System.out.println("[PUB/SUB] Node already subscribed to auction topic.");
+        }
+    }
 
     private void notifySubscribersOfNewBid(String auctionId, Transaction tx, Peer myself) {
         new Thread(() -> {
@@ -304,6 +366,33 @@ public class AuctionCaseUse implements BlockListener {
 
                 if (result instanceof Set<?> subscribers) {
                     System.out.println("[PUB/SUB] Found " + subscribers.size() + " subscribers to notify.");
+
+                    Message gossipMsg = new Message(MessageType.TRANSACTION, tx, myself.getHybridLogicalClock());
+
+                    for (Object obj : subscribers) {
+                        if (obj instanceof Node subscriberNode) {
+                            if (subscriberNode.getNodeId().equals(myself.getMyself().getNodeId())) {
+                                continue;
+                            }
+                            myself.getMkademliaNetwork().sendRPCAsync(subscriberNode, gossipMsg);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("[PUB/SUB] Failed to notify subscribers: " + e.getMessage());
+            }
+        }).start();
+    }
+
+    private void notifySubscribersOfAuctionEvent(String auctionId, Transaction tx, Peer myself) {
+        new Thread(() -> {
+            try {
+                String topicId = HashUtils.calculateSha256("subscribers_" + auctionId);
+                BigInteger topicKey = new BigInteger(topicId, 16);
+                Object result = myself.getMkademliaNetwork().findValue(topicKey, Object.class);
+
+                if (result instanceof Set<?> subscribers) {
+                    System.out.println("[PUB/SUB] Found " + subscribers.size() + " subscribers to notify about auction event.");
 
                     Message gossipMsg = new Message(MessageType.TRANSACTION, tx, myself.getHybridLogicalClock());
 

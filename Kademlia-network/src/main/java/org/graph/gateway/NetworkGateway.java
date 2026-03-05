@@ -83,8 +83,12 @@ public class NetworkGateway {
             return BlockStateRemote.EXISTS;
         }
 
+        boolean acceptedLocal;
         try {
-            blockchainUseCase.receiveBlockFromPeer(block);
+            acceptedLocal = blockchainUseCase.receiveBlockFromPeer(block);
+            if (!acceptedLocal) {
+                return BlockStateRemote.INVALID;
+            }
         } catch (Exception e) {
             System.err.println("[GATEWAY] Error processing block: " + e.getMessage());
             return BlockStateRemote.INVALID;
@@ -95,6 +99,9 @@ public class NetworkGateway {
 
             return BlockStateRemote.MISSING_PARENT;
         }
+
+        announceBlockToNetwork(block);
+
 
         return BlockStateRemote.ADDED;
     }

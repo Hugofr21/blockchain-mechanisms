@@ -44,7 +44,6 @@ public class AuctionState implements Serializable {
 
     public void addSuccessfulBid(Bid bid) {
         if (bid != null && this.bidHistory.add(bid)) {
-            this.bidHistory.add(bid);
             this.currentHighestBid = bid.bidPrice();
             this.currentWinnerId = bid.newBidderId();
         }

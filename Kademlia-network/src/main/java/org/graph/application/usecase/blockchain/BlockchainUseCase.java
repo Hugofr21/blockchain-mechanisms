@@ -1,5 +1,6 @@
 package org.graph.application.usecase.blockchain;
 
+import org.graph.adapter.outbound.network.message.auction.AuctionPayload;
 import org.graph.application.usecase.provider.BlockListener;
 import org.graph.application.usecase.provider.TransactionsPublished;
 import org.graph.domain.entities.block.Block;
@@ -133,9 +134,31 @@ public class BlockchainUseCase implements TransactionsPublished {
         }
 
         List<Transaction> genesisTx = new ArrayList<>();
-        genesisTx.add(new Transaction(TransactionType.REGULAR_TRANSFER, myself.getHybridLogicalClock().getPhysicalClock()));
+        AuctionPayload genesisData = AuctionPayload.genesis();
+
+        Transaction tx = new Transaction(
+                TransactionType.REGULAR_TRANSFER,
+                myself.getIsKeysInfrastructure().getOwnerPublicKey(),
+                genesisData,
+                myself.getMyself().getNodeId().value(),
+                0L,
+                myself.getHybridLogicalClock().getPhysicalClock()
+        );
+
+        try {
+            String dataToSign = tx.getDataSign();
+            byte[] signature = myself.getIsKeysInfrastructure().signMessage(dataToSign);
+            tx.setSignature(signature);
+        } catch (Exception e) {
+            System.err.println("[4] Failed to sign transaction Genesis: " + e.getMessage());
+            return;
+        }
+
+        genesisTx.add(tx);
+
         Block genesis = new Block(1, 0, "0", genesisTx, currentDifficulty);
         genesis.mineBlock(currentDifficulty, numThreads);
+
 
         if (genesis.getCurrentBlockHash() != null) {
             mBlockRule.addLocalBlock(genesis);
@@ -145,7 +168,6 @@ public class BlockchainUseCase implements TransactionsPublished {
     }
 
     public void addTransaction(Transaction tx) {
-        // TODO: verify Signature
         if (tx == null) {
             System.err.println("[BLOCK_TRANSACTION] Invalid transaction rejected.");
             return;
@@ -160,6 +182,7 @@ public class BlockchainUseCase implements TransactionsPublished {
         }
     }
 
+
     public void createNewBlock() {
         List<Transaction> transactions = mTransactionRule.getTransactionsForBlock();
 
@@ -168,7 +191,7 @@ public class BlockchainUseCase implements TransactionsPublished {
             return;
         }
 
-        System.out.println("[MINER] Criando Bloco #" + getInfoBlock().key() + " apontando para " + getInfoBlock().value());
+        System.out.println("[MINER] Creating Block #" + getInfoBlock().key() + " pointing to " + getInfoBlock().value());
 
         Block newBlock = new Block(1,getInfoBlock().key() , getInfoBlock().value(), transactions, currentDifficulty);
         newBlock.mineBlock(currentDifficulty, numThreads);
@@ -182,15 +205,28 @@ public class BlockchainUseCase implements TransactionsPublished {
         BigInteger keyId = new BigInteger(newBlock.getCurrentBlockHash(), 16);
         myself.getMkademliaNetwork().storage(keyId, newBlock);
 
+        myself.getNetworkGateway().announceBlockToNetwork(newBlock);
+
     }
 
 
     public boolean receiveBlockFromPeer(Block block) throws InterruptedException {
         System.out.println("\n[BLOCKCHAIN] Receiving block from peer...");
         System.out.println("Current Block: " + block);
-        Thread.sleep(100);
-        notifyListeners(block);
-        return mBlockRule.receiveBlock(block);
+
+        boolean isAdded = mBlockRule.receiveBlock(block);
+
+        if (isAdded) {
+            System.out.println("[BLOCKCHAIN] Block accepted. Cleaning pending transactions...");
+            mTransactionRule.cleanPool(block.getTransactions());
+
+            Thread.sleep(100);
+            notifyListeners(block);
+        } else {
+            System.err.println("[BLOCKCHAIN] Block rejected by BlockRule.");
+        }
+
+        return isAdded;
     }
 
     private Pair<Integer, String> getInfoBlock (){

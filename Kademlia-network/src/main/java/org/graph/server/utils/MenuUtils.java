@@ -428,6 +428,7 @@ public class MenuUtils {
         System.out.println("2) Place Bid (Transaction)");
         System.out.println("3) List Active Auctions (Ledger)");
         System.out.println("4) Simulation: 2 Auctions + 40 Bids");
+        System.out.println("5) Closed auction ledger");
         System.out.println("0) Back");
 
         System.out.print("Choose: ");
@@ -480,6 +481,11 @@ public class MenuUtils {
                 break;
             case 4:
                 runStressTest(peer);
+                break;
+            case 5:
+                System.out.print("\nAuction ID (Hash): ");
+                String auctionIdClosed = scanner.nextLine().trim();
+                peer.getNetworkGateway().getAuctionEngine().closeAuctionRequest(auctionIdClosed, peer);
                 break;
             case 0:
                 return;
