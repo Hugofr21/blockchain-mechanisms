@@ -4,7 +4,10 @@ import org.graph.domain.valueobject.cryptography.KeyPairPeer;
 import org.graph.domain.valueobject.cryptography.PublicKeyPeer;
 
 import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -25,18 +28,23 @@ class KeyStorageManager {
     private final String rootDir;
     private final String ownKeysDir;
     private final String neighborKeysDir;
+    private final char[] nodePassword;
 
     private static final String PRIVATE_KEY_FILE = "private.key";
     private static final String PUBLIC_KEY_FILE = "public.key";
     private static final String PEER_INFO_FILE = "peer.properties";
-    private static final String PASSWORD = "admin";
+
+    private static final int ITERATIONS = 100000;
+    private static final int KEY_LENGTH_BITS = 256;
+    private static final int SALT_LENGTH = 16;
+    private static final int IV_LENGTH = 12;
 
 
-    public KeyStorageManager(String peerIdentifier) {
+    public KeyStorageManager(String peerIdentifier, char[] password) {
         this.rootDir = "storage_" + peerIdentifier + "/keys";
         this.ownKeysDir = this.rootDir + "/own";
         this.neighborKeysDir = this.rootDir + "/neighbors";
-
+        this.nodePassword = password;
         initializeDirectories();
     }
 
@@ -48,23 +56,19 @@ class KeyStorageManager {
             throw new RuntimeException("Error creating unique key directories for peer.", e);
         }
     }
-
     /**
      * Securely saves your own pair of keys.
      * (Removido 'static' para acessar 'ownKeysDir')
      */
     public void saveOwnKeyPair(KeyPairPeer keyPair) throws Exception {
-        // 1. Salvar Chave PÚBLICA (X.509)
         Path publicKeyPath = Paths.get(ownKeysDir, PUBLIC_KEY_FILE);
         byte[] publicBytes = keyPair.getPublicKey().getKey().getEncoded();
         Files.write(publicKeyPath, publicBytes);
 
-        // 2. Salvar Chave PRIVADA (PKCS#8 Encrita)
         byte[] encryptedPrivateKey = encryptPrivateKey(keyPair.getPrivateKey().getEncoded());
         Path privateKeyPath = Paths.get(ownKeysDir, PRIVATE_KEY_FILE);
         Files.write(privateKeyPath, encryptedPrivateKey);
 
-        // 3. Salvar Metadados
         Properties props = new Properties();
         props.setProperty("peerId", keyPair.getPeerId().toString());
         props.setProperty("fingerprint", keyPair.getFingerprint());
@@ -77,7 +81,7 @@ class KeyStorageManager {
             props.store(fos, "Peer Key Information");
         }
 
-        System.out.println("Saved keys to " + ownKeysDir + " - Fingerprint: " + keyPair.getFingerprint());
+        System.out.println("[SECURITY] Saved keys with PBKDF2 encryption to " + ownKeysDir);
     }
 
     /**
@@ -86,7 +90,6 @@ class KeyStorageManager {
     public KeyPairPeer loadOwnKeyPair() throws Exception {
         Path propsPath = Paths.get(ownKeysDir, PEER_INFO_FILE);
 
-        // Verifica existência baseada na pasta da instância
         if (!Files.exists(propsPath) || !Files.exists(Paths.get(ownKeysDir, PUBLIC_KEY_FILE))) {
             return null;
         }
@@ -98,19 +101,16 @@ class KeyStorageManager {
         BigInteger peerId = new BigInteger(props.getProperty("peerId"));
         String savedFingerprint = props.getProperty("fingerprint");
 
-        // Carregar Pública
         Path publicKeyPath = Paths.get(ownKeysDir, PUBLIC_KEY_FILE);
         byte[] publicKeyBytes = Files.readAllBytes(publicKeyPath);
         KeyFactory keyFactory = KeyFactory.getInstance("EC", "BC");
-        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(publicKeyBytes);
-        PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
+        PublicKey publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(publicKeyBytes));
 
-        // Carregar Privada
         Path privateKeyPath = Paths.get(ownKeysDir, PRIVATE_KEY_FILE);
         byte[] encryptedPrivateKey = Files.readAllBytes(privateKeyPath);
+
         byte[] privateKeyBytes = decryptPrivateKey(encryptedPrivateKey);
-        PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
-        PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
+        PrivateKey privateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(privateKeyBytes));
 
         PublicKeyPeer publicKeyPeer = new PublicKeyPeer(publicKey);
         publicKeyPeer.setPeerId(peerId);
@@ -120,7 +120,6 @@ class KeyStorageManager {
             throw new SecurityException("Fingerprint integrity check failed.");
         }
 
-        System.out.println("Loaded keys from " + ownKeysDir);
         return keyPair;
     }
 
@@ -209,31 +208,45 @@ class KeyStorageManager {
         return Files.exists(publicKeyPath) && Files.exists(privateKeyPath);
     }
 
-    private static byte[] encryptPrivateKey(byte[] privateKeyBytes) throws Exception {
-        SecretKeySpec keySpec = deriveKey();
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        byte[] iv = new byte[12];
+    private byte[] encryptPrivateKey(byte[] privateKeyBytes) throws Exception {
         SecureRandom random = new SecureRandom();
+        byte[] salt = new byte[SALT_LENGTH];
+        random.nextBytes(salt);
+
+        SecretKey keySpec = deriveKey(salt);
+
+        byte[] iv = new byte[IV_LENGTH];
         random.nextBytes(iv);
         GCMParameterSpec parameterSpec = new GCMParameterSpec(128, iv);
 
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, keySpec, parameterSpec);
         byte[] encrypted = cipher.doFinal(privateKeyBytes);
 
-        byte[] result = new byte[iv.length + encrypted.length];
-        System.arraycopy(iv, 0, result, 0, iv.length);
-        System.arraycopy(encrypted, 0, result, iv.length, encrypted.length);
+        byte[] result = new byte[salt.length + iv.length + encrypted.length];
+        System.arraycopy(salt, 0, result, 0, salt.length);
+        System.arraycopy(iv, 0, result, salt.length, iv.length);
+        System.arraycopy(encrypted, 0, result, salt.length + iv.length, encrypted.length);
 
         return result;
     }
 
-    private byte[] decryptPrivateKey(byte[] encryptedData) throws Exception {
-        SecretKeySpec keySpec = deriveKey();
+    private byte[] decryptPrivateKey(byte[] fileData) throws Exception {
+        if (fileData.length < SALT_LENGTH + IV_LENGTH) {
+            throw new SecurityException("Encrypted key file is corrupted or too short.");
+        }
 
-        byte[] iv = new byte[12];
-        byte[] encrypted = new byte[encryptedData.length - 12];
-        System.arraycopy(encryptedData, 0, iv, 0, 12);
-        System.arraycopy(encryptedData, 12, encrypted, 0, encrypted.length);
+        byte[] salt = new byte[SALT_LENGTH];
+        System.arraycopy(fileData, 0, salt, 0, SALT_LENGTH);
+
+        SecretKey keySpec = deriveKey(salt);
+
+        byte[] iv = new byte[IV_LENGTH];
+        System.arraycopy(fileData, SALT_LENGTH, iv, 0, IV_LENGTH);
+
+        int cipherTextLength = fileData.length - SALT_LENGTH - IV_LENGTH;
+        byte[] encrypted = new byte[cipherTextLength];
+        System.arraycopy(fileData, SALT_LENGTH + IV_LENGTH, encrypted, 0, cipherTextLength);
 
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         GCMParameterSpec parameterSpec = new GCMParameterSpec(128, iv);
@@ -242,10 +255,11 @@ class KeyStorageManager {
         return cipher.doFinal(encrypted);
     }
 
-    private static SecretKeySpec deriveKey() throws Exception {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] key = digest.digest(PASSWORD.getBytes(StandardCharsets.UTF_8));
-        return new SecretKeySpec(key, "AES");
+    private SecretKey deriveKey(byte[] salt) throws Exception {
+        PBEKeySpec spec = new PBEKeySpec(nodePassword, salt, ITERATIONS, KEY_LENGTH_BITS);
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        byte[] keyBytes = factory.generateSecret(spec).getEncoded();
+        return new SecretKeySpec(keyBytes, "AES");
     }
 
 }

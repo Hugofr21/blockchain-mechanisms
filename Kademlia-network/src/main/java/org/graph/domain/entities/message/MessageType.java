@@ -18,9 +18,9 @@ public enum MessageType {
     INV_DATA((byte) 0x18),
     RESPONSE_NODES((byte) 0x19),
     CHAIN_STATUS_RESPONSE((byte) 0x20),
-    // --- NOVOS TIPOS ---
-    GET_DATA((byte) 0x21),    // Para pedir Transações (baseado em INV)
-    TRANSACTION((byte) 0x22); // Para enviar a Transação (resposta ao GET_DATA)
+    GET_DATA((byte) 0x21),
+    TRANSACTION((byte) 0x22),
+    HELLO_ACK((byte) 0x23);
 
 
     private final byte code;

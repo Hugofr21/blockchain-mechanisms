@@ -45,8 +45,8 @@ public class Peer {
     private ReputationsManager reputationsManager;
     private BrokerEvent mBrokerEvent;
 
-    public Peer(int port) {
-        this.keys = new KeysInfrastructure(this, port);
+    public Peer(int port, char[] password) {
+        this.keys = new KeysInfrastructure(this, port, password);
         this.hybridLogicalClock = new HybridLogicalClock();
         this.networkGateway = new NetworkGateway(this);
         this.mBrokerEvent =  new BrokerEvent();

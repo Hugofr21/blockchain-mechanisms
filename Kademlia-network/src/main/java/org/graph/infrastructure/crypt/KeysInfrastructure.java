@@ -23,14 +23,14 @@ public class KeysInfrastructure {
     private KeyStorageManager keyStorageManager;
     private Peer ownPeer;
 
-    public KeysInfrastructure(Peer ownPeer, int port) {
+    public KeysInfrastructure(Peer ownPeer, int port, char[] password) {
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
             Security.addProvider(new BouncyCastleProvider());
         }
         this.ownPeer = ownPeer;
         this.neighborPublicKeys = new ConcurrentHashMap<>();
         this.fingerprintToPeerId = new ConcurrentHashMap<>();
-        this.keyStorageManager = new KeyStorageManager("peer_" + port);
+        this.keyStorageManager = new KeyStorageManager("peer_" + port, password);
 
         try {
             initializeKeys();

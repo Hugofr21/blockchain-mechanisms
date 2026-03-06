@@ -25,16 +25,17 @@ import static org.graph.server.utils.Constants.BOOTSTRAP_PORT;
  */
 
 public class LauncherBootstrap {
-
     public static void main(String[] args) throws IOException, URISyntaxException {
+        System.out.println("\n================== BOOTSTRAPPING ================");
+        char[] nodeSecret = SecurityBootstrapper.obtainNodePassword();
 
-        Peer peer = new Peer(BOOTSTRAP_PORT);
+        Peer peer = new Peer(BOOTSTRAP_PORT, nodeSecret);
         peer.startPeer();
         peer.getNetworkGateway().getBlockchainEngine().createGenesisBlock();
         System.out.println("[BOOTSTRAPPING] Initialized bootstrap: " + peer.getMyself());
-        System.out.println("\n================== BOOTSTRAPPING ================");
+
+        java.util.Arrays.fill(nodeSecret, '\0');
+
         MenuUtils.showMainMenu(peer);
-
     }
-
 }

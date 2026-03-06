@@ -27,98 +27,155 @@ public final class Handshake {
     private Handshake() { /* no‑instantiation */ }
 
     /**
-     * Executa o handshake usando streams que já foram abertos.
-     * NÃO fecha os streams – eles permanecerão abertos para a comunicação
-     * posterior.
+     * Executa o handshake de autenticação utilizando streams que já se encontram abertos.
+     * <p>
+     * Este método realiza um protocolo de autenticação mútua entre dois pares
+     * sem fechar os streams fornecidos. Os streams permanecem abertos e podem
+     * ser reutilizados para comunicação posterior após um handshake bem-sucedido.
+     * </p>
      *
-     * @return Optional<Node> contendo o Node remoto (já validado) ou empty se falhar.
+     * <p><b>Fluxo do handshake (Iniciador / Cliente TCP):</b></p>
+     * <ol>
+     *   <li>Envia a sua identidade pública para o nó remoto.</li>
+     *   <li>Recebe a identidade do nó remoto juntamente com um desafio aleatório.</li>
+     *   <li>Assina o desafio recebido utilizando a sua chave privada, provando
+     *       a posse da chave privada associada à identidade pública.</li>
+     *   <li>Envia o desafio assinado como prova de identidade (ACK).</li>
+     *   <li>Aguarda a confirmação do nó remoto e obtém a assinatura remota,
+     *       completando a autenticação mútua.</li>
+     * </ol>
+     *
+     * <p>Se a autenticação for bem-sucedida, o nó remoto é validado e devolvido
+     * como um {@code Node}. Caso contrário, é devolvido um {@link Optional#empty()}.</p>
+     *
+     * @return um {@link Optional} contendo o {@code Node} remoto validado
+     *         caso o handshake seja bem-sucedido; caso contrário {@link Optional#empty()}.
      */
-    public static Optional<Node> doHandshake(Peer myself,
-                                             DataInputStream  in,
-                                             DataOutputStream out) throws Exception {
 
+    public static Optional<Node> doHandshake(Peer myself, DataInputStream in, DataOutputStream out) throws Exception {
         Logger logger = myself.getLogger();
-        long ts = System.currentTimeMillis();
-        String challenge = myself.getMyself().getNodeId().value().toString() + ":" + ts;
-        byte[] signature = myself.getIsKeysInfrastructure().signMessage(challenge);
 
-        HandshakePayload myPayload = new HandshakePayload(
+
+        HandshakePayload initPayload = new HandshakePayload(
                 myself.getMyself().getHost(),
                 myself.getMyself().getPort(),
                 myself.getMyself().getNonce(),
                 myself.getMyself().getNodeId().value(),
                 myself.getMyself().getNETWORK_DIFFICULTY(),
                 myself.getIsKeysInfrastructure().getOwnerPublicKey(),
-                ts,
-                signature
+                System.currentTimeMillis(),
+                null
         );
+        MessageUtils.sendMessage(out, new Message(MessageType.HELLO, initPayload, myself.getHybridLogicalClock().next()));
 
-        MessageUtils.sendMessage(out, new Message(MessageType.HELLO, myPayload, myself.getHybridLogicalClock().next()));
         Message response = MessageUtils.readMessage(in);
-
-
         if (response == null || response.getType() != MessageType.HELLO) {
-            logger.warning("Invalid handshake response from " + out);
+            logger.warning("Invalid handshake response structure.");
+            return Optional.empty();
+        }
+
+        Object rawPayload = response.getPayload();
+        HandshakePayload remotePayload;
+
+        try {
+            if (rawPayload instanceof HandshakePayload) {
+                remotePayload = (HandshakePayload) rawPayload;
+            } else if (rawPayload instanceof byte[]) {
+                remotePayload = (HandshakePayload) SerializationUtils.deserialize((byte[]) rawPayload);
+            } else {
+                logger.severe("Unexpected handshake payload type.");
+                return Optional.empty();
+            }
+        } catch (Exception e) {
+            logger.severe("Failed to deserialize HandshakePayload: " + e.getMessage());
+            return Optional.empty();
+        }
+
+        Node remoteNode = new Node(remotePayload.host(), remotePayload.port(), remotePayload.id(), remotePayload.nonce(), remotePayload.networkDifficulty());
+
+        String challengeToSign = remoteNode.getNodeId().value().toString() + ":" + remotePayload.timestamp();
+        byte[] mySignature = myself.getIsKeysInfrastructure().signMessage(challengeToSign);
+
+        Message ackMessage = new Message(MessageType.HELLO_ACK, mySignature, myself.getHybridLogicalClock().next());
+        MessageUtils.sendMessage(out, ackMessage);
+
+        Message finalConfirm = MessageUtils.readMessage(in);
+        if (finalConfirm == null || finalConfirm.getType() != MessageType.HELLO_ACK) {
+            logger.severe("Mutual authentication failed. Remote node dropped the connection.");
+            return Optional.empty();
+        }
+
+        Object rawAckPayload = finalConfirm.getPayload();
+        byte[] remoteSignature = null;
+
+        try {
+            if (rawAckPayload instanceof byte[]) {
+                try {
+                    Object deserialized = SerializationUtils.deserialize((byte[]) rawAckPayload);
+                    if (deserialized instanceof byte[]) {
+                        remoteSignature = (byte[]) deserialized;
+                    } else if (deserialized instanceof HandshakePayload) {
+                        remoteSignature = ((HandshakePayload) deserialized).signature();
+                    } else {
+                        remoteSignature = (byte[]) rawAckPayload;
+                    }
+                } catch (Exception e) {
+                    remoteSignature = (byte[]) rawAckPayload;
+                }
+            } else if (rawAckPayload instanceof HandshakePayload) {
+                remoteSignature = ((HandshakePayload) rawAckPayload).signature();
+            } else {
+                logger.severe("Invalid HELLO_ACK payload type.");
+                return Optional.empty();
+            }
+        } catch (Exception e) {
+            logger.severe("Error parsing ACK payload: " + e.getMessage());
             return Optional.empty();
         }
 
 
-        Object raw = response.getPayload();
-        HandshakePayload remote;
-        if (raw instanceof HandshakePayload hp) {
-            remote = hp;
-        } else if (raw instanceof byte[] bytes) {
-            remote = (HandshakePayload) SerializationUtils.deserialize(bytes);
-        } else {
-            logger.severe("Unexpected handshake payload type: " + raw.getClass().getName());
+        String remoteChallengeToVerify = myself.getMyself().getNodeId().value().toString() + ":" + initPayload.timestamp();
+
+        if (!validateRemoteIdentity(remoteNode, remotePayload.publicKey(), remoteChallengeToVerify, remoteSignature)) {
+            logger.severe("Mutual authentication validation failed. Connection aborted.");
             return Optional.empty();
         }
 
 
-        Node newNode = new Node(remote.host(),remote.port(), remote.id(), remote.nonce(), remote.networkDifficulty());
-        myself.getReputationsManager().getProofOfReputation(newNode.getNodeId().value());
+        myself.getReputationsManager().getProofOfReputation(remoteNode.getNodeId().value());
+        myself.getIsKeysInfrastructure().addNeighborPublicKey(remoteNode.getNodeId().value(), remotePayload.publicKey());
 
-
-        if (!validateRemoteIdentity(remote ,newNode)) {
-            logger.severe("Handshake validation failed (PoW or signature).");
-            return Optional.empty();
-        }
-
-
-        PublicKey pk = (PublicKey) remote.publicKey();
-        myself.getIsKeysInfrastructure()
-                .addNeighborPublicKey(newNode.getNodeId().value(), pk);
-
-        return Optional.of(newNode);
+        System.out.println("[SECURITY] Mutual Authentication successful with " + remoteNode.getHost() + ":" + remoteNode.getPort());
+        return Optional.of(remoteNode);
     }
 
-
-    private static boolean validateRemoteIdentity(HandshakePayload payload, Node remote) {
+    private static boolean validateRemoteIdentity(Node remote, PublicKey pk, String challengeToVerify, byte[] remoteSignature) {
         try {
-            PublicKey pk = payload.publicKey();
-            if (pk == null) return false;
-
-            boolean isIdValid = NodeId.isValidNode(remote, pk);
-
-            if (!isIdValid) {
-                System.err.println("[DEBUG]Handshake rejected: Invalid node ID or false PoW.");
+            if (pk == null) {
+                System.err.println("[SECURITY] Handshake rejected: Public key is null.");
                 return false;
             }
 
 
-            String challengeData = remote.getNodeId().value().toString() + ":" + payload.timestamp();
+            if (!NodeId.isValidNode(remote, pk)) {
+                System.err.println("[SECURITY] Handshake rejected: Invalid node ID or false PoW (Sybil risk).");
+                return false;
+            }
 
-            boolean isSignatureValid = CryptoUtils.verifySignature(pk, challengeData, payload.signature());
+            if (remoteSignature == null || remoteSignature.length == 0) {
+                System.err.println("[SECURITY] Handshake rejected: Empty signature.");
+                return false;
+            }
 
-            if (!isSignatureValid) {
-                System.err.println("[DEBUG]Handshake rejected: Invalid signature.");
+            if (!CryptoUtils.verifySignature(pk, challengeToVerify, remoteSignature)) {
+                System.err.println("[SECURITY] Handshake rejected: Invalid signature. Forgery detected.");
                 return false;
             }
 
             return true;
 
         } catch (Exception e) {
-            System.err.println("[DEBUG] Identity validation error: " + e.getMessage());
+            System.err.println("[SECURITY] Identity validation error: " + e.getMessage());
             return false;
         }
     }
