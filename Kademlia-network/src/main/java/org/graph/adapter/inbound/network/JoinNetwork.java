@@ -15,16 +15,36 @@ import java.net.Socket;
 import java.util.Optional;
 
 /**
- * When a node wants to join the network, it connects to a bootstrap node
- * that has been previously authenticated and authorized for that network.
- * The process occurs as follows:
- * the node authenticates with the network;
- * sends a FindNode message to locate nodes near its identifier;
- * validates and confirms the list of nodes received with the bootstrap node.
+ * Quando um nó pretende juntar-se à rede, estabelece ligação a um nó
+ * de bootstrap que foi previamente autenticado e autorizado para essa rede.
+ *
+ * O processo decorre da seguinte forma:
+ * <ol>
+ *   <li>O nó autentica-se na rede.</li>
+ *   <li>Envia uma mensagem {@code FindNode} para localizar nós próximos
+ *       do seu identificador.</li>
+ *   <li>Valida e confirma, junto do nó de bootstrap, a lista de nós recebida.</li>
+ * </ol>
  */
 
-
 public record JoinNetwork(Peer myPeer) {
+    /**
+     * O method {@code attemptJoin()} é utilizado para iniciar a entrada de um nó
+     * numa rede Kademlia recorrendo a um nó bootstrap que possui uma lista de nós conhecidos.
+     *
+     * <p>
+     * Este method deve ser invocado **após a autenticação e handshake** (modo 3)
+     * ter sido concluído com sucesso. A função realiza um pedido ao nó bootstrap
+     * para obter a lista de nós mais próximos da identidade do nó que pretende entrar
+     * na rede.
+     * </p>
+     *
+     * @param bootstrapHost Endereço do nó bootstrap na sub-rede privada, podendo
+     *                      ser, por exemplo, {@code localhost} ou {@code 127.0.0.1}
+     *                      (loopback da placa de rede local).
+     * @param bootstrapPort Porta do nó bootstrap. Por defeito, a classe
+     *                      {@code LauncherBootstrap} utiliza a porta {@code 5001}.
+     */
 
     public void attemptJoin(String bootstrapHost, int bootstrapPort) {
         System.out.println("[JOIN] Connecting to Bootstrap " + bootstrapHost + ":" + bootstrapPort);
@@ -75,12 +95,12 @@ public record JoinNetwork(Peer myPeer) {
         }
     }
     /**
-     * After verifying the authenticity and reliability of the node,
-     * a request is made to the network to locate the group
-     * of nodes closest to the identifier of the node in question.
+     * Após verificar a autenticidade e a fiabilidade do nó,
+     * é enviado um pedido à rede para localizar o conjunto
+     * de nós mais próximos do identificador do nó em questão.
      *
-     * @param handler active thread responsible for receiving all
-     * responses from the network through the socket.
+     * @param handler thread ativa responsável por receber todas
+     *                as respostas da rede através do socket.
      */
     private void triggerBootstrapLookup(ConnectionHandler handler) {
         try {

@@ -73,11 +73,25 @@ public class RoutingTable {
     }
 
 
-   /*
-      // 1. Calcula Old Distance (OD) - XOR
-      // 2. Calcula Trust (t)
-      // 3. Calcula New Distance (ND) conforme Eq. (1) do artigo [cite: 370]
-    */
+    /**
+     * Cálculo da distância ponderada para S-Kademlia.
+     *
+     * <p>
+     * O processo segue os seguintes passos:
+     * <ol>
+     *   <li>Calcula a Old Distance (OD) usando a distância XOR entre nós.</li>
+     *   <li>Determina o fator de confiança (Trust, t) do nó alvo.</li>
+     *   <li>Calcula a New Distance (ND) conforme a Equação (1) do artigo S-Kademlia [cite: 370]:
+     *       {@code ND = OD * b + (1 - b) * 1/t}, onde b é o balancing factor.</li>
+     * </ol>
+     * </p>
+     *
+     * <p>
+     * Este cálculo permite ponderar a proximidade lógica (XOR) com a reputação do nó,
+     * melhorando a resistência a ataques Sybil e priorizando nós confiáveis mesmo
+     * que não sejam os mais próximos XOR.
+     * </p>
+     */
    public synchronized List<Node> findClosestNodesProximity(BigInteger targetNode, int count) {
        PriorityQueue<NodeMetric> closest = new PriorityQueue<>(
                Comparator.comparing(NodeMetric::newDistance)
@@ -103,7 +117,6 @@ public class RoutingTable {
            }
        }
 
-       // Extração dos Top-K resultados
        List<Node> result = new ArrayList<>();
        for (int i = 0; i < count && !closest.isEmpty(); i++) {
            result.add(closest.poll().node());
@@ -112,10 +125,26 @@ public class RoutingTable {
        return result;
    }
 
-    // nd = od * b + (1-b) * 1/t
-    // Onde:od (Old Distance): Distância XOR.
-    // b (Balancing Factor): Fator de peso (0.65 sugerido para routing)
-    // t (Trust): Fator de confiança.
+    /**
+     * Cálculo da nova distância ponderada (nd) para S-Kademlia:
+     *
+     * <p>
+     * Fórmula: {@code nd = od * b + (1 - b) * 1/t}
+     * </p>
+     *
+     * <ul>
+     *   <li>{@code od} (Old Distance): Distância XOR entre nós.</li>
+     *   <li>{@code b} (Balancing Factor): Fator de ponderação entre distância e confiança
+     *       (valor sugerido: 0.65 para operações de routing).</li>
+     *   <li>{@code t} (Trust): Fator de confiança do nó, baseado na reputação ou histórico de interações.</li>
+     * </ul>
+     *
+     * <p>
+     * Esta fórmula combina a proximidade lógica (XOR) com a confiança do nó,
+     * conforme descrito no artigo S-Kademlia, permitindo priorizar nós confiáveis
+     * mesmo que não sejam os mais próximos XOR, aumentando resistência a ataques Sybil.
+     * </p>
+     */
     private double  calculateSKademliaMetric(BigInteger xorDistance, double trust ){
         BigDecimal distance = new BigDecimal(xorDistance);
         double normalizedDistance = distance.divide(MAX_DISTANCE, MathContext.DECIMAL64).doubleValue();
@@ -130,6 +159,22 @@ public class RoutingTable {
         return  buckets.get(bucketIndex).removeNode(node);
     }
 
+    /**
+     * Proteção contra ataques Eclipse.
+     *
+     * <p>
+     * Este method verifica se um nó tenta manipular o bucket, por exemplo,
+     * mudando endereços IP para se aproveitar do nó local ou tentar realizar
+     * ataques de DoS/DDoS. A verificação inclui a validação da subnet e outros
+     * parâmetros de rede para assegurar que apenas nós válidos e consistentes
+     * são mantidos nos buckets.
+     * </p>
+     *
+     * @param host Endereço IP do nó a verificar, incluindo informação de subnet
+     *             para validação de consistência de rede.
+     * @return {@code false} caso seja detectada uma tentativa de ataque ou
+     *         o nó seja considerado inválido.
+     */
     private synchronized boolean isGlobalIpLimitExceeded(String host) {
         if (host == null || host.isEmpty()) return true;
 

@@ -26,6 +26,7 @@ public class ProofOfReputationPolicy {
             case INVALID_BLOCK -> weightInvalidBlock;
             case VALID_TRANSACTION -> +10;
             case VALID_BLOCK -> +50;
+            case MALICIOUS_BEHAVIOR ->  -100;
             default -> 0.0;
         };
 

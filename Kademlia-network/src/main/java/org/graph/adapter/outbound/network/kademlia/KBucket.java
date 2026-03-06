@@ -34,15 +34,33 @@ public class KBucket { ;
             return true;
         }
 
-        // 3. Bucket Cheio - Política de Defesa Sybil
-        // O Kademlia padrão tenta pingar o nó mais antigo (head do map).
-        // Se o antigo responder, o novo é descartado.
-        // S-Kademlia Extension: Se o antigo tiver Trust MUITO baixo e o novo tiver Trust alto,
-        // podemos considerar a troca.
-        // Lógica S-Kademlia: Evicção baseada em Trust [cite: 58]
-        // Se o nó antigo for suspeito (trust baixo) e o novo tiver PoW válido...
-        // Caso contrário, preferimos a estabilidade (resistência a Sybil Flooding)
-        // Retornamos false indicando que o caller deve testar o 'leastRecentlySeen' antes de descartar
+        /**
+         * Política de bucket cheio – Defesa contra ataques Sybil.
+         *
+         * <p>
+         * No Kademlia padrão, quando um bucket está cheio, o nó mais antigo (head do mapa)
+         * é pingado. Se responder, o novo nó é descartado. Esta abordagem garante
+         * estabilidade, mas não considera a reputação dos nós.
+         * </p>
+         *
+         * <p>
+         * Extensão S-Kademlia: Se o nó antigo tiver um nível de Trust muito baixo
+         * e o nó novo tiver um Trust alto, podemos considerar substituir o nó antigo.
+         * A decisão baseia-se em:
+         * <ul>
+         *   <li>Evicção baseada em Trust.</li>
+         *   <li>Validação de PoW do nó novo.</li>
+         * </ul>
+         * Caso contrário, preservamos a estabilidade para resistir a ataques de
+         * Sybil flooding.
+         * </p>
+         *
+         * <p>
+         * O method retorna {@code false} para indicar que o caller deve testar
+         * o nó menos recentemente visto ({@code leastRecentlySeen}) antes de
+         * descartar qualquer nó.
+         * </p>
+         */
 
         Node leastRecentlySeen = getLeastRecentlySeen();
         if (leastRecentlySeen != null) {

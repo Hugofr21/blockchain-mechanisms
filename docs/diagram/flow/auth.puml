@@ -1,14 +1,15 @@
 @startuml
 title P2P Join Process: Authentication, Reputation & Discovery
-skinparam round corner 10
+skinparam roundCorner 10
 skinparam sequenceMessageAlign center
 skinparam participantBorderColor #005A9C
 skinparam participantBackgroundColor #E0F0FF
 autonumber
 
+
 box "Local Peer (My Node)" #F9F9F9
     participant "Peer" as P
-    participant "Handshake\n(Utility)" as HS
+    participant "Handshake\nUtility" as HS
     participant "Reputation\nManager" as REP
     participant "Routing\nTable" as RT
     participant "ChainSync\nManager" as SYNC
@@ -21,7 +22,7 @@ box "Remote Network" #EFEFEF
 end box
 
 
-group "Phase1: Cryptographic Authentication"
+group "Phase1 – Cryptographic Authentication"
     P -> P : new Socket(bootstrapIP)
     P -> CH : new ConnectionHandler(socket)
     activate CH
@@ -29,31 +30,51 @@ group "Phase1: Cryptographic Authentication"
     P -> HS : doHandshake(CH)
     activate HS
 
-    HS -> CH : send(HELLO + PubKey + Nonce)
-    CH -> B : [TCP] HELLO request
 
-    B -> B : verify PoW & signature
-    B -> CH : [TCP] HELLO response (signed)
-    CH -> HS : return response payload
+    HS -> CH : send(HELLO(pubKeyA, clientNonce))
+    CH -> B : [TCP] HELLO(pubKeyA, clientNonce)
 
-    HS -> HS : validateRemoteIdentity()
 
+    B -> B : generate(challengeB)
+    B -> B : sign(HELLO(pubKeyA, clientNonce, challengeB))
+    B --> CH : [TCP] HELLO_RESPONSE(pubKeyB, challengeB, signatureB)
+
+    CH --> HS : receive(HELLO_RESPONSE(...))
+
+    HS -> HS : validateRemoteSignature()
     alt Invalid signature
         HS --> P : throw SecurityException
         P -> CH : close()
         deactivate CH
-    else Success
-        HS --> P : return RemoteNode(B)
+    else Valid signature
+
+        HS -> HS : sign(challengeB)
+        HS -> CH : send(ACK(signedChallengeB))
+        CH -> B : [TCP] ACK(signedChallengeB)
+
+
+        B -> B : verify(signedChallengeB)
+        alt verification fails
+            B --> CH : [TCP] AUTH_FAILURE
+            CH --> HS : error
+            HS --> P : Optional.empty()
+        else verification ok
+            B --> CH : [TCP] AUTH_SUCCESS
+            CH --> HS : success payload
+            HS --> P : Optional.of(RemoteNode(B))
+        end
     end
     deactivate HS
+    deactivate CH
 end
 
-group "Phase2: Initial Reputation Registration"
+
+group "Phase2 – Reputation Registration"
     P -> REP : reportEvent(B, PING_SUCCESS)
     activate REP
     note right of REP
         Initialise reputation score.
-        TrustFactor>0.1
+        TrustFactor > 0.1
     end note
     REP --> P : ok
     deactivate REP
@@ -63,7 +84,7 @@ group "Phase2: Initial Reputation Registration"
     RT -> REP : getTrustFactor(B)
     RT -> RT : addOrUpdate(B)
     note right of RT
-        Accept node because
+        Node accepted because
         handshake proved identity.
     end note
     deactivate RT
@@ -74,41 +95,40 @@ group "Phase2: Initial Reputation Registration"
 end
 
 
-group "Phase3: Chain Height Check"
+group "Phase3 – Chain Height Check"
     P -> SYNC : startSync(CH)
     activate SYNC
 
     SYNC -> CH : send(GET_STATUS)
     CH -> B : [MSG] GET_STATUS
-    B --> CH : [MSG] STATUS_RESPONSE(Height, TopHash)
+    B --> CH : [MSG] STATUS_RESPONSE(height, topHash)
 
-    CH -> SYNC : handleResponse()
+    CH --> SYNC : handleResponse(...)
     SYNC -> SYNC : compareHeights()
-
     opt Remote height > local height
-        SYNC -> CH : send(GET_BLOCK, TopHash)
+        SYNC -> CH : send(GET_BLOCK, topHash)
         note right of SYNC
             Initiate reverse download
-            (Missing parents)
+            (missing parents)
         end note
     end
     deactivate SYNC
 end
 
 
-group "Phase4: Network Discovery (Bootstrap)"
+group "Phase4 – Network Discovery (Bootstrap)"
     P -> KAD : findNode(myNodeId)
     activate KAD
 
     KAD -> CH : send(FIND_NODE, target=myNodeId)
     CH -> B : [MSG] FIND_NODE
-    B --> CH : [MSG] NODES_RESPONSE(List<Node>)
+    B --> CH : [MSG] NODES_RESPONSE(list<Node>)
 
-    CH -> KAD : return List<Node>
+    CH --> KAD : return list<Node>
 
-    loop For each received neighbour
+    loop for each neighbour
         KAD -> REP : reportEvent(neighbour, FIND_NODE_USEFUL)
-        KAD -> RT : updateNode(neighbour)
+        KAD -> RT  : updateNode(neighbour)
         note right of KAD
             Populate routing table
             with new peers

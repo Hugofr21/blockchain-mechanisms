@@ -7,5 +7,6 @@ public enum EventTypePolicy {
     VALID_BLOCK,        // +50 (Minerou/Propagou bloco válido - GRANDE PRÉMIO)
     PING_FAIL,          // -5
     INVALID_BLOCK,      // -100
+    MALICIOUS_BEHAVIOR, // - 50
     INVALID_DATA        // -20
 }

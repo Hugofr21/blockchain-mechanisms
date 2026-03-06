@@ -77,8 +77,6 @@ public class KeysInfrastructure {
         if (!loaded) {
             System.out.println("[INFO] Generating new KeyPair adapter...");
             createKeysInfrastructure();
-            // Nota: Não salvamos imediatamente aqui, o Peer fará isso após minerar o ID.
-            // Isso evita salvar chaves sem ID associado.
         }
 
         // 3. Carrega vizinhos (opcional, não deve impedir o boot se falhar)

@@ -39,19 +39,23 @@ import static org.graph.adapter.utils.Constants.NODE_K;
  * já existe uma lista de nós considerada fiável, validada e adequada para
  * comunicações seguras entre participantes da rede.
  *
+ * <p>
  * O pressuposto fundamental é que os nós presentes nesta lista passaram
  * previamente por mecanismos de autenticação, validação de identidade e,
  * quando aplicável, verificação criptográfica ou prova de trabalho,
- * mitigando riscos associados a ataques Sybil, Eclipse ou à introdução de
- * nós maliciosos. Consequentemente, esta camada de Kademlia não se destina
- * à descoberta inicial de nós num ambiente não confiável, mas sim à
- * manutenção, otimização e exploração eficiente de uma topologia já
+ * mitigando riscos associados a ataques Sybil, Eclipse ou à introdução
+ * de nós maliciosos. Consequentemente, esta camada de Kademlia não se
+ * destina à descoberta inicial de nós num ambiente não confiável, mas sim
+ * à manutenção, otimização e exploração eficiente de uma topologia já
  * estabilizada.
+ * </p>
  *
+ * <p>
  * A utilização deste componente fora deste contexto constitui um erro de
- * conceção do sistema, uma vez que compromete diretamente as garantias de
- * segurança assumidas pelo protocolo e invalida os pressupostos de
+ * conceção do sistema, uma vez que compromete diretamente as garantias
+ * de segurança assumidas pelo protocolo e invalida os pressupostos de
  * comunicação segura entre nós.
+ * </p>
  */
 
 public class KademliaNetwork implements IKademliaIController {
@@ -75,13 +79,16 @@ public class KademliaNetwork implements IKademliaIController {
      * identificador numa rede distribuída baseada em Kademlia, aplicando
      * otimizações locais e mecanismos explícitos de mitigação de ataques.
      *
+     * <p>
      * O processo inicia-se com uma verificação local em memória ou cache,
      * evitando tráfego de rede desnecessário sempre que a informação já se
      * encontra disponível. De seguida, é inicializada a shortlist de lookup,
      * composta pelos nós seed obtidos a partir da tabela de encaminhamento
      * local, ordenados segundo a distância XOR relativamente ao identificador
      * alvo.
+     * </p>
      *
+     * <p>
      * Antes de qualquer nó remoto ser considerado válido para participação
      * no processo de lookup, é aplicada uma validação do seu identificador,
      * incluindo a verificação de prova de trabalho associada ao Node ID,
@@ -89,13 +96,16 @@ public class KademliaNetwork implements IKademliaIController {
      * reduzir a superfície de ataque a cenários de Eclipse Attack, garantindo
      * que apenas nós que provaram ter gerado corretamente o seu identificador
      * são incluídos na shortlist.
+     * </p>
      *
+     * <p>
      * A fase seguinte consiste num loop iterativo de rede, onde são
      * selecionados, em cada iteração, os ALPHA nós mais próximos ainda não
      * consultados. Estes nós são contactados de forma controlada, atualizando
      * progressivamente a shortlist com candidatos mais próximos, até que não
      * existam novos nós relevantes a consultar ou que seja atingido o critério
      * de convergência definido pelo protocolo.
+     * </p>
      *
      * @param targetId
      *        Identificador Kademlia representado como {@link BigInteger},
@@ -106,7 +116,6 @@ public class KademliaNetwork implements IKademliaIController {
      *        conhecidos do identificador alvo após a conclusão do processo
      *        de lookup.
      */
-
 
     @Override
     public List<Node> findNode(BigInteger targetId) {
@@ -140,7 +149,7 @@ public class KademliaNetwork implements IKademliaIController {
                 Object res = sendRPCAsync(node, findMsg);
 
                 if (res == null) {
-                     myself.getReputationsManager().reportEvent(node.getNodeId().value(), EventTypePolicy.PING_FAIL);
+                    myself.getReputationsManager().reportEvent(node.getNodeId().value(), EventTypePolicy.PING_FAIL);
                     continue;
                 }
 
@@ -226,30 +235,37 @@ public class KademliaNetwork implements IKademliaIController {
     /**
      * Executa a procura de um valor numa rede distribuída baseada em Kademlia,
      * garantindo segurança de tipos e respeitando a hierarquia de otimização
-     * definida pelo sistema. O processo inicia-se pela verificação de fontes
-     * locais, reduzindo latência e tráfego de rede, e apenas recorre a mecanismos
-     * de descoberta distribuída quando necessário.
+     * definida pelo sistema.
+     * <p>
+     * O processo inicia-se pela verificação de fontes locais, reduzindo latência
+     * e tráfego de rede, e apenas recorre a mecanismos de descoberta distribuída
+     * quando necessário.
+     * </p>
      *
-     * A pesquisa é realizada de forma sequencial e determinística. Em primeiro
-     * lugar, é verificada a existência local do valor na blockchain, aplicável
-     * exclusivamente quando a chave corresponde a um bloco já validado e
-     * organizado internamente. Em seguida, é consultado o armazenamento DHT
-     * local, que funciona como cache persistente de dados previamente obtidos.
-     * Caso o valor não seja encontrado em nenhuma destas camadas, é então
-     * desencadeado um processo iterativo de lookup na rede Kademlia.
+     * <p>
+     * A pesquisa é realizada de forma sequencial e determinística. Primeiro,
+     * verifica-se a existência local do valor na blockchain, aplicável apenas
+     * quando a chave corresponde a um bloco já validado e organizado internamente.
+     * Em seguida, é consultado o armazenamento DHT local, que funciona como cache
+     * persistente de dados previamente obtidos. Caso o valor não seja encontrado
+     * nestas camadas, é desencadeado um processo iterativo de lookup na rede Kademlia.
+     * </p>
      *
+     * <p>
      * O lookup distribuído segue o modelo clássico do protocolo, utilizando uma
      * lista ordenada de nós por distância XOR relativamente à chave procurada.
-     * O algoritmo consulta iterativamente os nós mais próximos ainda não
-     * contactados, respeitando o parâmetro ALPHA, evitando consultas duplicadas
-     * e excluindo explicitamente o próprio nó local. As comunicações são
-     * realizadas via RPC síncrono, assumindo a correta desserialização automática
-     * das respostas recebidas.
+     * O algoritmo consulta iterativamente os nós mais próximos ainda não contactados,
+     * respeitando o parâmetro ALPHA, evitando consultas duplicadas e excluindo
+     * explicitamente o próprio nó local. As comunicações são realizadas via
+     * RPC síncrono, assumindo a correta desserialização automática das respostas.
+     * </p>
      *
+     * <p>
      * As respostas dos nós remotos podem consistir no valor associado à chave
      * ou numa lista de nós mais próximos (“closer nodes”), indicando possíveis
      * candidatos para iterações subsequentes. O processo termina quando o valor
      * é encontrado ou quando não existem novos nós relevantes a consultar.
+     * </p>
      *
      * @param key
      *        Chave Kademlia representada como {@link BigInteger}, utilizada para
@@ -266,33 +282,19 @@ public class KademliaNetwork implements IKademliaIController {
     @Override
     public <T> T findValue(BigInteger key, Class<T> type) {
         String hashHex = key.toString(16);
+
         if (type.equals(Block.class)) {
-            Block localBlock = myself.getNetworkGateway().getBlockchainEngine()
-                    .getBlockOrganizer().getBlockByHash(hashHex);
-            if (localBlock != null) {
-                System.out.println("[DHT] Finding of the Blockchain local (BlockOrganizer).");
-                return type.cast(localBlock);
-            }
+            Block localBlock = myself.getNetworkGateway().getBlockchainEngine().getBlockOrganizer().getBlockByHash(hashHex);
+            if (localBlock != null) return type.cast(localBlock);
         }
-
         if (type.equals(Transaction.class)) {
-            Transaction localTx = myself.getNetworkGateway().getBlockchainEngine()
-                    .getTransactionOrganizer().getTransactionById(hashHex);
-            if (localTx != null) {
-                System.out.println("[DHT] To find local (Mempool).");
-                return type.cast(localTx);
-            }
+            Transaction localTx = myself.getNetworkGateway().getBlockchainEngine().getTransactionOrganizer().getTransactionById(hashHex);
+            if (localTx != null) return type.cast(localTx);
         }
-
         if (type.equals(AuctionState.class)) {
-            AuctionState localState = myself.getNetworkGateway().getAuctionEngine()
-                    .getWorldState().get(hashHex);
-            if (localState != null) {
-                System.out.println("[DHT] To find local (Ledger).");
-                return type.cast(localState);
-            }
+            AuctionState localState = myself.getNetworkGateway().getAuctionEngine().getWorldState().get(hashHex);
+            if (localState != null) return type.cast(localState);
         }
-
 
         T localVal = storage.get(key, type);
         if (localVal != null) {
@@ -300,19 +302,16 @@ public class KademliaNetwork implements IKademliaIController {
             return localVal;
         }
 
-
-        TreeSet<Node> shortlist = new TreeSet<>(Comparator.comparing(
-                n -> n.getNodeId().distanceBetweenNode(key)
-        ));
-
-
+        TreeSet<Node> shortlist = new TreeSet<>(Comparator.comparing(n -> n.getNodeId().distanceBetweenNode(key)));
         shortlist.addAll(myself.getRoutingTable().findClosestNodesProximity(key, NODE_K));
-
 
         Set<BigInteger> queried = new HashSet<>();
         queried.add(myself.getMyself().getNodeId().value());
 
         boolean madeProgress = true;
+
+        Node closestNodeWithoutValue = null;
+        BigInteger minDistanceWithoutValue = null;
 
         while (madeProgress) {
             madeProgress = false;
@@ -329,10 +328,13 @@ public class KademliaNetwork implements IKademliaIController {
 
                 Message request = new Message(MessageType.FIND_VALUE, key, myself.getHybridLogicalClock());
 
-                Object response = sendRPCAsync(node, request);
 
-                if (response == null) continue;
+                Object response = sendRPCSync(node, request);
 
+                if (response == null) {
+                    myself.getReputationsManager().reportEvent(node.getNodeId().value(), EventTypePolicy.PING_FAIL);
+                    continue;
+                }
 
                 if (response instanceof byte[]) {
                     try {
@@ -344,6 +346,13 @@ public class KademliaNetwork implements IKademliaIController {
                 }
 
                 if (response instanceof List<?>) {
+
+                    BigInteger dist = node.getNodeId().distanceBetweenNode(key);
+                    if (closestNodeWithoutValue == null || dist.compareTo(minDistanceWithoutValue) < 0) {
+                        closestNodeWithoutValue = node;
+                        minDistanceWithoutValue = dist;
+                    }
+
                     try {
                         List<Node> returnedNodes = (List<Node>) response;
                         for (Node received : returnedNodes) {
@@ -353,28 +362,106 @@ public class KademliaNetwork implements IKademliaIController {
                             }
                         }
                     } catch (ClassCastException e) {}
-                }
-
-                else {
+                } else {
 
                     if (type.isInstance(response)) {
-                        System.out.println("[DHT] Successfully! Find value remote at " + node.getPort());
 
+                        if (!validateDataIntegrity(key, response, type, node)) {
+                            continue;
+                        }
+
+                        System.out.println("[DHT] Successfully! Find value remote at " + node.getPort());
                         storage.put(key, response);
+
+
+                        if (closestNodeWithoutValue != null) {
+                            Map<String, Object> storagePayload = new HashMap<>();
+                            storagePayload.put("key", key);
+                            storagePayload.put("value", response);
+                            Message cacheMsg = new Message(MessageType.STORAGE, storagePayload, myself.getHybridLogicalClock());
+
+
+                            sendRPCAsync(closestNodeWithoutValue, cacheMsg);
+                            System.out.println("[DHT] Path Caching: Optimization injected into the node " + closestNodeWithoutValue.getPort());
+                        }
 
                         return type.cast(response);
                     }
                 }
             }
 
-
             while (shortlist.size() > NODE_K * 2) {
                 shortlist.pollLast();
             }
         }
-
         return null;
     }
+
+    /**
+     * Validação baseada em Content-Addressable Storage (CAS).
+     *
+     * <p>Quando um objeto é recebido da rede, é calculado o hash criptográfico
+     * (ex.: SHA-256) do seu conteúdo. Esse hash deve corresponder exatamente
+     * à chave Kademlia ({@code expectedKey}) utilizada no pedido do objeto.</p>
+     *
+     * <p>Este mecanismo garante a integridade e autenticidade do conteúdo,
+     * assegurando que o objeto devolvido corresponde criptograficamente
+     * ao identificador solicitado.</p>
+     *
+     * <p>Se o hash calculado não corresponder à chave esperada, o objeto é
+     * considerado inválido ou forjado e deve ser rejeitado. O nó que forneceu
+     * o objeto poderá ser penalizado no sistema de confiança.</p>
+     *
+     * @param expectedKey Chave Kademlia esperada, previamente anunciada na rede
+     *                    através da arquitetura PUB/SUB, permitindo que os vizinhos
+     *                    DHT saibam qual objeto deve corresponder à chave.
+     * @param data Objeto recebido da rede pelos vizinhos mais próximos no k-bucket,
+     *             correspondente ao identificador do objeto.
+     * @param sender Identificação do nó que enviou o objeto, utilizada para
+     *               verificar a sua autenticidade e reputação.
+     */
+    private boolean validateDataIntegrity(BigInteger expectedKey, Object data, Class<?> type, Node sender) {
+        String expectedHashHex = expectedKey.toString(16);
+
+        if (type.equals(Block.class)) {
+            Block block = (Block) data;
+            if (block.getCurrentBlockHash() != null && !block.getCurrentBlockHash().equals(expectedHashHex)) {
+                System.err.println("[SECURITY] Poisoned Block received! Hash mismatch from " + sender.getPort());
+                myself.getReputationsManager().reportEvent(sender.getNodeId().value(), EventTypePolicy.VALID_BLOCK);
+                return false;
+            }
+        } else if (type.equals(Transaction.class)) {
+            Transaction tx = (Transaction) data;
+            if (tx.getTxId() != null && !tx.getTxId().equals(expectedHashHex)) {
+                System.err.println("[SECURITY] Poisoned Transaction received! ID mismatch from " + sender.getPort());
+                myself.getReputationsManager().reportEvent(sender.getNodeId().value(), EventTypePolicy.MALICIOUS_BEHAVIOR);
+                return false;
+            }
+        } else if (type.equals(AuctionState.class)) {
+            AuctionState state = (AuctionState) data;
+            if (state.getAuctionId() != null && !state.getAuctionId().equals(expectedHashHex)) {
+                System.err.println("[SECURITY] Poisoned AuctionState received! ID mismatch from " + sender.getPort());
+                myself.getReputationsManager().reportEvent(sender.getNodeId().value(), EventTypePolicy.MALICIOUS_BEHAVIOR);
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    /**
+     * Verifica se um nó (peer) está ativo na rede Kademlia antes de iniciar
+     * qualquer envio de mensagem ou processo de solicitação.
+     * <p>
+     * Ping() envia um ping ao nó de destino para confirmar a sua disponibilidade,
+     * garantindo que a comunicação subsequente seja realizada apenas com nós ativos.
+     * </p>
+     *
+     * @param target
+     *        Identificador do nó na rede, utilizado para localizar logicamente o nó
+     *        no sistema distribuído. A chave pode ser gerada através de mecanismos
+     *        de prova de trabalho e possui 256 bits.
+     */
 
 
     @Override
@@ -388,20 +475,21 @@ public class KademliaNetwork implements IKademliaIController {
     /**
      * O armazenamento é responsável por anunciar e manter a associação entre
      * identificadores e objetos criados na rede, refletindo o estado de posse
-     * desses objetos num determinado momento. Um objeto pode estar associado
-     * a um único nó ou a um conjunto de nós, dependendo da distribuição da rede
-     * e do grau de comunicação estabelecido entre o nó criador e os restantes
-     * participantes.
+     * desses objetos num dado momento. Um objeto pode estar associado a um único
+     * nó ou a um conjunto de nós, dependendo da distribuição da rede e do grau
+     * de comunicação estabelecido entre o nó criador e os restantes participantes.
      *
+     * <p>
      * Os objetos armazenados são identificados de forma determinística através
      * de chaves geradas por mecanismos de prova de trabalho, garantindo um
      * espaço de endereçamento de 256 bits e reduzindo a probabilidade de colisão
      * ou apropriação maliciosa de identificadores.
+     * </p>
      *
      * @param key
-     *        Identificador do objeto dentro da rede, utilizado para estabelecer
-     *        a sua relação e localização lógica no sistema distribuído. A chave
-     *        resulta de um processo de prova de trabalho e possui 256 bits.
+     *        Identificador do objeto na rede, utilizado para estabelecer a sua
+     *        localização lógica no sistema distribuído. A chave é gerada através
+     *        de um processo de prova de trabalho e possui 256 bits.
      * @param value
      *        Valor associado ao identificador {@code key}, representando a
      *        referência lógica ao objeto. Este valor pode corresponder, por
@@ -431,11 +519,15 @@ public class KademliaNetwork implements IKademliaIController {
     }
 
     /**
-     * Envia uma mensagem RPC para um nó de destino de forma assíncrona ("Request e Response").
-     * Ideal para mensagens de Gossip/Notificação em que o remetente não tem de esperar
-     * por uma resposta com dados, evitando o bloqueio de threads no fluxo principal.
+     * Envia uma mensagem RPC para um nó de destino de forma assíncrona
+     * (modelo "Request e Response").
+     * <p>
+     * O sendRPCAsync() é ideal para mensagens de Gossip ou notificações, em que
+     * o remetente não precisa de aguardar uma resposta com dados, evitando
+     * o bloqueio de threads no fluxo principal.
+     * </p>
      *
-     * @return
+     * @return O objeto retornado pelo nó remoto, caso exista; {@code null} se não houver resposta.
      */
     public Object sendRPCAsync(Node target, Message request) {
         if (target.getNodeId().equals(myself.getMyself().getNodeId())) return null;
@@ -502,5 +594,65 @@ public class KademliaNetwork implements IKademliaIController {
                 } catch (Exception ignored) {}
             }
         }
+    }
+
+    /**
+     * Envia uma mensagem RPC para um nó de destino de forma SÍNCRONA.
+     * <p>
+     * Bloqueia a thread atual até receber a resposta ou atingir o tempo limite (timeout).
+     * Esta operação utiliza uma ligação efémera para evitar contenção de leitura
+     * com o {@code ConnectionHandler} principal.
+     * </p>
+     *
+     * @param target Nó de destino.
+     * @param request Mensagem a enviar (ex.: {@code FIND_NODE}, {@code FIND_VALUE}).
+     * @return O objeto de carga útil ({@code Payload}) retornado pelo nó alvo,
+     *         ou {@code null} em caso de falha ou timeout.
+     */
+    public Object sendRPCSync(Node target, Message request) {
+        if (target.getNodeId().equals(myself.getMyself().getNodeId())) {
+            return null;
+        }
+
+        Socket socket = null;
+        try {
+            socket = new Socket();
+
+            socket.connect(new InetSocketAddress(target.getHost(), target.getPort()), 3000);
+
+            socket.setSoTimeout(5000);
+
+            DataInputStream in = new DataInputStream(socket.getInputStream());
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+            Optional<Node> handshakeResult = Handshake.doHandshake(myself, in, out);
+
+            if (handshakeResult.isEmpty()) {
+                System.err.println("[DHT RPC] Synchronization failed: Handshake rejected by " + target.getPort());
+                return null;
+            }
+
+            MessageUtils.sendMessage(out, request);
+
+            Message response = MessageUtils.readMessage(in);
+
+            if (response != null) {
+                return response.getPayload();
+            }
+
+        } catch (java.net.SocketTimeoutException e) {
+            System.err.println("[DHT RPC] Timeout waiting for response from " + target.getPort() + " (Node excessively slow or offline).");
+            myself.getReputationsManager().reportEvent(target.getNodeId().value(), EventTypePolicy.PING_FAIL);
+        } catch (Exception e) {
+            System.err.println("[DHT RPC] Synchronous communication failed with " + target.getPort() + ": " + e.getMessage());
+        } finally {
+            if (socket != null && !socket.isClosed()) {
+                try {
+                    socket.close();
+                } catch (Exception ignored) {}
+            }
+        }
+
+        return null;
     }
 }
