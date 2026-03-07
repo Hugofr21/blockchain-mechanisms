@@ -103,15 +103,18 @@ public class Block implements Serializable {
     }
 
     /**
+     * Valida se o bloco atual é válido em relação ao bloco pai (último bloco da cadeia).
      *
-     * @param parent LAST BLOCK
-     * @return boolean
+     * @param parent último bloco da blockchain (bloco anterior)
+     * @return true se o bloco for válido relativamente ao bloco pai; false caso contrário
      *
-     * Role valid:
-     * // 1. The previousHash must point to the parent hash
-     * // 2. The blockNumber must be sequential
-     * // 3. The timestamp must be later than the parent's
+     * Regras de validação:
+     * 1. O campo previousHash deve corresponder ao hash do bloco pai.
+     * 2. O número do bloco (blockNumber) deve ser sequencial em relação ao bloco pai.
+     * 3. O timestamp do bloco deve ser posterior ao timestamp do bloco pai.
+     * 4. O timestamp deve respeitar limites válidos para evitar ataques do tipo Time Warp.
      */
+
     public boolean isValidBlock(Block parent){
         // 1. Validação de Gênesis
         if (parent == null) {
@@ -139,18 +142,6 @@ public class Block implements Serializable {
             return false;
         }
 
-        // 5. CRÍTICO: Validação do Proof of Work
-        // Recalculamos o hash com o nonce declarado e verificamos a dificuldade
-//        String reclaculatedHash = this.header.calculateHash();
-//        if (!recalculatedHash.equals(this.hashCache)) {
-//            System.out.println("Hash integrity check failed");
-//            return false;
-//        }
-
-//        if (!checkDifficulty(recalculatedHash, this.header.getDifficulty())) {
-//            System.out.println("PoW Difficulty not met");
-//            return false;
-//        }
 
         return true;
     }

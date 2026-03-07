@@ -89,9 +89,93 @@ public class MenuUtils {
         }
     }
 
-    private static void simulateNaiveRollbackAttack(Peer peer) {
+    public static void simulateNaiveRollbackAttack(Peer peer) {
+        System.out.println("\n[SIMULATION] Starting State Corruption Test via Naive Rollback...");
 
+        var auctionEngine = peer.getNetworkGateway().getAuctionEngine();
+        var ledger = auctionEngine.getWorldState();
 
+        if (ledger.isEmpty()) {
+            System.err.println("[ERROR] No active auctions found. Please create an auction first (Menu 4 -> 1).");
+            return;
+        }
+
+        // Lê o ID do leilão através do input do utilizador
+        System.out.print("\nAuction ID (Hash): ");
+        String auctionId = scanner.nextLine().trim();
+
+        // Valida se o leilão introduzido existe realmente no estado mundial
+        AuctionState state = ledger.get(auctionId);
+        if (state == null) {
+            System.err.println("[ERROR] Auction ID not found in the local ledger. Aborting simulation.");
+            return;
+        }
+
+        BigInteger myNodeId = peer.getMyself().getNodeId().value();
+
+        new Thread(() -> {
+            try {
+                System.out.println("\n[PHASE 1] Establishing Baseline State for Auction: " + auctionId.substring(0, 8) + "...");
+                BigDecimal initialBid = state.getCurrentHighestBid().add(new BigDecimal("100"));
+                auctionEngine.placeBidRequest(auctionId, initialBid, peer);
+
+                // Espera artificial para simular a mineração do lance
+                Thread.sleep(3000);
+
+                BigDecimal secondBid = initialBid.add(new BigDecimal("200"));
+                auctionEngine.placeBidRequest(auctionId, secondBid, peer);
+
+                Thread.sleep(3000);
+
+                System.out.println("\n[CURRENT STATE] Highest Bid is now: " + state.getCurrentHighestBid());
+                System.out.println("[CURRENT STATE] Expected Next Nonce for user: " + auctionEngine.getExpectedLedgerNonce(myNodeId));
+
+                System.out.println("\n[PHASE 2] Simulating a Fork with Naive Rollback (UNDO)...");
+                System.out.println("[WARNING] Attempting to manually undo the last bid and decrement the nonce.");
+
+                // Tentativa ingénua de desfazer o último lance (Remoção manual)
+                synchronized (state) {
+                    Set<Bid> history = state.getBidHistory();
+                    if (history.size() > 1) {
+                        // Converter para Lista e ordenar cronologicamente para encontrar o último lance
+                        List<Bid> sortedHistory = new ArrayList<>(history);
+                        sortedHistory.sort(Comparator.comparingLong(Bid::throwTimestamp));
+
+                        Bid lastBid = sortedHistory.get(sortedHistory.size() - 1);
+                        history.remove(lastBid); // Remove o lance do Set original
+
+                        System.out.println("[NAIVE UNDO] Removed bid of: " + lastBid.bidPrice());
+
+                        // ERRO FATAL 1: Ao remover o último lance, qual era o lance mais alto anterior?
+                        // Num modelo ingénuo, teríamos de recalcular varrendo todo o histórico novamente.
+                        // Como o AuctionState apenas guarda o "CurrentHighestBid", ele não recua automaticamente.
+                        System.out.println("[BUG DETECTED] Current Highest Bid remains stuck at: " + state.getCurrentHighestBid() + " (Should have reverted!)");
+                    }
+                }
+
+                // ERRO FATAL 2: Corrupção de Nonces
+                // Numa reversão manual, teríamos de manipular o dicionário de nonces para trás.
+                // Isto abre a porta a Replay Attacks, porque a assinatura criptográfica original do utilizador
+                // (com o nonce antigo) volta a ser válida perante o sistema corrupto.
+                System.out.println("[BUG DETECTED] Nonce state is irreversibly desynchronized. System expects: " + auctionEngine.getExpectedLedgerNonce(myNodeId));
+
+                System.out.println("\n[PHASE 3] System Failure Demonstration...");
+                System.out.println("Attempting to place a legitimate new bid after the naive rollback.");
+
+                // Como o HighestBid não foi revertido corretamente e o nonce está corrompido,
+                // um novo lance legítimo (que deveria ser superior ao lance de PHASE 1, mas inferior ao de PHASE 2)
+                // será rejeitado pela máquina de estados.
+                BigDecimal validBid = initialBid.add(new BigDecimal("50"));
+                System.out.println("Placing new bid: " + validBid);
+
+                auctionEngine.placeBidRequest(auctionId, validBid, peer);
+
+                System.out.println("\n[CONCLUSION] The Naive Rollback has corrupted the local ledger. The node is now out of consensus.");
+
+            } catch (Exception e) {
+                System.err.println("[CRITICAL ERROR] Simulation failed: " + e.getMessage());
+            }
+        }).start();
     }
 
     public static void simulateDuplicateBidAttack(Peer peer) {

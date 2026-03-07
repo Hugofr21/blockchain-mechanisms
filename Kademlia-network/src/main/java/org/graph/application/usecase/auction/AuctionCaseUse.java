@@ -1,7 +1,7 @@
 package org.graph.application.usecase.auction;
 
-import org.graph.application.usecase.provider.BlockListener;
-import org.graph.application.usecase.provider.TransactionsPublished;
+import org.graph.application.usecase.provider.IBlockListener;
+import org.graph.application.usecase.provider.ITransactionsPublished;
 import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
@@ -55,15 +55,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * errada e deve ser descartada.
  */
 
-public class AuctionCaseUse implements BlockListener {
+public class AuctionCaseUse implements IBlockListener {
     private final Map<String, AuctionState> ledger;
     private final Map<String, List<Bid>> pendingBids;
-    private final TransactionsPublished serviceTransactions;
+    private final ITransactionsPublished serviceTransactions;
     private final ConcurrentHashMap<String, Long> userNonces;
     private final ConcurrentHashMap<String, Long> pendingUserNonces;
 
 
-    public AuctionCaseUse(TransactionsPublished serviceTransactions) {
+    public AuctionCaseUse(ITransactionsPublished serviceTransactions) {
         this.ledger = new ConcurrentHashMap<>();
         this.pendingBids = new ConcurrentHashMap<>();
         this.serviceTransactions = serviceTransactions;
@@ -77,6 +77,11 @@ public class AuctionCaseUse implements BlockListener {
 
     @Override
     public void onBlockCommitted(Block block) {
+        submittingBlockForChain(block);
+
+    }
+
+    private void submittingBlockForChain(Block block) {
         for (Transaction tx : block.getTransactions()) {
             try {
                 processTransactionRemote(tx, block.getHeader().getTimestamp());
@@ -93,6 +98,39 @@ public class AuctionCaseUse implements BlockListener {
                         ": " + e.getMessage());
             }
         }
+    }
+
+    @Override
+    public void onChainReorganized(List<Block> newChain) {
+        System.out.println("\n[AUCTION ENGINEER] !!! ALERTA DE FORK (REORG) !!!");
+        System.out.println("[AUCTION ENGINEER] A reconstruir o estado mundial desde o Bloco Génese...");
+
+        rebuildStateFromChain(newChain);
+
+        System.out.println("\n=== NOVO ESTADO DOS LEILÕES PÓS-REORG ===");
+        if (ledger.isEmpty()) {
+            System.out.println(" >> Nenhum leilão sobreviveu à reorganização.");
+        } else {
+            for (AuctionState state : ledger.values()) {
+                System.out.println(state.toString());
+            }
+        }
+        System.out.println("=========================================\n");
+    }
+
+    /**
+     * Apaga o estado volátil local e reconstrói o mundo exato ditado pela nova cadeia principal.
+     */
+    public synchronized void rebuildStateFromChain(List<Block> newMainChain) {
+        this.ledger.clear();
+        this.pendingBids.clear();
+        this.userNonces.clear();
+        this.pendingUserNonces.clear();
+
+        for (Block block : newMainChain) {
+            submittingBlockForChain(block);
+        }
+        System.out.println("[STATE REBUILD] World Status synchronized. Active auctions: " + ledger.size());
     }
 
     private void processTransactionRemote(Transaction tx, long blockTimestamp) throws Exception {
@@ -366,23 +404,14 @@ public class AuctionCaseUse implements BlockListener {
 
                 if (result instanceof Set<?> subscribers) {
                     System.out.println("[PUB/SUB] Found " + subscribers.size() + " subscribers to notify.");
-
-                    Message gossipMsg = new Message(MessageType.TRANSACTION, tx, myself.getHybridLogicalClock());
-
-                    for (Object obj : subscribers) {
-                        if (obj instanceof Node subscriberNode) {
-                            if (subscriberNode.getNodeId().equals(myself.getMyself().getNodeId())) {
-                                continue;
-                            }
-                            myself.getMkademliaNetwork().sendRPCAsync(subscriberNode, gossipMsg);
-                        }
-                    }
+                    sendGossipingMsg(myself,tx, subscribers);
                 }
             } catch (Exception e) {
                 System.err.println("[PUB/SUB] Failed to notify subscribers: " + e.getMessage());
             }
         }).start();
     }
+
 
     private void notifySubscribersOfAuctionEvent(String auctionId, Transaction tx, Peer myself) {
         new Thread(() -> {
@@ -394,20 +423,24 @@ public class AuctionCaseUse implements BlockListener {
                 if (result instanceof Set<?> subscribers) {
                     System.out.println("[PUB/SUB] Found " + subscribers.size() + " subscribers to notify about auction event.");
 
-                    Message gossipMsg = new Message(MessageType.TRANSACTION, tx, myself.getHybridLogicalClock());
-
-                    for (Object obj : subscribers) {
-                        if (obj instanceof Node subscriberNode) {
-                            if (subscriberNode.getNodeId().equals(myself.getMyself().getNodeId())) {
-                                continue;
-                            }
-                            myself.getMkademliaNetwork().sendRPCAsync(subscriberNode, gossipMsg);
-                        }
-                    }
+                   sendGossipingMsg(myself, tx, subscribers);
                 }
             } catch (Exception e) {
                 System.err.println("[PUB/SUB] Failed to notify subscribers: " + e.getMessage());
             }
         }).start();
+    }
+
+    private void sendGossipingMsg(Peer myself, Transaction tx, Set<?> subscribers) {
+        Message gossipMsg = new Message(MessageType.TRANSACTION, tx, myself.getHybridLogicalClock());
+
+        for (Object obj : subscribers) {
+            if (obj instanceof Node subscriberNode) {
+                if (subscriberNode.getNodeId().equals(myself.getMyself().getNodeId())) {
+                    continue;
+                }
+                myself.getMkademliaNetwork().sendRPCAsync(subscriberNode, gossipMsg);
+            }
+        }
     }
 }

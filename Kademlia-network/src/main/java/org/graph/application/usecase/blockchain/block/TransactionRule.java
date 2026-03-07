@@ -102,7 +102,16 @@ public class TransactionRule {
         synchronized (lock) {
             for (Transaction tx : transactions) {
                 completedTransactions.add(tx.getTxId());
-                pendingTransactions.remove(tx);
+                pendingTransactions.removeIf(p -> p.getTxId().equals(tx.getTxId()));
+            }
+        }
+    }
+
+    public void cleanPool(List<Transaction> minedTxs) {
+        synchronized (lock) {
+            for (Transaction minedTx : minedTxs) {
+                pendingTransactions.removeIf(p -> p.getTxId().equals(minedTx.getTxId()));
+                completedTransactions.add(minedTx.getTxId());
             }
         }
     }
@@ -113,16 +122,6 @@ public class TransactionRule {
         }
     }
 
-    public void cleanPool(List<Transaction> minedTxs) {
-        synchronized (lock) {
-            for (Transaction tx : minedTxs) {
-                pendingTransactions.remove(tx);
-                completedTransactions.add(tx.getTxId());
-            }
-            System.out.println("[POOL] Limpeza concluída. Restantes: " + pendingTransactions.size());
-        }
-    }
-
 
     public Transaction getTransactionById(String hashHex) {
         synchronized (lock) {
@@ -130,6 +129,18 @@ public class TransactionRule {
                     .filter(tx -> tx.getTxId().equals(hashHex))
                     .findFirst()
                     .orElse(null);
+        }
+    }
+
+    /**
+     * Ressuscita transações de blocos que foram orfanados durante um Fork (Chain Reorg).
+     */
+    public void restoreToPool(List<Transaction> orphanedTxs) {
+        synchronized (lock) {
+            for (Transaction tx : orphanedTxs) {
+                completedTransactions.remove(tx.getTxId());
+                pendingTransactions.add(tx);
+            }
         }
     }
 }

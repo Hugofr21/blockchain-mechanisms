@@ -1,8 +1,8 @@
 package org.graph.application.usecase.blockchain;
 
 import org.graph.adapter.outbound.network.message.auction.AuctionPayload;
-import org.graph.application.usecase.provider.BlockListener;
-import org.graph.application.usecase.provider.TransactionsPublished;
+import org.graph.application.usecase.provider.IBlockListener;
+import org.graph.application.usecase.provider.ITransactionsPublished;
 import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.transaction.Transaction;
 import org.graph.domain.entities.transaction.TransactionType;
@@ -54,12 +54,12 @@ import java.util.function.Function;
  * falhas de consenso.
 **/
 
-public class BlockchainUseCase implements TransactionsPublished {
+public class BlockchainUseCase implements ITransactionsPublished {
     private final int numThreads;
     private final int currentDifficulty;
     private final TransactionRule mTransactionRule;
     private final BlockRule mBlockRule;
-    private final List<BlockListener> listeners;
+    private final List<IBlockListener> listeners;
     private long lastTxTime;
     private static final long MAX_WAIT_TIME_MS = 2000;
     private Peer myself;
@@ -104,7 +104,7 @@ public class BlockchainUseCase implements TransactionsPublished {
         watchdog.start();
     }
 
-
+    public Peer getMyself() {return myself;}
     public TransactionRule getTransactionOrganizer() {
         return mTransactionRule;
     }
@@ -112,7 +112,7 @@ public class BlockchainUseCase implements TransactionsPublished {
         return mBlockRule;
     }
 
-    public void addBlockListener(BlockListener listener) {
+    public void addBlockListener(IBlockListener listener) {
         this.listeners.add(listener);
     }
 
@@ -122,8 +122,14 @@ public class BlockchainUseCase implements TransactionsPublished {
     }
 
     private void notifyListeners(Block block) {
-        for (BlockListener listener : listeners) {
+        for (IBlockListener listener : listeners) {
             listener.onBlockCommitted(block);
+        }
+    }
+
+    public void notifyChainReorganized(List<Block> newChain) {
+        for (IBlockListener listener : listeners) {
+            listener.onChainReorganized(newChain);
         }
     }
 
@@ -188,6 +194,7 @@ public class BlockchainUseCase implements TransactionsPublished {
 
         if (transactions == null || transactions.isEmpty()) {
             System.out.println("[INFO] No pending transactions");
+            this.lastTxTime = System.currentTimeMillis();
             return;
         }
 
