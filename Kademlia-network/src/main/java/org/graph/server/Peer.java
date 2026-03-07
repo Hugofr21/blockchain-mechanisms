@@ -33,7 +33,6 @@ public class Peer {
     private Node myself;
     private RoutingTable routingTable;
     private Logger mLogger;
-    private volatile boolean running;
     private KeysInfrastructure keys;
     private NeighboursConnections neighboursManager;
     private KademliaNetwork mkademliaNetwork;
@@ -44,6 +43,9 @@ public class Peer {
     private ChainSyncUseCase mChainSyncManager;
     private ReputationsManager reputationsManager;
     private BrokerEvent mBrokerEvent;
+
+
+    private volatile boolean running;
 
     public Peer(int port, char[] password) {
         this.keys = new KeysInfrastructure(this, port, password);

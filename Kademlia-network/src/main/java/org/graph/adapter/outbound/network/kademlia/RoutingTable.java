@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.util.*;
 
 import static org.graph.adapter.utils.Constants.ID_BITS;
@@ -197,5 +198,87 @@ public class RoutingTable {
     private int getBucketIndex(Node node) {
         BigInteger distance = localNode.getNodeId().distanceBetweenNode(node.getNodeId().value());
         return Math.min(distance.bitLength() - 1, ID_BITS - 1);
+    }
+
+    /**
+     * Mecanismo de manutenção ativa da Tabela de Roteamento (Routing Table).
+     *
+     * Para garantir que os k-buckets permaneçam atualizados, com rotatividade
+     * adequada e resilientes a nós inativos ("zombies") ou a ataques de
+     * ofuscação (Eclipse), é necessária uma verificação periódica do estado
+     * da topologia da rede.
+     *
+     * Durante esta verificação, o sistema percorre todos os buckets da tabela.
+     * O objetivo não é necessariamente encontrar os nós mais próximos do
+     * identificador local, mas sim garantir que cada faixa de distância do
+     * espaço de endereçamento contenha nós ativos e validados.
+     *
+     * Para popular um bucket específico (índice 'i'), o algoritmo gera um
+     * Node ID alvo artificial. Este identificador aleatório é construído de
+     * forma a garantir que a distância matemática entre ele e o nó local
+     * (calculada através da operação XOR) possua o seu bit mais significativo
+     * exatamente na posição 'i'.
+     *
+     * Regra de execução:
+     * O sistema percorre todos os buckets. Se um bucket não registar atividade
+     * (inserção ou lookup) durante a última hora, o nó local gera um Node ID
+     * aleatório restrito a essa faixa de distância e dispara uma operação
+     * FIND_NODE silenciosa, forçando a descoberta de vizinhos ativos nessa zona.
+     */
+    public synchronized List<BigInteger> getIdleBucketTargets() {
+        long now = System.currentTimeMillis();
+        long ONE_MS =  60L * 1000L;
+        List<BigInteger> targetsForRefresh = new ArrayList<>();
+
+        for (int i = 0; i < ID_BITS; i++) {
+            KBucket bucket = buckets.get(i);
+
+            if ((now - bucket.getLastRefreshTime()) > ONE_MS) {
+
+                BigInteger targetId = generateRandomBuckets(i);
+                targetsForRefresh.add(targetId);
+
+                bucket.updateRefreshTime();
+            }
+        }
+
+        return targetsForRefresh;
+    }
+    /**
+     * Gera um Node ID alvo cuja distância XOR em relação ao nó local
+     * pertença à faixa correspondente ao índice do bucket especificado.
+     *
+     * Na métrica de distância do Kademlia, um nó pertence ao bucket 'i'
+     * quando a distância XOR entre o seu identificador e o identificador
+     * do nó local tem o bit mais significativo igual a 'i'.
+     *
+     * Assim, este method constrói um Node ID artificial que garante que
+     * a distância calculada através da operação XOR caia exatamente
+     * na faixa de distância representada pelo bucket 'i'.
+     *
+     * @param bucketIndex índice do k-bucket cuja faixa de distância
+     *                    deve ser atingida pelo Node ID gerado
+     * @return um Node ID aleatório que pertence à faixa de distância
+     *         correspondente ao bucket especificado
+     *
+     *  Exemplo:
+     *   Target: 01010
+     *   Local Node: 10101
+     *   Distance: 11111
+     *   2^1 < d < 2^i+1
+     */
+
+    private BigInteger generateRandomBuckets(int bucketIndex) {
+        Random random = new SecureRandom();
+
+        BigInteger prefix = BigInteger.ONE.shiftLeft(bucketIndex);
+
+        BigInteger randomSuffix = new BigInteger(bucketIndex, random);
+
+        BigInteger targetDistance = prefix.or(randomSuffix);
+
+        return localNode.getNodeId().value().xor(targetDistance);
+
+
     }
 }

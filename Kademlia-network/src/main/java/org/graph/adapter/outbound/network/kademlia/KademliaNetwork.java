@@ -614,45 +614,36 @@ public class KademliaNetwork implements IKademliaIController {
             return null;
         }
 
-        Socket socket = null;
-        try {
-            socket = new Socket();
+        ConnectionHandler handler = myself.getNeighboursManager()
+                .getNeighbourById(target.getNodeId().value());
 
-            socket.connect(new InetSocketAddress(target.getHost(), target.getPort()), 3000);
 
-            socket.setSoTimeout(5000);
+        if (handler != null && !handler.getSocket().isClosed()) {
+            try {
+                MessageUtils.sendMessage(handler.getOutputStream(), request);
+                System.out.println("[GOSSIP] Notification sent via open tunnel to: " + target.getPort());
 
-            DataInputStream in = new DataInputStream(socket.getInputStream());
-            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                Message response = MessageUtils.readMessage(handler.getInputStream());
 
-            Optional<Node> handshakeResult = Handshake.doHandshake(myself, in, out);
+                if (response != null) {
+                    return response.getPayload();
+                }
 
-            if (handshakeResult.isEmpty()) {
-                System.err.println("[DHT RPC] Synchronization failed: Handshake rejected by " + target.getPort());
-                return null;
+            }  catch (java.net.SocketTimeoutException e) {
+                System.err.println("[DHT RPC] Timeout waiting for response from " + target.getPort() + " (Node excessively slow or offline).");
+                myself.getReputationsManager().reportEvent(target.getNodeId().value(), EventTypePolicy.PING_FAIL);
+            } catch (Exception e) {
+                System.err.println("[DHT RPC] Synchronous communication failed with " + target.getPort() + ": " + e.getMessage());
             }
-
-            MessageUtils.sendMessage(out, request);
-
-            Message response = MessageUtils.readMessage(in);
-
-            if (response != null) {
-                return response.getPayload();
-            }
-
-        } catch (java.net.SocketTimeoutException e) {
-            System.err.println("[DHT RPC] Timeout waiting for response from " + target.getPort() + " (Node excessively slow or offline).");
-            myself.getReputationsManager().reportEvent(target.getNodeId().value(), EventTypePolicy.PING_FAIL);
-        } catch (Exception e) {
-            System.err.println("[DHT RPC] Synchronous communication failed with " + target.getPort() + ": " + e.getMessage());
-        } finally {
-            if (socket != null && !socket.isClosed()) {
-                try {
-                    socket.close();
-                } catch (Exception ignored) {}
-            }
+//            finally {
+//                if (handler.getSocket() != null && !handler.getSocket().isClosed()) {
+//                    try {
+//                       handler.closeConnection();
+//                    } catch (Exception ignored) {}
+//                }
+//            }
         }
-
         return null;
     }
+
 }

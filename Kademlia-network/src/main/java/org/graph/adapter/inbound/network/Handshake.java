@@ -29,7 +29,7 @@ public final class Handshake {
     /**
      * Executa o handshake de autenticação utilizando streams que já se encontram abertos.
      * <p>
-     * Este método realiza um protocolo de autenticação mútua entre dois pares
+     * Este method realiza um protocolo de autenticação mútua entre dois pares
      * sem fechar os streams fornecidos. Os streams permanecem abertos e podem
      * ser reutilizados para comunicação posterior após um handshake bem-sucedido.
      * </p>

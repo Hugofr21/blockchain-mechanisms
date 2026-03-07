@@ -14,13 +14,18 @@ import static org.graph.adapter.utils.Constants.NODE_K;
 public class KBucket { ;
     private LinkedHashMap<BigInteger, Node> nodes;
     private final IReputationsManager reputationProvider;
+    private long lastRefreshTime;
+
     public KBucket(IReputationsManager reputationProvider) {
         this.reputationProvider = reputationProvider;
         this.nodes = new LinkedHashMap<>(NODE_K, 0.75f, true);
+        this.lastRefreshTime = System.currentTimeMillis();
 
     }
 
     public synchronized boolean addNode(Node newNode) {
+        this.lastRefreshTime = System.currentTimeMillis();
+
         BigInteger nodeId = newNode.getNodeId().value();
 
         if (nodes.containsKey(nodeId)) {
@@ -104,5 +109,9 @@ public class KBucket { ;
     public synchronized boolean isFull() {
         return nodes.size() >= NODE_K;
     }
+
+    public long getLastRefreshTime() {return lastRefreshTime;}
+
+    public void updateRefreshTime() {lastRefreshTime = System.currentTimeMillis();}
 
 }

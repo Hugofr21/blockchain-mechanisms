@@ -15,9 +15,7 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PublicKey;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 public class MenuUtils {
 
@@ -73,7 +71,8 @@ public class MenuUtils {
         System.out.println("1) Simulate Sybil Attack (Fake Identity Injection)");
         System.out.println("2) Simulate Eclipse Attack (IP Saturation)");
         System.out.println("3) Security Test: Simulate Duplicate Bids (Replay Attack)");
-        System.out.println("4) Return");
+        System.out.println("4) Rollback an auction bid by bid");
+        System.out.println("0) Return");
         System.out.print("Choose the attack vector: ");
 
         int choice = scanner.nextInt();
@@ -83,10 +82,16 @@ public class MenuUtils {
             case 1: simulateSybilAttack(peer); break;
             case 2: simulateEclipseAttack(peer); break;
             case 3: simulateDuplicateBidAttack(peer); break;
-            case 4: return;
+            case 4: simulateNaiveRollbackAttack(peer); break;
+            case 0: return;
             default: System.out.println("Invalid option.");
 
         }
+    }
+
+    private static void simulateNaiveRollbackAttack(Peer peer) {
+
+
     }
 
     public static void simulateDuplicateBidAttack(Peer peer) {
