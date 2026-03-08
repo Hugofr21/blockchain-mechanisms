@@ -10,6 +10,7 @@ import org.graph.domain.valueobject.cryptography.Pair;
 import org.graph.application.usecase.blockchain.block.BlockRule;
 import org.graph.application.usecase.blockchain.block.TransactionRule;
 import org.graph.server.Peer;
+import org.graph.server.utils.MetricsLogger;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -168,6 +169,7 @@ public class BlockchainUseCase implements ITransactionsPublished {
 
         if (genesis.getCurrentBlockHash() != null) {
             mBlockRule.addLocalBlock(genesis);
+            MetricsLogger.updateChainHeight(mBlockRule.getChainHeight());
         } else {
             System.out.println("[BLOCK_GENESIS] Genesis block mining failed. Structural insertion aborted.");
         }
@@ -206,6 +208,8 @@ public class BlockchainUseCase implements ITransactionsPublished {
         mTransactionRule.cleanPool(transactions);
         mBlockRule.addLocalBlock(newBlock);
 
+        MetricsLogger.updateChainHeight(mBlockRule.getChainHeight());
+
         this.lastTxTime = System.currentTimeMillis();
         notifyListeners(newBlock);
 
@@ -226,7 +230,7 @@ public class BlockchainUseCase implements ITransactionsPublished {
         if (isAdded) {
             System.out.println("[BLOCKCHAIN] Block accepted. Cleaning pending transactions...");
             mTransactionRule.cleanPool(block.getTransactions());
-
+            MetricsLogger.updateChainHeight(mBlockRule.getChainHeight());
             Thread.sleep(100);
             notifyListeners(block);
         } else {

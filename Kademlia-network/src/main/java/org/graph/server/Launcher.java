@@ -3,6 +3,7 @@ package org.graph.server;
 
 import org.graph.adapter.inbound.network.JoinNetwork;
 import org.graph.server.utils.MenuUtils;
+import org.graph.server.utils.MetricsLogger;
 
 import static org.graph.server.utils.Constants.BOOTSTRAP_PORT;
 
@@ -17,7 +18,8 @@ public class Launcher {
 
         int port = Integer.parseInt(args[0]);
         char[] nodeSecret = SecurityBootstrapper.obtainNodePassword();
-
+        int prometheusPort = port + 1001;
+        MetricsLogger.init(prometheusPort);
         Peer peer = new Peer(port, nodeSecret);
         peer.startPeer();
         System.out.println("Peer started: " + peer.getMyself().toString());

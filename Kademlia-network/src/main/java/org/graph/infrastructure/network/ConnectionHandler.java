@@ -20,6 +20,7 @@ import org.graph.domain.entities.node.Node;
 import org.graph.infrastructure.utils.SerializationUtils;
 import org.graph.gateway.block.*;
 import org.graph.server.Peer;
+import org.graph.server.utils.MetricsLogger;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -102,6 +103,9 @@ public class ConnectionHandler implements Runnable {
             while (myPeer.getIsRunning() && !socket.isClosed() && running) {
                 try {
                     Message message = readMessage(inputStream);
+
+                    MetricsLogger.recordInboundMessage(myPeer.getMyself().getPort() + "");
+
                     logger.severe("Received message: " + message.toString());
 
                     if (message.getType() == MessageType.HELLO) {

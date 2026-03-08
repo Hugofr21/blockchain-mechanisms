@@ -20,6 +20,7 @@ import org.graph.domain.entities.node.Node;
 import org.graph.server.Peer;
 import org.graph.adapter.provider.IKademliaIController;
 import org.graph.infrastructure.storage.StorageDHT;
+import org.graph.server.utils.MetricsLogger;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -623,7 +624,11 @@ public class KademliaNetwork implements IKademliaIController {
                 MessageUtils.sendMessage(handler.getOutputStream(), request);
                 System.out.println("[GOSSIP] Notification sent via open tunnel to: " + target.getPort());
 
+                long startTime = System.currentTimeMillis();
                 Message response = MessageUtils.readMessage(handler.getInputStream());
+                long rttDelay = System.currentTimeMillis() - startTime;
+
+                MetricsLogger.recordLatency(target.getPort() + "", rttDelay);
 
                 if (response != null) {
                     return response.getPayload();
@@ -635,13 +640,6 @@ public class KademliaNetwork implements IKademliaIController {
             } catch (Exception e) {
                 System.err.println("[DHT RPC] Synchronous communication failed with " + target.getPort() + ": " + e.getMessage());
             }
-//            finally {
-//                if (handler.getSocket() != null && !handler.getSocket().isClosed()) {
-//                    try {
-//                       handler.closeConnection();
-//                    } catch (Exception ignored) {}
-//                }
-//            }
         }
         return null;
     }

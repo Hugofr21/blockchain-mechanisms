@@ -1,6 +1,7 @@
 package org.graph.server;
 
 import org.graph.server.utils.MenuUtils;
+import org.graph.server.utils.MetricsLogger;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -28,9 +29,11 @@ public class LauncherBootstrap {
     public static void main(String[] args) throws IOException, URISyntaxException {
         System.out.println("\n================== BOOTSTRAPPING ================");
         char[] nodeSecret = SecurityBootstrapper.obtainNodePassword();
-
+        int prometheusPort = BOOTSTRAP_PORT + 4000;
+        MetricsLogger.init(prometheusPort);
         Peer peer = new Peer(BOOTSTRAP_PORT, nodeSecret);
         peer.startPeer();
+
         peer.getNetworkGateway().getBlockchainEngine().createGenesisBlock();
         System.out.println("[BOOTSTRAPPING] Initialized bootstrap: " + peer.getMyself());
 
