@@ -230,6 +230,11 @@ public class KademliaNetwork implements IKademliaIController {
             }
         }
 
+        MetricsLogger.updateTopologyMetrics(
+                myself.getNeighboursManager().getActiveNeighbours().size(),
+                this.storage.size()
+        );
+
         return new ArrayList<>(shortlist).subList(0, Math.min(NODE_K, shortlist.size()));
     }
 
@@ -300,6 +305,7 @@ public class KademliaNetwork implements IKademliaIController {
         T localVal = storage.get(key, type);
         if (localVal != null) {
             System.out.println("[DHT] Find value inside cache.");
+            MetricsLogger.recordCacheHit();
             return localVal;
         }
 
@@ -314,6 +320,9 @@ public class KademliaNetwork implements IKademliaIController {
         Node closestNodeWithoutValue = null;
         BigInteger minDistanceWithoutValue = null;
 
+        MetricsLogger.recordNetworkHit();
+        int hops = 0;
+
         while (madeProgress) {
             madeProgress = false;
 
@@ -325,6 +334,7 @@ public class KademliaNetwork implements IKademliaIController {
             if (toQuery.isEmpty()) break;
 
             for (Node node : toQuery) {
+                hops++;
                 queried.add(node.getNodeId().value());
 
                 Message request = new Message(MessageType.FIND_VALUE, key, myself.getHybridLogicalClock());
@@ -395,6 +405,7 @@ public class KademliaNetwork implements IKademliaIController {
                 shortlist.pollLast();
             }
         }
+        MetricsLogger.recordLookupHops("FIND_VALUE", hops);
         return null;
     }
 
@@ -468,6 +479,12 @@ public class KademliaNetwork implements IKademliaIController {
     @Override
     public boolean ping(Node target) {
         Message pingMsg = new Message(MessageType.PING, "PING", myself.getHybridLogicalClock());
+
+        MetricsLogger.updateTopologyMetrics(
+                myself.getNeighboursManager().getActiveNeighbours().size(),
+                this.storage.size()
+        );
+
         Object res = sendRPCAsync(target, pingMsg);
         return res != null;
     }
@@ -502,6 +519,11 @@ public class KademliaNetwork implements IKademliaIController {
     public void storage(BigInteger key, Object value) {
         storage.put(key, value);
         List<Node> closestNodes = findNode(key);
+
+        MetricsLogger.updateTopologyMetrics(
+                myself.getNeighboursManager().getActiveNeighbours().size(),
+                this.storage.size()
+        );
 
         Map<String, Object> storagePayload = new HashMap<>();
         storagePayload.put("key", key);
@@ -637,8 +659,10 @@ public class KademliaNetwork implements IKademliaIController {
             }  catch (java.net.SocketTimeoutException e) {
                 System.err.println("[DHT RPC] Timeout waiting for response from " + target.getPort() + " (Node excessively slow or offline).");
                 myself.getReputationsManager().reportEvent(target.getNodeId().value(), EventTypePolicy.PING_FAIL);
+                MetricsLogger.recordRpcError("TIMEOUT");
             } catch (Exception e) {
                 System.err.println("[DHT RPC] Synchronous communication failed with " + target.getPort() + ": " + e.getMessage());
+                MetricsLogger.recordRpcError("CONNECTION_REFUSED");
             }
         }
         return null;

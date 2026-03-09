@@ -146,26 +146,22 @@ public class AuctionCaseUse implements IBlockListener {
         AuctionPayload payload = (AuctionPayload) tx.getData();
 
         if (payload.getOperation() == AuctionOpType.CREATE) {
-            AuctionState remoteStateInfo = payload.getAuctionStateRemote();
 
+            AuctionState remoteStateInfo = payload.getAuctionStateRemote();
             String newAuctionId = remoteStateInfo.getAuctionId();
 
-            if (ledger.containsKey(newAuctionId)) {
-                System.out.println("[AUCTION ENGINEER] Auction already exists locally, ignoring duplication.");
-                return;
+
+            if (!ledger.containsKey(newAuctionId)) {
+                AuctionState newState = new AuctionState(
+                        newAuctionId,
+                        tx.getSenderId(),
+                        remoteStateInfo.getMinPrice(),
+                        remoteStateInfo.getEndTimestamp()
+                );
+                ledger.put(newAuctionId, newState);
+                processOrphanBids(newAuctionId, newState);
             }
 
-            AuctionState newState = new AuctionState(
-                    newAuctionId,
-                    tx.getSenderId(),
-                    remoteStateInfo.getMinPrice(),
-                    remoteStateInfo.getEndTimestamp()
-            );
-
-            ledger.put(newAuctionId, newState);
-            System.out.println("[AUCTION ENGINEER] OFFICIAL auction registered in Ledger: " + newAuctionId);
-
-            processOrphanBids(newAuctionId, newState);
 
         } else if (payload.getOperation() == AuctionOpType.BID) {
             Bid bid = payload.getBidRemote();
