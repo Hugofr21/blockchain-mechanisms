@@ -121,9 +121,13 @@ public class KademliaNetwork implements IKademliaIController {
     @Override
     public List<Node> findNode(BigInteger targetId) {
 
-        TreeSet<Node> shortlist = new TreeSet<>(Comparator.comparing(
-                n -> n.getNodeId().distanceBetweenNode(targetId)
-        ));
+        TreeSet<Node> shortlist = new TreeSet<>(
+                Comparator.comparingDouble((Node n) -> {
+                    BigInteger xorDist = n.getNodeId().distanceBetweenNode(targetId);
+                    double trust = myself.getReputationsManager().getTrustFactor(n.getNodeId().value());
+                    return myself.getRoutingTable().calculateSKademliaMetric(xorDist, trust);
+                }).thenComparing(n -> n.getNodeId().value())
+        );
 
         List<Node> localClosest = myself.getRoutingTable().findClosestNodesProximity(targetId, NODE_K);
         shortlist.addAll(localClosest);
@@ -309,7 +313,14 @@ public class KademliaNetwork implements IKademliaIController {
             return localVal;
         }
 
-        TreeSet<Node> shortlist = new TreeSet<>(Comparator.comparing(n -> n.getNodeId().distanceBetweenNode(key)));
+        TreeSet<Node> shortlist = new TreeSet<>(
+                Comparator.comparingDouble((Node n) -> {
+                    BigInteger xorDist = n.getNodeId().distanceBetweenNode(key);
+                    double trust = myself.getReputationsManager().getTrustFactor(n.getNodeId().value());
+                    return myself.getRoutingTable().calculateSKademliaMetric(xorDist, trust);
+                }).thenComparing(n -> n.getNodeId().value())
+        );
+
         shortlist.addAll(myself.getRoutingTable().findClosestNodesProximity(key, NODE_K));
 
         Set<BigInteger> queried = new HashSet<>();

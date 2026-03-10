@@ -15,7 +15,7 @@ public class BlockRule {
     private Map<String, Block> blockMap;
     private Map<String, List<Block>> orphanBlocks;
     private Map<Integer, Block> organizedChain;
-    private BlockchainUseCase mBlockchain;
+    private final BlockchainUseCase mBlockchain;
     private Block currentTip = null;
 
     public BlockRule(BlockchainUseCase blockchain) {

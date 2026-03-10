@@ -149,7 +149,7 @@ public class RoutingTable {
      * mesmo que não sejam os mais próximos XOR, aumentando resistência a ataques Sybil.
      * </p>
      */
-    private double  calculateSKademliaMetric(BigInteger xorDistance, double trust ){
+    double  calculateSKademliaMetric(BigInteger xorDistance, double trust){
         BigDecimal distance = new BigDecimal(xorDistance);
         double normalizedDistance = distance.divide(MAX_DISTANCE, MathContext.DECIMAL64).doubleValue();
         double safeTrust = Math.max(0.0001, trust);
