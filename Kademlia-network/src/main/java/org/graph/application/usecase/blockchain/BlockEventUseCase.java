@@ -11,6 +11,9 @@ import org.graph.domain.entities.message.MessageType;
 import org.graph.gateway.NetworkGateway;
 import org.graph.gateway.block.BlockStateRemote;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * O BlockEventManager atua como camada central de validação e coordenação
  * no tratamento de eventos relacionados com blocos recebidos da rede.
@@ -51,7 +54,6 @@ public class BlockEventUseCase {
         this.dispatcher = dispatcher;
     }
 
-
     public void handleInv(InventoryPayload payload, ConnectionHandler source) {
         if (payload.type() != InventoryType.BLOCK) return;
 
@@ -63,11 +65,12 @@ public class BlockEventUseCase {
         }
     }
 
-
     public void handleGetData(InventoryPayload payload, ConnectionHandler requester) {
-        if (!payload.getTypeInventoryBlock()) return;
+        if (payload.type() != InventoryType.BLOCK) return;
 
-        String hash = payload.getInventoryHah();
+        String hash = payload.hash();
+        // --------------------------------------------------------------
+
         Block block = gateway.getBlockchainEngine().getBlockOrganizer().getBlockByHash(hash);
 
         if (block != null) {
@@ -102,7 +105,6 @@ public class BlockEventUseCase {
                 if (source.getPeer().getmChainSyncController() != null) {
                     source.getPeer().getmChainSyncController().recoverMissingBlock(parentHash);
                 }
-
             }
 
             case INVALID -> {
@@ -134,5 +136,31 @@ public class BlockEventUseCase {
         InventoryPayload inv = new InventoryPayload(InventoryType.BLOCK, block.getCurrentBlockHash());
         Message msg = new Message(MessageType.INV_DATA, inv, excludeSource.getPeer().getHybridLogicalClock());
         dispatcher.broadcastExcept(msg, excludeSource.getRemoteNode());
+    }
+
+    public void handleGetBlocksBatch(InventoryPayload payload, ConnectionHandler requester) {
+        if (payload.type() != InventoryType.BATCH_REQUEST) return;
+
+        try {
+            int startHeight = Integer.parseInt(payload.hash());
+            List<Block> myChain = gateway.getBlockchainEngine().getBlockOrganizer().getOrderedChain();
+
+            List<Block> batchToSend = new ArrayList<>();
+            for (Block b : myChain) {
+                if (b.getNumberBlock() > startHeight) {
+                    batchToSend.add(b);
+                    if (batchToSend.size() >= 20) break;
+                }
+            }
+
+            if (!batchToSend.isEmpty()) {
+                System.out.println("[UPLOAD] Sending batch of " + batchToSend.size() + " blocks to " + requester.getRemoteNode().getPort());
+                Message response = new Message(MessageType.BLOCK_BATCH, batchToSend, requester.getPeer().getHybridLogicalClock());
+                dispatcher.sendUnicast(response, requester);
+            }
+
+        } catch (NumberFormatException e) {
+            System.err.println("[SYNC] Invalid batch request: " + payload.hash());
+        }
     }
 }

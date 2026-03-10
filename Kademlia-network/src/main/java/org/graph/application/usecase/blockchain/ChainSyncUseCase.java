@@ -12,6 +12,7 @@ import org.graph.gateway.NetworkGateway;
 import org.graph.server.Peer;
 
 import java.math.BigInteger;
+import java.util.List;
 
 /**
  * O processo de sincronização inicial decorre em três fases distintas.
@@ -44,6 +45,8 @@ public class ChainSyncUseCase {
         this.myself = myself;
     }
 
+
+
     public void startInitialSync(ConnectionHandler handler) {
         System.out.println("[BOOTSTRAP] Requesting chain status....");
         Message msg = new Message(MessageType.GET_STATUS, null, handler.getPeer().getHybridLogicalClock());
@@ -72,50 +75,67 @@ public class ChainSyncUseCase {
         int remoteHeight = remoteStatus.blockHeight();
 
         var lastBlock = gateway.getBlockchainEngine().getBlockOrganizer().getLastBlock();
-        System.out.println("LAST BLOCK: " + lastBlock);
+
         int localHeight = (lastBlock != null) ? lastBlock.getNumberBlock() : -1;
+        String localHash = (lastBlock != null) ? lastBlock.getCurrentBlockHash() : "";
 
-        System.out.println("[SYNC] Local Height: " + localHeight + " | Remote Height: " + remoteHeight);
+        boolean isBehind = remoteHeight > localHeight;
+        boolean isForkAtSameHeight = (localHeight == remoteHeight && localHeight >= 0 && !localHash.equals(remoteHash));
 
-        boolean needsSync = (remoteHeight > localHeight);
+        if (isBehind || isForkAtSameHeight) {
+            int requestFrom = localHeight;
 
-        if (!needsSync && localHeight == remoteHeight && lastBlock != null) {
-            if (!lastBlock.getCurrentBlockHash().equals(remoteHash)) {
-                needsSync = true;
-                System.out.println("[SYNC] Hash mismatch at the same time (Fork detected).");
+            if (isForkAtSameHeight) {
+                System.out.println("[SYNC] Fork detected at the same time (" + localHeight + "). Hashes diverge!");
+                requestFrom = localHeight - 1;
+            } else {
+                System.out.println("[SYNC] Delay detected. Requesting blocks starting at height: " + localHeight);
             }
-        }
 
-        if (needsSync) {
-            System.out.println("[SYNC] Delay detected. Requesting top block: " + remoteHash);
-            sendGetData(remoteHash, source);
+            requestFrom = Math.max(-1, requestFrom);
+
+            InventoryPayload req = new InventoryPayload(InventoryType.BATCH_REQUEST, String.valueOf(requestFrom));
+            Message msg = new Message(MessageType.GET_BLOCKS_BATCH, req, source.getPeer().getHybridLogicalClock());
+            dispatcher.sendUnicast(msg, source);
+
         } else {
-            System.out.println("[SYNC] Node is now synchronized.");
+            System.out.println("[SYNC] Node is already synchronized with the remote branch.");
         }
     }
-
 
     public void recoverMissingBlock(String missingHash) {
         new Thread(() -> {
             try {
-                System.out.println("[KADEMLIA] A procurar bloco órfão na DHT: " + missingHash);
+                System.out.println("[KADEMLIA] Searching for orphaned block in DHT: " + missingHash);
                 BigInteger targetKey = new BigInteger(missingHash, 16);
                 Block recoveredBlock = myself.getMkademliaNetwork().findValue(targetKey, Block.class);
                 if (recoveredBlock != null) {
-                    System.out.println("[KADEMLIA] Bloco recuperado com sucesso!");
+                    System.out.println("[KADEMLIA] Block retrieved successfully!");
                     myself.getNetworkGateway().processIncomingBlock(recoveredBlock);
                 } else {
-                    System.out.println("[KADEMLIA] Bloco não encontrado na rede.");
+                    System.out.println("[KADEMLIA] Block not found on the network.");
                 }
             } catch (Exception e) {
-                System.err.println("[KADEMLIA] Erro na recuperação: " + e.getMessage());
+                System.err.println("[KADEMLIA] Error retrieving: " + e.getMessage());
             }
         }).start();
     }
 
-    private void sendGetData(String hash, ConnectionHandler target) {
-        InventoryPayload req = new InventoryPayload(InventoryType.BLOCK, hash);
-        Message msg = new Message(MessageType.GET_BLOCK, req, target.getPeer().getHybridLogicalClock());
-        dispatcher.sendUnicast(msg, target);
+
+    public void handleBlockBatch(List<Block> batch, ConnectionHandler source) {
+        System.out.println("[SYNC] Batch received from " + batch.size() + " blocks.");
+
+        for (Block b : batch) {
+            gateway.processIncomingBlock(b);
+        }
+
+        if (batch.size() == 20) {
+            int newHeight = gateway.getBlockchainEngine().getBlockOrganizer().getChainHeight() - 1;
+            InventoryPayload req = new InventoryPayload(InventoryType.BATCH_REQUEST, String.valueOf(newHeight));
+            Message msg = new Message(MessageType.GET_BLOCKS_BATCH, req, source.getPeer().getHybridLogicalClock());
+            dispatcher.sendUnicast(msg, source);
+        } else {
+            System.out.println("[SYNC] Batch synchronization completed.");
+        }
     }
 }

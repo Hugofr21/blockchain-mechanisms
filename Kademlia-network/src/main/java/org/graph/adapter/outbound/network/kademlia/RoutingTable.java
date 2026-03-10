@@ -5,6 +5,7 @@ import org.graph.domain.entities.node.Node;
 import org.graph.domain.entities.node.NodeId;
 import org.graph.domain.valueobject.cryptography.PublicKeyPeer;
 import org.graph.server.Peer;
+import org.graph.server.utils.MetricsLogger;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -113,6 +114,8 @@ public class RoutingTable {
 
                double trust = reputationProvider.getTrustFactor(nodeId);
                double nd = calculateSKademliaMetric(xorDist, trust);
+
+               MetricsLogger.recordTrustScore(nodeId.toString(), trust);
 
                closest.offer(new NodeMetric(node, nd));
            }

@@ -14,7 +14,7 @@ public class TransactionRule {
     private Set<Transaction> pendingTransactions;
     private List<String> completedTransactions;
     private int maxTransactionsPending;
-    private Object lock;
+    private final Object lock;
     private Function<BigInteger, Long> currentNonceProvider;
 
     public TransactionRule(int maxTransactionsPending) {
@@ -40,11 +40,11 @@ public class TransactionRule {
             if (currentNonceProvider != null) {
                 long expectedNextNonce = currentNonceProvider.apply(transaction.getSenderId());
                 if (transaction.getNonce() < expectedNextNonce) {
-                    System.err.println("[SECURITY] Replay Attack ignorado! Nonce " + transaction.getNonce() + " < " + expectedNextNonce);
+                    System.err.println("[SECURITY] Replay Attack ignored! Nonce " + transaction.getNonce() + " < " + expectedNextNonce);
                     return;
                 }
             } else {
-                System.out.println("[WARN] Nonce Provider não inicializado. Transação pendente em risco.");
+                System.out.println("[WARN] Nonce Provider not initialized. Pending transaction at risk.");
             }
 
             boolean added = pendingTransactions.add(transaction);
@@ -133,7 +133,7 @@ public class TransactionRule {
     }
 
     /**
-     * Ressuscita transações de blocos que foram orfanados durante um Fork (Chain Reorg).
+     * Revives transactions from blocks that were orphaned during a Fork (Chain Reorg).
      */
     public void restoreToPool(List<Transaction> orphanedTxs) {
         synchronized (lock) {

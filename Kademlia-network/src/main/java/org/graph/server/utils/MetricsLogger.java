@@ -14,9 +14,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class MetricsLogger {
 
-    private static OpenTelemetry openTelemetry;
-    private static Meter meter;
-
     private static DoubleHistogram networkLatency;
     private static LongCounter inboundThroughput;
     private static LongCounter outboundThroughput;
@@ -27,6 +24,12 @@ public class MetricsLogger {
     private static LongCounter kademliaCacheHits;
     private static LongCounter kademliaNetworkHits;
     private static LongCounter kademliaRpcErrors;
+
+
+    private static LongCounter skademliaOperations;
+    private static LongCounter skademliaMaliciousActivities;
+    private static DoubleHistogram skademliaTrustScore;
+    private static DoubleHistogram skademliaKbucketFilling;
 
     private static boolean isInitialized = false;
     private static final AtomicLong routingTableSize = new AtomicLong(0);
@@ -45,11 +48,11 @@ public class MetricsLogger {
                     .registerMetricReader(prometheusServer)
                     .build();
 
-            openTelemetry = OpenTelemetrySdk.builder()
+            OpenTelemetry openTelemetry = OpenTelemetrySdk.builder()
                     .setMeterProvider(meterProvider)
                     .buildAndRegisterGlobal();
 
-            meter = openTelemetry.getMeter("org.graph.p2p.node");
+            Meter meter = openTelemetry.getMeter("org.graph.p2p.node");
 
             networkLatency = meter.histogramBuilder("kademlia.network.latency")
                     .setDescription("Tempo de ida e volta (RTT) das mensagens RPC na DHT")
@@ -93,6 +96,23 @@ public class MetricsLogger {
                     .setDescription("Número de objetos atualmente guardados na DHT local")
                     .ofLongs().buildWithCallback(m -> m.record(dhtStorageSize.get()));
 
+            skademliaOperations = meter.counterBuilder("skademlia.operations.total")
+                    .setDescription("Resultados das operações Kademlia (Successful, Unsuccessful, Unended)")
+                    .build();
+
+            skademliaMaliciousActivities = meter.counterBuilder("skademlia.malicious.activities")
+                    .setDescription("Comportamentos maliciosos detetados (Null list, Fake resource, Store refusal)")
+                    .build();
+
+            skademliaTrustScore = meter.histogramBuilder("skademlia.peer.trust_score")
+                    .setDescription("Pontuação de confiança (t) calculada para os peers")
+                    .build();
+
+            skademliaKbucketFilling = meter.histogramBuilder("skademlia.kbucket.filling")
+                    .setDescription("Percentagem média de preenchimento dos k-buckets")
+                    .setUnit("%")
+                    .build();
+
             isInitialized = true;
             System.out.println("[TELEMETRIA] Prometheus Exporter iniciado no porto: " + prometheusPort);
 
@@ -124,6 +144,49 @@ public class MetricsLogger {
         currentChainHeight.set(newHeight);
     }
 
+    /**
+     * Regista o desfecho de uma operação (LOOKUP, GET, PUT)
+     * Status esperados: "SUCCESSFUL", "UNSUCCESSFUL", "UNENDED"
+     */
+    public static void recordOperationStatus(String operationType, String status) {
+        if (!isInitialized) return;
+        Attributes attrs = Attributes.of(
+                AttributeKey.stringKey("operation"), operationType,
+                AttributeKey.stringKey("status"), status
+        );
+        skademliaOperations.add(1, attrs);
+    }
+
+    /**
+     * Regista a deteção de um comportamento anómalo/Sibil
+     * Tipos esperados: "NULL_LIST", "FAKE_RESOURCE", "STORE_REFUSAL"
+     */
+    public static void recordMaliciousBehavior(String peerId, String behaviorType) {
+        if (!isInitialized) return;
+        Attributes attrs = Attributes.of(
+                AttributeKey.stringKey("peer.id"), peerId,
+                AttributeKey.stringKey("behavior"), behaviorType
+        );
+        skademliaMaliciousActivities.add(1, attrs);
+    }
+
+    /**
+     * Regista o Trust Score atualizado de um Peer específico
+     */
+    public static void recordTrustScore(String peerId, double trustScore) {
+        if (!isInitialized) return;
+        Attributes attrs = Attributes.of(AttributeKey.stringKey("peer.id"), peerId);
+        skademliaTrustScore.record(trustScore, attrs);
+    }
+
+    /**
+     * Regista a percentagem de preenchimento de um K-Bucket
+     */
+    public static void recordKBucketFilling(String bucketIndex, double fillPercentage) {
+        if (!isInitialized) return;
+        Attributes attrs = Attributes.of(AttributeKey.stringKey("bucket.index"), bucketIndex);
+        skademliaKbucketFilling.record(fillPercentage, attrs);
+    }
     public static void recordLookupHops(String operationType, int hops) {
         if (!isInitialized) return;
         Attributes attrs = Attributes.of(AttributeKey.stringKey("operation"), operationType);

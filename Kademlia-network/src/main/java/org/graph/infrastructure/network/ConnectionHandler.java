@@ -28,6 +28,7 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 import static org.graph.adapter.utils.Constants.*;
@@ -162,6 +163,8 @@ public class ConnectionHandler implements Runnable {
             case BLOCK -> new BlockStrategy().handle(message, this);
             case INV_DATA -> new InvStrategy().handle(message, this);
             case TRANSACTION -> handleTransaction(message.getPayload());
+            case GET_BLOCKS_BATCH -> new GetBlocksBatchStrategy().handle(message, this);
+            case BLOCK_BATCH -> new BlockBatchStrategy().handle(message, this);
             default -> logger.warning("Unhandled message type: " + message.getType());
         }
     }
@@ -365,13 +368,18 @@ public class ConnectionHandler implements Runnable {
 
 
     public void closeConnection() {
-        try {
-            if (inputStream != null) inputStream.close();
-            if (outputStream != null) outputStream.close();
-            if (socket != null) socket.close();
-            logger.info("Connection closed");
-        } catch (IOException e) {
-            logger.severe("Error closing connection: " + e.getMessage());
+        running = false;
+        if (socket != null && !socket.isClosed()) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                logger.warning("Error closing socket: " + e.getMessage());
+            }
+        }
+
+        if (remoteNode != null) {
+            myPeer.getNeighboursManager().removeConnection(remoteNode.getNodeId().value());
+            myPeer.getRoutingTable().removeNode(remoteNode);
         }
     }
 

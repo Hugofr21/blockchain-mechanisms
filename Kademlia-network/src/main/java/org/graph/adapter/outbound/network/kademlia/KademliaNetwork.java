@@ -580,45 +580,6 @@ public class KademliaNetwork implements IKademliaIController {
         return null;
     }
 
-    private void tryConnection(Node target, Message request){
-        Socket socket = null;
-        try  {
-            myself.getNeighboursManager().removeConnection(target.getNodeId().value());
-
-            socket = new Socket();
-            socket.connect(new InetSocketAddress(target.getHost(), target.getPort()), 3000);
-
-
-            socket.setSoTimeout(3000);
-
-            DataInputStream in = new DataInputStream(socket.getInputStream());
-            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-
-            Optional<Node> handshakeResult = Handshake.doHandshake(myself, in, out);
-
-            if (handshakeResult.isEmpty()) {
-                System.out.println("[GOSSIP] Abort. Handshake rejected by " + target.getPort());
-                return;
-            }
-
-            MessageUtils.sendMessage(out, request);
-            System.out.println("[GOSSIP] Notification sent via new connection to: " + target.getPort());
-
-            socket.setSoTimeout(0);
-
-            ConnectionHandler newHandler = new ConnectionHandler(socket, myself, myself.getLogger());
-            myself.getNeighboursManager().addConnection(target, newHandler);
-
-        }catch (Exception e) {
-            System.err.println("[GOSSIP] Communication failure with " + target.getPort() + ": " + e.getMessage());
-            if (socket != null && !socket.isClosed()) {
-                try {
-                    socket.close();
-                } catch (Exception ignored) {}
-            }
-        }
-    }
-
     /**
      * Envia uma mensagem RPC para um nó de destino de forma SÍNCRONA.
      * <p>
@@ -660,9 +621,11 @@ public class KademliaNetwork implements IKademliaIController {
                 System.err.println("[DHT RPC] Timeout waiting for response from " + target.getPort() + " (Node excessively slow or offline).");
                 myself.getReputationsManager().reportEvent(target.getNodeId().value(), EventTypePolicy.PING_FAIL);
                 MetricsLogger.recordRpcError("TIMEOUT");
+                handler.closeConnection();
             } catch (Exception e) {
                 System.err.println("[DHT RPC] Synchronous communication failed with " + target.getPort() + ": " + e.getMessage());
                 MetricsLogger.recordRpcError("CONNECTION_REFUSED");
+                handler.closeConnection();
             }
         }
         return null;

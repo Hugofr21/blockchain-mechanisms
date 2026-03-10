@@ -246,7 +246,7 @@ public class AuctionCaseUse implements IBlockListener {
         return userNonces.getOrDefault(idKey, 0L) + 1;
     }
 
-    public void createdLocalAuctions(BigDecimal startPrice, Peer myself) {
+    public String createdLocalAuctions(BigDecimal startPrice, Peer myself) {
         long durationMillis = 2L * 60L * 1000L;
         long endTime = System.currentTimeMillis() + durationMillis;
 
@@ -274,7 +274,7 @@ public class AuctionCaseUse implements IBlockListener {
         signAndSubmit(tx, myself);
 
         subscribeToAuction(newAuction.getAuctionId(), myself);
-
+        return entropyId;
     }
 
     public void placeBidRequest(String auctionId, BigDecimal bidValue, Peer myself) {

@@ -12,18 +12,23 @@ import static org.graph.adapter.utils.Constants.MAX_MESSAGE_SIZE;
 public final class MessageUtils {
 
     public static Message readMessage(DataInputStream inputStream) throws IOException, ClassNotFoundException {
-        int length = inputStream.readInt();
-        if (length <= 0 || length > MAX_MESSAGE_SIZE * 2)
-            throw new IOException("Invalid size: " + length);
+        synchronized (inputStream) {
+            int length = inputStream.readInt();
 
-        byte[] raw = new byte[length];
-        inputStream.readFully(raw);
-        Object obj = SerializationUtils.deserialize(raw);
+            if (length <= 0 || length > MAX_MESSAGE_SIZE * 2) {
+                throw new IOException("[MESSAGE_UTILS] Invalid message size (Stream corrupted): " + length);
+            }
 
-        if (!(obj instanceof Message))
-            throw new IOException("Expected Message, got " + obj.getClass());
+            byte[] raw = new byte[length];
+            inputStream.readFully(raw);
+            Object obj = SerializationUtils.deserialize(raw);
 
-        return (Message) obj;
+            if (!(obj instanceof Message)) {
+                throw new IOException("[MESSAGE_UTILS] Invalid message type received.");
+            }
+
+            return (Message) obj;
+        }
     }
 
     public static void sendMessage(DataOutputStream outputStream, Object object) throws IOException {

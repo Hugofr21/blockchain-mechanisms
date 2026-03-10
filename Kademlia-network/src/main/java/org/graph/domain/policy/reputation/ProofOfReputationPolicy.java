@@ -82,6 +82,6 @@ public class ProofOfReputationPolicy {
         if (currentProofOfReputation <= 0) {
             return 0.1;
         }
-        return 1.0 + (currentProofOfReputation / 100.0);
+        return 1.0 + Math.log10(1.0 + (currentProofOfReputation / 10.0));
     }
 }

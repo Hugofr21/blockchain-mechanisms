@@ -64,6 +64,7 @@ public class BrokerEvent {
     private record MessageWrapper(Message message, ConnectionHandler source) implements Comparable<MessageWrapper> {
         @Override
         public int compareTo(MessageWrapper o) {
+            if (this.message.getTimestamp() == null || o.message.getTimestamp() == null) return 0;
             return this.message.getTimestamp().compareTo(o.message.getTimestamp());
         }
     }

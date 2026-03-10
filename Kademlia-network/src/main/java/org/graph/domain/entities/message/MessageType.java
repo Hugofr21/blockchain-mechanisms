@@ -20,7 +20,9 @@ public enum MessageType {
     CHAIN_STATUS_RESPONSE((byte) 0x20),
     GET_DATA((byte) 0x21),
     TRANSACTION((byte) 0x22),
-    HELLO_ACK((byte) 0x23);
+    HELLO_ACK((byte) 0x23),
+    GET_BLOCKS_BATCH((byte) 0x24),
+    BLOCK_BATCH((byte) 0x25);
 
 
     private final byte code;

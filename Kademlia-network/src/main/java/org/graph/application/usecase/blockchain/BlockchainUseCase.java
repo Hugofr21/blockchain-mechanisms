@@ -15,6 +15,7 @@ import org.graph.server.utils.MetricsLogger;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 /**
@@ -55,26 +56,31 @@ import java.util.function.Function;
  * falhas de consenso.
 **/
 
+
 public class BlockchainUseCase implements ITransactionsPublished {
     private final int numThreads;
     private final int currentDifficulty;
     private final TransactionRule mTransactionRule;
     private final BlockRule mBlockRule;
     private final List<IBlockListener> listeners;
-    private long lastTxTime;
+
+    private volatile long lastTxTime;
     private static final long MAX_WAIT_TIME_MS = 2000;
-    private Peer myself;
+    private final Peer myself;
+    private final AtomicBoolean isMining = new AtomicBoolean(false);
+
+    private final Object chainStateLock = new Object();
 
     public BlockchainUseCase(int difficulty, int maxTx, Peer myself) {
         this.mTransactionRule = new TransactionRule(maxTx);
         this.mBlockRule = new BlockRule(this);
-        this.numThreads = Runtime.getRuntime().availableProcessors();
+        int availableCores = Runtime.getRuntime().availableProcessors();
+        this.numThreads = Math.max(1, availableCores - 2);
         this.currentDifficulty = difficulty;
         this.listeners = new ArrayList<>();
         this.lastTxTime = System.currentTimeMillis();
         this.myself = myself;
         startMiningWatchdog();
-        
     }
 
     public void setNonceProvider(Function<BigInteger, Long> provider) {
@@ -86,15 +92,12 @@ public class BlockchainUseCase implements ITransactionsPublished {
             while (true) {
                 try {
                     Thread.sleep(500);
+                    int pending = mTransactionRule.getPendingCount();
+                    long timeDiff = System.currentTimeMillis() - lastTxTime;
 
-                    synchronized (this) {
-                        int pending = mTransactionRule.getPendingCount();
-                        long timeDiff = System.currentTimeMillis() - lastTxTime;
-
-                        if (pending > 0 && timeDiff > MAX_WAIT_TIME_MS) {
-                            System.out.println("\n[WATCHDOG] Timeout atingido (" + pending + " txs). Forçando mineração...");
-                            createNewBlock();
-                        }
+                    if (pending > 0 && timeDiff > MAX_WAIT_TIME_MS) {
+                        System.out.println("\n[WATCHDOG] Timeout reached (" + pending + " txs). Forcing mining...");
+                        triggerAsyncMining();
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -105,16 +108,14 @@ public class BlockchainUseCase implements ITransactionsPublished {
         watchdog.start();
     }
 
-    public Peer getMyself() {return myself;}
-    public TransactionRule getTransactionOrganizer() {
-        return mTransactionRule;
-    }
-    public BlockRule getBlockOrganizer() {
-        return mBlockRule;
-    }
+    public Peer getMyself() { return myself; }
+    public TransactionRule getTransactionOrganizer() { return mTransactionRule; }
+    public BlockRule getBlockOrganizer() { return mBlockRule; }
 
     public void addBlockListener(IBlockListener listener) {
-        this.listeners.add(listener);
+        synchronized (listeners) {
+            this.listeners.add(listener);
+        }
     }
 
     @Override
@@ -123,22 +124,30 @@ public class BlockchainUseCase implements ITransactionsPublished {
     }
 
     private void notifyListeners(Block block) {
-        for (IBlockListener listener : listeners) {
-            listener.onBlockCommitted(block);
+        synchronized (listeners) {
+            for (IBlockListener listener : listeners) {
+                listener.onBlockCommitted(block);
+            }
         }
     }
 
     public void notifyChainReorganized(List<Block> newChain) {
-        for (IBlockListener listener : listeners) {
-            listener.onChainReorganized(newChain);
+        synchronized (listeners) {
+            for (IBlockListener listener : listeners) {
+                listener.onChainReorganized(newChain);
+            }
         }
     }
 
+    private void triggerAsyncMining() {
+        Thread minerThread = new Thread(this::createNewBlock);
+        minerThread.setName("Miner-Worker-" + System.currentTimeMillis());
+        minerThread.setPriority(Thread.MIN_PRIORITY);
+        minerThread.start();
+    }
+
     public void createGenesisBlock() {
-        if (mBlockRule.getChainHeight() >= 0) {
-            System.out.println("[BLOCK_GENESIS] Blockchain already initialized. Genesis ignored.");
-            return;
-        }
+        if (mBlockRule.getChainHeight() >= 0) return;
 
         List<Transaction> genesisTx = new ArrayList<>();
         AuctionPayload genesisData = AuctionPayload.genesis();
@@ -153,99 +162,130 @@ public class BlockchainUseCase implements ITransactionsPublished {
         );
 
         try {
-            String dataToSign = tx.getDataSign();
-            byte[] signature = myself.getIsKeysInfrastructure().signMessage(dataToSign);
-            tx.setSignature(signature);
+            tx.setSignature(myself.getIsKeysInfrastructure().signMessage(tx.getDataSign()));
         } catch (Exception e) {
             System.err.println("[4] Failed to sign transaction Genesis: " + e.getMessage());
             return;
         }
 
         genesisTx.add(tx);
-
         Block genesis = new Block(1, 0, "0", genesisTx, currentDifficulty);
         genesis.mineBlock(currentDifficulty, numThreads);
 
-
-        if (genesis.getCurrentBlockHash() != null) {
-            mBlockRule.addLocalBlock(genesis);
-            MetricsLogger.updateChainHeight(mBlockRule.getChainHeight());
-        } else {
-            System.out.println("[BLOCK_GENESIS] Genesis block mining failed. Structural insertion aborted.");
+        synchronized (chainStateLock) {
+            if (genesis.getCurrentBlockHash() != null) {
+                mBlockRule.addLocalBlock(genesis);
+                MetricsLogger.updateChainHeight(mBlockRule.getChainHeight());
+            }
         }
     }
 
     public void addTransaction(Transaction tx) {
-        if (tx == null) {
-            System.err.println("[BLOCK_TRANSACTION] Invalid transaction rejected.");
-            return;
-        }
+        if (tx == null) return;
 
         mTransactionRule.addTransaction(tx);
         this.lastTxTime = System.currentTimeMillis();
 
         if (mTransactionRule.shouldCreateBlock()) {
-            System.out.println("\n[MINER] Mempool full. Mining started...");
-            createNewBlock();
+            System.out.println("\n[MINER] Mempool full. Delegando mineração...");
+            triggerAsyncMining();
         }
     }
 
-
     public void createNewBlock() {
-        List<Transaction> transactions = mTransactionRule.getTransactionsForBlock();
 
-        if (transactions == null || transactions.isEmpty()) {
-            System.out.println("[INFO] No pending transactions");
-            this.lastTxTime = System.currentTimeMillis();
+        if (!isMining.compareAndSet(false, true)) {
             return;
         }
 
-        System.out.println("[MINER] Creating Block #" + getInfoBlock().key() + " pointing to " + getInfoBlock().value());
+        boolean minedAndAdded = false;
 
-        Block newBlock = new Block(1,getInfoBlock().key() , getInfoBlock().value(), transactions, currentDifficulty);
-        newBlock.mineBlock(currentDifficulty, numThreads);
+        try {
+            List<Transaction> transactions;
+            Pair<Integer, String> infoBlock;
 
-        mTransactionRule.cleanPool(transactions);
-        mBlockRule.addLocalBlock(newBlock);
+            synchronized (chainStateLock) {
+                transactions = mTransactionRule.getTransactionsForBlock();
+                if (transactions == null || transactions.isEmpty()) {
+                    this.lastTxTime = System.currentTimeMillis();
+                    return;
+                }
+                infoBlock = getInfoBlock();
+            }
 
-        MetricsLogger.updateChainHeight(mBlockRule.getChainHeight());
+            System.out.println("[MINER] Creating Block #" + infoBlock.key() + " pointing to " + infoBlock.value());
 
-        this.lastTxTime = System.currentTimeMillis();
-        notifyListeners(newBlock);
 
-        BigInteger keyId = new BigInteger(newBlock.getCurrentBlockHash(), 16);
-        myself.getMkademliaNetwork().storage(keyId, newBlock);
+            Block newBlock = new Block(1, infoBlock.key(), infoBlock.value(), transactions, currentDifficulty);
+            newBlock.mineBlock(currentDifficulty, numThreads);
 
-        myself.getNetworkGateway().announceBlockToNetwork(newBlock);
 
+            synchronized (chainStateLock) {
+                Pair<Integer, String> currentInfo = getInfoBlock();
+
+                if (!currentInfo.value().equals(infoBlock.value())) {
+                    System.out.println("[MINER] ABORTED: A faster block arrived from the network while we were mining.");
+                    return;
+                }
+
+                mTransactionRule.cleanPool(transactions);
+                mBlockRule.addLocalBlock(newBlock);
+                MetricsLogger.updateChainHeight(mBlockRule.getChainHeight());
+                this.lastTxTime = System.currentTimeMillis();
+                minedAndAdded = true;
+            }
+
+
+            if (minedAndAdded) {
+                notifyListeners(newBlock);
+                BigInteger keyId = new BigInteger(newBlock.getCurrentBlockHash(), 16);
+                myself.getMkademliaNetwork().storage(keyId, newBlock);
+                myself.getNetworkGateway().announceBlockToNetwork(newBlock);
+            }
+
+        } finally {
+            isMining.set(false);
+
+            if (mTransactionRule.shouldCreateBlock()) {
+                System.out.println("[MINER] Mempool remains full. Starting mining of the next block...");
+                triggerAsyncMining();
+            }
+        }
     }
 
 
-    public boolean receiveBlockFromPeer(Block block) throws InterruptedException {
-        System.out.println("\n[BLOCKCHAIN] Receiving block from peer...");
-        System.out.println("Current Block: " + block);
+    public boolean receiveBlockFromPeer(Block block) {
+        boolean isAdded;
 
-        boolean isAdded = mBlockRule.receiveBlock(block);
+        synchronized (chainStateLock) {
+            isAdded = mBlockRule.receiveBlock(block);
+
+            if (isAdded) {
+                System.out.println("[BLOCKCHAIN] Block " + block.getNumberBlock() + " accepted. Cleaning pool...");
+                mTransactionRule.cleanPool(block.getTransactions());
+                MetricsLogger.updateChainHeight(mBlockRule.getChainHeight());
+                this.lastTxTime = System.currentTimeMillis();
+            } else {
+                System.err.println("[BLOCKCHAIN] Block " + block.getNumberBlock() + " rejected by BlockRule.");
+            }
+        }
+
 
         if (isAdded) {
-            System.out.println("[BLOCKCHAIN] Block accepted. Cleaning pending transactions...");
-            mTransactionRule.cleanPool(block.getTransactions());
-            MetricsLogger.updateChainHeight(mBlockRule.getChainHeight());
-            Thread.sleep(100);
             notifyListeners(block);
-        } else {
-            System.err.println("[BLOCKCHAIN] Block rejected by BlockRule.");
+            if (mTransactionRule.shouldCreateBlock()) {
+                triggerAsyncMining();
+            }
         }
 
         return isAdded;
     }
 
-    private Pair<Integer, String> getInfoBlock (){
+    private Pair<Integer, String> getInfoBlock() {
         Block parentBlock = mBlockRule.getLastBlock();
 
         String previousHash;
         int newHeight;
-
 
         if (parentBlock != null) {
             previousHash = parentBlock.getCurrentBlockHash();
@@ -257,5 +297,4 @@ public class BlockchainUseCase implements ITransactionsPublished {
 
         return new Pair<>(newHeight, previousHash);
     }
-
 }

@@ -18,7 +18,6 @@ public class BlockRule {
     private BlockchainUseCase mBlockchain;
     private Block currentTip = null;
 
-
     public BlockRule(BlockchainUseCase blockchain) {
         this.mBlockchain = blockchain;
         this.blockMap = new ConcurrentHashMap<>();
@@ -31,29 +30,31 @@ public class BlockRule {
 
         if (blockMap.containsKey(currentHash)) return false;
 
-
         String prevHash = block.getHeader().getPreviousBlockHash();
         Block parent = blockMap.get(prevHash);
 
         if (parent == null && block.getNumberBlock() != 0) {
-            System.err.println("[ERROR] Attempt to add orphaned local block" + block.getNumberBlock());
+            System.err.println("[ERROR] Attempt to add orphaned local block: " + block.getNumberBlock());
             return false;
         }
 
-        if (validateAndAddToChain(block, parent)) {
-            blockMap.put(currentHash, block);
-            System.out.println("[DEBUG] Block " + block.getNumberBlock() + " added the chain");
-            mBlockchain.getTransactionOrganizer().markTransactionsAsProcessed(block.getTransactions());
-            mBlockchain.getTransactionOrganizer().cleanPool(block.getTransactions());
-
-            processOrphans(currentHash);
-
-            return true;
+        if (parent != null && !block.isValidBlock(parent)) {
+            System.err.println("[INFO] Local block invalid rejected!");
+            return false;
         }
 
-        return false;
-    }
+        blockMap.put(currentHash, block);
+        System.out.println("[DEBUG] Local Block " + block.getNumberBlock() + " saved to blockMap.");
 
+        updateMainChainIfNecessary(block);
+
+        mBlockchain.getTransactionOrganizer().markTransactionsAsProcessed(block.getTransactions());
+        mBlockchain.getTransactionOrganizer().cleanPool(block.getTransactions());
+
+        processOrphans(currentHash);
+
+        return true;
+    }
 
     public synchronized boolean receiveBlock(Block block) {
         if (block == null) return false;
@@ -65,43 +66,39 @@ public class BlockRule {
         Block parent = blockMap.get(prevHash);
 
         boolean isGenesis = (block.getNumberBlock() == 0);
-        boolean hasParent = (parent != null);
 
-        if (hasParent || isGenesis) {
-            if (validateAndAddToChain(block, parent)) {
-                blockMap.put(currentHash, block);
-                processOrphans(currentHash);
-                return true;
-            }
-        } else {
+        if (!isGenesis && parent == null) {
             System.out.println("[ORGANIZER] Buffering orphan block: " + block.getNumberBlock());
             orphanBlocks.computeIfAbsent(prevHash, k -> new ArrayList<>()).add(block);
             return true;
         }
-        return false;
-    }
 
-    private synchronized boolean validateAndAddToChain(Block block, Block parent) {
         if (parent != null && !block.isValidBlock(parent)) {
-            System.out.println("[INFO] Block invalid rejected!");
+            System.out.println("[INFO] Remote block invalid rejected!");
             return false;
         }
 
-        // Fluxo Normal: Génese ou constrói diretamente em cima da nossa ponta atual
+        blockMap.put(currentHash, block);
+        System.out.println("[DEBUG] Remote Block " + block.getNumberBlock() + " saved to blockMap.");
+
+        updateMainChainIfNecessary(block);
+
+        processOrphans(currentHash);
+
+        return true;
+    }
+
+    private void updateMainChainIfNecessary(Block block) {
         if (currentTip == null || block.getHeader().getPreviousBlockHash().equals(currentTip.getCurrentBlockHash())) {
             organizedChain.put(block.getNumberBlock(), block);
             currentTip = block;
-            return true;
+            System.out.println("[CHAIN] Extended main chain to height: " + block.getNumberBlock());
         }
-
-        // Fluxo de Fork: Bloco válido, mas aponta para outra ramificação. A cadeia dele é mais longa?
-        if (block.getNumberBlock() > currentTip.getNumberBlock()) {
-            System.out.println("[FORK DETECTADO] Cadeia concorrente é mais longa (" + block.getNumberBlock() + " vs " + currentTip.getNumberBlock() + "). Resolvendo...");
+        else if (block.getNumberBlock() > currentTip.getNumberBlock()) {
+            System.out.println("[FORK DETECTED] Concurrent chain is longer (" + block.getNumberBlock() + " vs " + currentTip.getNumberBlock() + "). Resolving...");
             executeChainReorganization(block);
-            return true;
         } else {
-            System.out.println("[FORK DETECTADO] Ramificação guardada, mas a nossa cadeia continua mais longa.");
-            return false;
+            System.out.println("[FORK DETECTED] Branch stored in blockMap, but our main chain is still longer.");
         }
     }
 
@@ -109,7 +106,6 @@ public class BlockRule {
         List<Block> newBranch = new ArrayList<>();
         Block iterator = newTip;
 
-        // 1. Caminha para trás na nova cadeia até cruzar com o ancestral comum
         while (iterator != null) {
             newBranch.add(iterator);
             Block oldBlockAtThisHeight = organizedChain.get(iterator.getNumberBlock());
@@ -119,9 +115,13 @@ public class BlockRule {
             iterator = blockMap.get(iterator.getHeader().getPreviousBlockHash());
         }
 
-        Collections.reverse(newBranch); // Coloca em ordem cronológica (Ancestral -> Nova Ponta)
+        if (iterator == null) {
+            System.err.println("[FATAL] Reorg failed: Common ancestor not found in local database.");
+            return;
+        }
 
-        // 2. Extrair transações dos blocos que vão ser orfanados (descartados)
+        Collections.reverse(newBranch);
+
         List<Transaction> orphanedTxs = new ArrayList<>();
         int commonAncestorHeight = newBranch.getFirst().getNumberBlock();
         for (int i = commonAncestorHeight + 1; i <= currentTip.getNumberBlock(); i++) {
@@ -131,49 +131,38 @@ public class BlockRule {
             }
         }
 
-        // 3. Atualizar a Cadeia Principal
         for (Block b : newBranch) {
             organizedChain.put(b.getNumberBlock(), b);
         }
         currentTip = newTip;
 
-        // Limpar blocos fantasmas se a nova cadeia tiver menos altura temporariamente durante o cálculo
         for (int i = currentTip.getNumberBlock() + 1; i <= organizedChain.size(); i++) {
             organizedChain.remove(i);
         }
 
-        // 4. Repor transações na Mempool e expurgar as que já estão na nova cadeia
         mBlockchain.getTransactionOrganizer().restoreToPool(orphanedTxs);
         for (Block b : newBranch) {
             mBlockchain.getTransactionOrganizer().cleanPool(b.getTransactions());
         }
 
-        // NOVO: Anunciar ativamente aos vizinhos as transações ressuscitadas!
         if (!orphanedTxs.isEmpty()) {
-            System.out.println("[REORG] Anunciando " + orphanedTxs.size() + " transações ressuscitadas à rede.");
+            System.out.println("[REORG] Announcing " + orphanedTxs.size() + " transactions resurrected to the network.");
             for (Transaction resurrectedTx : orphanedTxs) {
-                // Utiliza a infraestrutura de rede para enviar a transação por Gossip
                 org.graph.domain.entities.message.Message gossipMsg =
                         new org.graph.domain.entities.message.Message(
                                 org.graph.domain.entities.message.MessageType.TRANSACTION,
                                 resurrectedTx,
                                 mBlockchain.getMyself().getHybridLogicalClock()
                         );
-
-                // Dispara o broadcast para os vizinhos para que eles também a coloquem na Mempool
                 mBlockchain.getMyself().getNetworkEvent().broadcastExcept(gossipMsg, null);
             }
         }
 
-        // 5. Notificar a Máquina de Estados para fazer o Rollback (State Rebuild)
         List<Block> fullValidChain = getOrderedChain();
         mBlockchain.notifyChainReorganized(fullValidChain);
 
-        System.out.println("[REORG CONCLUÍDO] Cadeia Principal assumiu ramificação vencedora.");
+        System.out.println("[REORG COMPLETED] Main Chain assumed winning branch.");
     }
-
-
-
 
     private void processOrphans(String parentHash) {
         List<Block> orphans = orphanBlocks.remove(parentHash);
@@ -181,9 +170,10 @@ public class BlockRule {
             System.out.println("[ORGANIZER] Found " + orphans.size() + " orphans waiting for parent " + parentHash);
             for (Block orphan : orphans) {
                 Block parent = blockMap.get(parentHash);
-                if (validateAndAddToChain(orphan, parent)) {
+                if (parent != null && orphan.isValidBlock(parent)) {
                     blockMap.put(orphan.getCurrentBlockHash(), orphan);
-                    System.out.println("[ORGANIZER] Orphan " + orphan.getNumberBlock() + " connected to chain!");
+                    System.out.println("[ORGANIZER] Orphan " + orphan.getNumberBlock() + " connected to tree!");
+                    updateMainChainIfNecessary(orphan);
                     processOrphans(orphan.getCurrentBlockHash());
                 }
             }
@@ -212,17 +202,11 @@ public class BlockRule {
     }
 
     public boolean contains(String hash) {
-        for (Block block : organizedChain.values()) {
-            if (block.getCurrentBlockHash().equals(hash)) return true;
-        }
-        return false;
+        return blockMap.containsKey(hash);
     }
 
     public Block getBlockByHash(String hash) {
-        for (Block block : organizedChain.values()) {
-            if (block.getCurrentBlockHash().equals(hash)) return block;
-        }
-        return null;
+        return blockMap.get(hash);
     }
 
     public boolean isParentInChain(String parentHash) {

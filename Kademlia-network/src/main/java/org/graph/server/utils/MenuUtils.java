@@ -637,68 +637,39 @@ public class MenuUtils {
                 System.out.println("\n[SIMULATION] === INICIANDO STRESS TEST ===");
 
                 BigDecimal priceA = new BigDecimal("1000");
-                auctionEngine.createdLocalAuctions(priceA, peer);
-
-
-                String auctionIdA = waitForAuctionInLedger(peer, null);
-                if (auctionIdA == null) return;
+                String auctionIdA = auctionEngine.createdLocalAuctions(priceA, peer); // Guarda o ID Real
+                waitForAuctionInLedger(peer, auctionIdA);
 
                 BigDecimal priceB = new BigDecimal("500");
-                auctionEngine.createdLocalAuctions(priceB, peer);
-
-                String auctionIdB = waitForAuctionInLedger(peer, auctionIdA);
-                if (auctionIdB == null) return;
-                System.out.println("[SIMULATION] >> Auction B confirmed at Ledger:" + auctionIdB);
-
+                String auctionIdB = auctionEngine.createdLocalAuctions(priceB, peer); // Guarda o ID Real
+                waitForAuctionInLedger(peer, auctionIdB);
 
                 System.out.println("[SIMULATION] 3. Firing 40 shots...");
-
                 for (int i = 1; i <= 20; i++) {
-
-                    BigDecimal bidA = priceA.add(BigDecimal.valueOf(1000 + i * 50));
+                    BigDecimal bidA = priceA.add(BigDecimal.valueOf(i * 50));
                     auctionEngine.placeBidRequest(auctionIdA, bidA, peer);
-                    System.out.println("[SIMULATION] Bid #" + i + "Sent to Car: " + bidA);
 
-
-                    BigDecimal bidB = priceB.add(BigDecimal.valueOf(500 + i * 25));
+                    BigDecimal bidB = priceB.add(BigDecimal.valueOf(i * 25));
                     auctionEngine.placeBidRequest(auctionIdB, bidB, peer);
-                    System.out.println("[SIMULATION] Bid #" + i + "Sent to Painting:" + bidB);
 
                     Thread.sleep(100);
                 }
-
-                System.out.println("[SIMULATION] === This was sent successfully. ===");
-                System.out.println("Please wait for the blocks to be mined to see the final result in the Menu 4 -> 3.");
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            } catch (Exception e) { e.printStackTrace(); }
         }).start();
     }
 
-    private static String waitForAuctionInLedger(Peer peer, String excludeId) throws InterruptedException {
+    private static void waitForAuctionInLedger(Peer peer, String targetId) throws InterruptedException {
         var engine = peer.getNetworkGateway().getAuctionEngine();
         int attempts = 0;
-
-        System.out.print("[SIMULATION] Awaiting mining...");
+        System.out.print("[SIMULATION] Awaiting mining of " + targetId.substring(0, 8) + "...");
         while (attempts < 30) {
-            Map<String, AuctionState> ledger = engine.getWorldState();
-
-            for (String id : ledger.keySet()) {
-
-                if (!id.equals(excludeId)) {
-                    System.out.println(" Done!");
-                    return id;
-                }
+            if (engine.getWorldState().containsKey(targetId)) { // Espera APENAS por este ID
+                System.out.println(" Done!");
+                return;
             }
-
             Thread.sleep(1000);
             System.out.print(".");
             attempts++;
-
         }
-
-        System.err.println("\n[ERROR] Timeout! The auction was not mined in time. Check the difficulty or block size.");
-        return null;
     }
 }
