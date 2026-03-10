@@ -1,11 +1,10 @@
-@startuml
-title P2P Blockchain: State Sync & Block Gossip
+@startuml Chaiba P2P Blockchain: State Sync & Block Gossip
+title P2P Blockchain: State Sync, Batch Download & Block Gossip
 skinparam sequenceMessageAlign center
 skinparam round corner 10
 skinparam participantBorderColor #005A9C
 skinparam participantBackgroundColor #E0F0FF
 autonumber
-
 
 box "Peers" #F8F8F8
     participant "Remote Peer (R)" as R
@@ -13,98 +12,113 @@ box "Peers" #F8F8F8
     participant "Other Peers (O)" as O
 end box
 
+participant "Kademlia DHT" as DHT
 
-group Phase1 – Initial Sync (Handshake)
+group Phase 1 – Anti-Entropy & Initial Sync (Batch)
     L -> R : GET_STATUS
     activate R
     note over R
-        ChainSyncController:
-        - reads local tip (last block)
-        - returns **height** and **topHash**
+        ChainSyncUseCase:
+        Reads local tip (last block)
     end note
-    R --> L : STATUS_RESPONSE(topHash, height)
+    R --> L : CHAIN_STATUS_RESPONSE(topHash, remoteHeight)
     deactivate R
 
     activate L
     L -> L : handleStatusResponse()
     note right of L
-        Compare heights:
-        if remoteHeight > localHeight
-            *Sync needed*
-        else
-            *Already up‑to‑date*
-        end if
+        Compare state:
+        1. isBehind = remoteHeight > localHeight
+        2. isFork = (remoteHeight == localHeight) && (remoteHash != localHash)
     end note
 
-    opt Remote is ahead (remoteHeight > localHeight)
-        L -> R : GET_BLOCK(hash=remoteTopHash)
+    alt isFork detected
+        note right of L: Hash mismatch at same height.\nStep back to find common ancestor.
+        L -> R : GET_BLOCKS_BATCH(requestFrom = localHeight - 1)
+    else isBehind detected
+        note right of L: Local node is delayed.
+        L -> R : GET_BLOCKS_BATCH(requestFrom = localHeight)
+    else Synchronized
+        note right of L: State matches. No action needed.
+    end
+
+    opt If BATCH_REQUEST was sent
         activate R
-        R --> L : BLOCK(latestBlock)
+        note over R: Collects up to 20 blocks\nin chronological order
+        R --> L : BLOCK_BATCH(List<Block>)
         deactivate R
+
+        L -> L : handleBlockBatch()
         note right of L
-            This triggers the **Missing‑Parent** walk
-            until the common ancestor is found.
+            Process blocks sequentially.
+            If batch is full (20 blocks),
+            request next batch automatically.
         end note
     end
     deactivate L
 end
 
-group Phase2 – Live Gossip (Block Propagation)
-    R -> L : INV(BLOCK, hash=X)
+== ==
+
+group Phase 2 – Live Gossip (Real-Time Propagation)
+    R -> L : INV_DATA(InventoryType.BLOCK, hash=X)
     activate L
     note right of L
-        InvHandler:
-        if !BlockStore.contains(X) then
-            request block
-        end if
+        BlockEventUseCase:
+        Check if Block X is in BlockStore
     end note
-end
 
-alt Block X already stored
-    'nothing to do – already have it
-else Block X unknown
-    group Download (Request Block)
-        L -> R : GET_BLOCK(hash=X)
-        activate R
-        R --> L : BLOCK(fullBlockData)
-        deactivate R
-    end
+    alt Block X already stored
+        ' do nothing
+    else Block X unknown
+        group Download (Request Single Block)
+            L -> R : GET_BLOCK(hash=X)
+            activate R
+            R --> L : BLOCK(fullBlockData)
+            deactivate R
+        end
 
-    group Processing & Consensus
-        L -> L : BlockProcessor.process()
-        alt Block is VALID (added to chain)
-            L -> L : Ledger.addBlock()
-            note right of L
-                onBlockCommitted event fired
-                → updates state, UTXO set, mempool, etc.
-            end note
-
-            '--- RE‑BROADCAST TO OTHER PEERS ---
-            par Gossip (broadcast)
-                L -> O : INV(BLOCK, hash=X)
-            end
-        else Block MISSING_PARENT
-            note right of L
-                Block saved as *orphan*.
-                Missing ancestor detected.
-            end note
-
-            loop while parent missing
-                L -> R : GET_BLOCK(hash=parentOfX)
-                activate R
-                R --> L : BLOCK(parentBlock)
-                deactivate R
+        group Processing & Consensus (BlockRule)
+            L -> L : BlockRule.receiveBlock(X)
+            
+            alt Block is VALID (Added to Main Chain)
+                L -> L : TransactionRule.cleanPool()
                 note right of L
-                    SyncManager may also try Kademlia
-                    or direct peer fallback.
+                    onBlockCommitted fired
+                    Triggers async mining if Mempool is still full
+                end note
+
+                par Gossip (Broadcast)
+                    L -> O : INV_DATA(BLOCK, hash=X)
+                end
+
+            else FORK DETECTED (Concurrent Mining)
+                L -> L : executeChainReorganization()
+                note right of L
+                    1. Rewind to common ancestor
+                    2. Apply new longer branch
+                    3. Return dead txs to Mempool
+                    4. Notify State Machine (Rollback)
+                end note
+
+            else MISSING_PARENT (Orphan Block)
+                note right of L
+                    Block buffered in orphan list.
+                    Missing ancestor detected.
+                end note
+                
+                L -> R : GET_BLOCK(hash=parentOfX)
+                
+                par Fallback Recovery
+                    L -> DHT : findValue(hash=parentOfX)
+                end
+
+            else INVALID Block
+                L -> L : discard()
+                note right of L
+                    Penalize sender reputation (PING_FAIL / INVALID_BLOCK)
                 end note
             end
-        else Block INVALID
-            L -> L : discard()
-            note right of L
-                Penalise sender reputation
-                (rate‑limit, temporary ban, etc.)
-            end note
         end
     end
     deactivate L

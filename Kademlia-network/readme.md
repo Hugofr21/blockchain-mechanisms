@@ -15,12 +15,11 @@
 │   │       └── graph
 │   │           ├── adapter
 │   │           │   ├── inbound
-│   │           │   │   ├── network
-│   │           │   │   │   ├── Handshake.java
-│   │           │   │   │   ├── HeartbeatEvent.java
-│   │           │   │   │   ├── JoinNetwork.java
-│   │           │   │   │   └── NetworkEvent.java
-│   │           │   │   └── server
+│   │           │   │   └── network
+│   │           │   │       ├── Handshake.java
+│   │           │   │       ├── HeartbeatEvent.java
+│   │           │   │       ├── JoinNetwork.java
+│   │           │   │       └── NetworkEvent.java
 │   │           │   ├── outbound
 │   │           │   │   └── network
 │   │           │   │       ├── kademlia
@@ -54,23 +53,23 @@
 │   │           ├── application
 │   │           │   └── usecase
 │   │           │       ├── auction
-│   │           │       │   └── AuctionEngine.java
+│   │           │       │   └── AuctionCaseUse.java
 │   │           │       ├── blockchain
 │   │           │       │   ├── block
-│   │           │       │   │   ├── BlockOrganizer.java
-│   │           │       │   │   └── TransactionOrganizer.java
-│   │           │       │   ├── BlockEventManger.java
-│   │           │       │   ├── BlockchainEngine.java
-│   │           │       │   └── ChainSyncManager.java
+│   │           │       │   │   ├── BlockRule.java
+│   │           │       │   │   └── TransactionRule.java
+│   │           │       │   ├── BlockEventUseCase.java
+│   │           │       │   ├── BlockchainUseCase.java
+│   │           │       │   └── ChainSyncUseCase.java
 │   │           │       ├── mining
 │   │           │       │   ├── MinerThread.java
 │   │           │       │   ├── MinerThreadBlock.java
 │   │           │       │   ├── MiningResult.java
 │   │           │       │   └── MiningResultBlock.java
 │   │           │       ├── provider
-│   │           │       │   ├── BlockListener.java
+│   │           │       │   ├── IBlockListener.java
 │   │           │       │   ├── IReputationsManager.java
-│   │           │       │   └── TransactionsPublished.java
+│   │           │       │   └── ITransactionsPublished.java
 │   │           │       └── reputation
 │   │           │           └── ReputationsManager.java
 │   │           ├── domain
@@ -95,8 +94,8 @@
 │   │           │   │       └── MerkleTree.java
 │   │           │   ├── policy
 │   │           │   │   ├── reputation
-│   │           │   │   │   └── ProofOfReputation.java
-│   │           │   │   └── EventType.java
+│   │           │   │   │   └── ProofOfReputationPolicy.java
+│   │           │   │   └── EventTypePolicy.java
 │   │           │   └── valueobject
 │   │           │       ├── cryptography
 │   │           │       │   ├── KeyPairPeer.java
@@ -106,13 +105,16 @@
 │   │           │           └── HashUtils.java
 │   │           ├── gateway
 │   │           │   ├── block
+│   │           │   │   ├── BlockBatchStrategy.java
 │   │           │   │   ├── BlockStateRemote.java
 │   │           │   │   ├── BlockStrategy.java
 │   │           │   │   ├── ChainStatusResponseStrategy.java
 │   │           │   │   ├── GetBlockStrategy.java
+│   │           │   │   ├── GetBlocksBatchStrategy.java
 │   │           │   │   ├── GetStatusStrategy.java
 │   │           │   │   └── InvStrategy.java
 │   │           │   ├── provider
+│   │           │   │   ├── IConsensusEngine.java
 │   │           │   │   └── MessageStrategy.java
 │   │           │   ├── validator
 │   │           │   │   └── SecurityValidator.java
@@ -124,7 +126,7 @@
 │   │           │   │   ├── KeyStorageManager.java
 │   │           │   │   └── KeysInfrastructure.java
 │   │           │   ├── network
-│   │           │   │   ├── neigbour
+│   │           │   │   ├── neighbor
 │   │           │   │   │   ├── ConnectionEntry.java
 │   │           │   │   │   └── NeighboursConnections.java
 │   │           │   │   ├── BrokerEvent.java
@@ -146,13 +148,14 @@
 │   │               │   ├── Constants.java
 │   │               │   ├── FileSystemUtils.java
 │   │               │   ├── MenuUtils.java
+│   │               │   ├── MetricsLogger.java
 │   │               │   └── PrintBlock.java
 │   │               ├── Launcher.java
 │   │               ├── LauncherBootstrap.java
-│   │               └── Peer.java
+│   │               ├── Peer.java
+│   │               └── SecurityBootstrapper.java
 │   └── resources
 │       └── boostrapp.neigbours.txt
 └── test
     └── java
-
 ````

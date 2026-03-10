@@ -8,7 +8,7 @@
 
 1. [Tolerance Mechanism](./docs/toleranceMechanism/README.md)
 2. [Replication](./docs/replication/README.md)
-3. [Prova de Posse (Proof‑of‑Possession – PoP)](./docs/proofofPossession/README.MD)
+3. [Handshake de Autenticação Mútua a 3 Vias (3-Way Mutual Authentication))](./docs/proofofPossession/README.MD)
 
 ## 1. Introdução
 
@@ -198,12 +198,16 @@ Descrever e organizar os casos de teste implementados para validar as principais
 
 ## Test Scenarios
 
-- [X] **Desligamento de nós (fault tolerance)**: Simular a indisponibilidade de alguns nós e verificar se o sistema continua operando corretamente, mantendo a **preservação de dados imutáveis**.
+
+## Test Scenarios
+
+- [X] **Desligamento de nós (tolerância a falhas)**: Simular a indisponibilidade de alguns nós e verificar se o sistema continua operando corretamente, mantendo a **preservação de dados imutáveis**.
 - [X] **Ataque Eclipse a um nó**: Um nó tenta isolar outros nós da rede, testando a resiliência do mecanismo de descoberta e das rotas de comunicação.
 - [X] **Ataque Sybil**: Tentar inserir identidades falsas que sobrescrevam ou corrompam o estado do ledger, verificando a capacidade do protocolo de detectar e rejeitar esses nós.
-- [X] **Simulação de leilão descentralizado**: Executar um leilão onde os participantes podem criar e registrar novos objetos/ativos no ledger.
-- [X] **Demonstração do projeto descentralizado** : Mostrar a interação entre nós, a rede P2P e os contratos inteligentes em um cenário real de uso.
-- [X] **Autenticação entre nós (Proof‑of‑Validation)**: Implementar um *challenge‑response* baseado em **Proof‑of‑Validation** para garantir que somente nós autenticados possam ingressar na rede.
+- [X] **Simulação de leilão descentralizado**: Executar um leilão onde os participantes podem criar e registar novos objetos/ativos no ledger.
+- [X] **Demonstração do projeto descentralizado**: Mostrar a interação entre nós, a rede P2P e os contratos inteligentes num cenário real de utilização.
+- [X] **Autenticação entre nós (Proof-of-Validation)**: Implementar um *challenge-response* baseado em **Proof-of-Possession** para garantir que apenas nós autenticados possam ingressar na rede.
 - [X] **Simulação de licitações duplicadas e rejeição de valores baixos em leilão**: Validar que transações duplicadas são detectadas e rejeitadas, e que lances abaixo do valor mínimo configurado são descartados, garantindo a integridade dos dados no ledger.
+- [X] **Simulação de concorrência de licitações**: Validar que múltiplas licitações num leilão enviadas sequencialmente em todas as máquinas são lidas pela mesma ordem e rejeitadas caso não cumpram com as regras de negócio.
+- [X] **Simulação de condições de corrida em leilões**: Criar vários leilões simultaneamente e enviar licitações com pedidos concorrentes de dados para verificar integridade e consistência.
 
----

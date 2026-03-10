@@ -1,4 +1,4 @@
-# Prova de Posse (Proof‑of‑Possession – PoP)
+# Handshake de Autenticação Mútua a 3 Vias (3-Way Mutual Authentication)
 
 ## Objetivo
 
