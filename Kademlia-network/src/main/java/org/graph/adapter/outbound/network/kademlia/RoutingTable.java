@@ -49,11 +49,13 @@ public class RoutingTable {
 
         if (!NodeId.isValidNode(node, pkPeer.getKey())) {
             System.err.println("[SECURITY] Injection rejected: Node failed Proof of Work (Possible Sybil).");
+            MetricsLogger.recordMaliciousBehavior(node.getNodeId().value().toString(), "SYBIL_ATTACK");
             return false;
         }
 
         if (isGlobalIpLimitExceeded(node.getHost())) {
             System.err.println("[SECURITY] Injection rejected: Global IP limit reached in the routing table (Eclipse risk).");
+            MetricsLogger.recordMaliciousBehavior(node.getNodeId().value().toString(), "ECLIPSE_ATTACK");
             return false;
         }
 
@@ -211,16 +213,22 @@ public class RoutingTable {
      * ofuscação (Eclipse), é necessária uma verificação periódica do estado
      * da topologia da rede.
      *
+     *
+     *
      * Durante esta verificação, o sistema percorre todos os buckets da tabela.
      * O objetivo não é necessariamente encontrar os nós mais próximos do
      * identificador local, mas sim garantir que cada faixa de distância do
      * espaço de endereçamento contenha nós ativos e validados.
+     *
+     *
      *
      * Para popular um bucket específico (índice 'i'), o algoritmo gera um
      * Node ID alvo artificial. Este identificador aleatório é construído de
      * forma a garantir que a distância matemática entre ele e o nó local
      * (calculada através da operação XOR) possua o seu bit mais significativo
      * exatamente na posição 'i'.
+     *
+     *
      *
      * Regra de execução:
      * O sistema percorre todos os buckets. Se um bucket não registar atividade

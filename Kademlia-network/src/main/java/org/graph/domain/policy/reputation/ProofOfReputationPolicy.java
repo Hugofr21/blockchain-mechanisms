@@ -27,6 +27,7 @@ public class ProofOfReputationPolicy {
             case VALID_TRANSACTION -> +10;
             case VALID_BLOCK -> +50;
             case MALICIOUS_BEHAVIOR ->  -100;
+            case ABRUPT_DISCONNECT -> -150;
             default -> 0.0;
         };
 

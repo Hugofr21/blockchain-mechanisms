@@ -1,13 +1,11 @@
 package org.graph.adapter.inbound.network;
 
-import org.graph.infrastructure.network.ConnectionHandler;
+import org.graph.domain.entities.message.Message;
+import org.graph.domain.entities.message.MessageType;
+import org.graph.domain.policy.EventTypePolicy;
 import org.graph.server.Peer;
 import org.graph.domain.entities.node.Node;
-
 import java.math.BigInteger;
-import java.util.logging.Logger;
-
-import static org.graph.adapter.utils.Constants.*;
 
 
 /**
@@ -28,36 +26,24 @@ import static org.graph.adapter.utils.Constants.*;
  * interpretado como perda de conectividade ou falha operacional.
  */
 
-public class HeartbeatEvent implements Runnable{
-   Peer myself;
-   Logger logger;
+public class HeartbeatEvent implements Runnable {
+    private final Peer myself;
+    private static final long TIME_TO_SEND_PING = 10_000;
+    private static final long TIME_LIMIT_FAIL_CONNECTIONS = 30_000;
 
-   public HeartbeatEvent(Peer myself){
-       this.myself = myself;
-       this.logger = myself.getLogger();
-   }
+    public HeartbeatEvent(Peer myself) {
+        this.myself = myself;
+    }
 
     @Override
     public void run() {
+        if (!myself.getIsRunning()) return;
 
-        while (myself.getIsRunning()){
-            try {
-                verifyHeartbeat();
-                Thread.sleep(CHECK_INTERVAL);
-            }catch (InterruptedException exception) {
-                logger.severe("[HEARTBEAT] Error to send message from the node: " + exception.getMessage());
-            }
-        }
-
-    }
-
-
-
-    private void verifyHeartbeat() {
         long now = System.currentTimeMillis();
 
         for (BigInteger nodeId : myself.getNeighboursManager().getActivesNeighborsByBigInteger()) {
             Long lastSeen = myself.getNeighboursManager().getLastTimeByNodeId(nodeId);
+
             if (lastSeen == null) {
                 myself.getNeighboursManager().updateTimestamp(nodeId);
                 continue;
@@ -66,35 +52,30 @@ public class HeartbeatEvent implements Runnable{
             long diff = now - lastSeen;
 
             if (diff > TIME_LIMIT_FAIL_CONNECTIONS) {
-                System.out.println("[HEARTBEAT] Nó morto detetado (Timeout): " + nodeId);
-
-                myself.getNeighboursManager().removeConnection(nodeId);
-
-                Node deadNode = myself.getRoutingTable().getByNodeIdNode(nodeId);
-                if (deadNode != null) {
-                    myself.getRoutingTable().removeNode(deadNode);
-                }
-
+                myself.getLogger().info("[HEARTBEAT] Ghost node detected (Timeout: " + diff + "ms). Purging: " + nodeId);
+                purgeDeadNode(nodeId);
             } else if (diff > TIME_TO_SEND_PING) {
-                System.out.println("[HEARTBEAT] Silent knot. Sending PING to: " + nodeId);
-                sendKeepAlivePing(nodeId, myself);
+                triggerAsyncPing(nodeId);
             }
         }
     }
 
-    private void sendKeepAlivePing(BigInteger nodeId, Peer myself) {
-        ConnectionHandler context = myself.getNeighboursManager().getNeighbourById(nodeId);
-        if (context != null ) {
-            Node target = myself.getNeighboursManager().getNeighbourByIdNode(nodeId);
-            boolean isAlive = myself.getMkademliaNetwork().ping(target);
-            if (isAlive) {
-                myself.getNeighboursManager().updateTimestamp(nodeId);
-                System.out.println("[HEARTBEAT] PONG received from" + nodeId);
-            } else {
-                System.out.println("[HEARTBEAT] Ping failed to reach " + nodeId + ". It will be removed in the next cycle if it persists.");
-            }
+    private void purgeDeadNode(BigInteger nodeId) {
+        myself.getNeighboursManager().removeConnection(nodeId);
 
+        Node deadNode = myself.getRoutingTable().getByNodeIdNode(nodeId);
+        if (deadNode != null) {
+            myself.getRoutingTable().removeNode(deadNode);
         }
+
+         myself.getReputationsManager().reportEvent(nodeId, EventTypePolicy.ABRUPT_DISCONNECT);
     }
 
+    private void triggerAsyncPing(BigInteger nodeId) {
+        Node target = myself.getNeighboursManager().getNeighbourByIdNode(nodeId);
+        if (target != null) {
+            Message pingMsg = new Message(MessageType.PING, "PING", myself.getHybridLogicalClock());
+            myself.getMkademliaNetwork().sendRPCAsync(target, pingMsg);
+        }
+    }
 }

@@ -8,5 +8,6 @@ public enum EventTypePolicy {
     PING_FAIL,          // -5
     INVALID_BLOCK,      // -100
     MALICIOUS_BEHAVIOR, // - 50
+    ABRUPT_DISCONNECT, // -150
     INVALID_DATA        // -20
 }

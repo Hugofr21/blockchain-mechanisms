@@ -1,0 +1,209 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "panels": [],
+      "title": "1. Blockchain Engine & Consensus",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+      "gridPos": { "h": 6, "w": 5, "x": 0, "y": 1 },
+      "id": 2,
+      "title": "Chain Height",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "blockchain_chain_height_blocks", "legendFormat": "Blocks", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineInterpolation": "stepAfter", "lineWidth": 2, "fillOpacity": 15 },
+          "min": 0, "decimals": 0
+        }
+      }
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+      "gridPos": { "h": 6, "w": 5, "x": 5, "y": 1 },
+      "id": 3,
+      "title": "Mempool Size",
+      "type": "stat",
+      "targets": [
+        { "expr": "blockchain_mempool_size_transactions", "legendFormat": "Pending", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 10 }, { "color": "red", "value": 50 } ] }
+        }
+      },
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto" }
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+      "gridPos": { "h": 6, "w": 4, "x": 10, "y": 1 },
+      "id": 12,
+      "title": "Broker Queue",
+      "type": "stat",
+      "targets": [
+        { "expr": "broker_event_queue_size_messages", "legendFormat": "Messages", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "blue", "value": null }, { "color": "orange", "value": 100 } ] }
+        }
+      },
+      "options": { "colorMode": "value", "graphMode": "area" }
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+      "gridPos": { "h": 6, "w": 7, "x": 14, "y": 1 },
+      "id": 4,
+      "title": "Mining Duration (Avg CPU Time)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rate(blockchain_mine_duration_milliseconds_sum[1m]) / rate(blockchain_mine_duration_milliseconds_count[1m])", "legendFormat": "Avg Time (ms)", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "ms"
+        }
+      }
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+      "gridPos": { "h": 6, "w": 3, "x": 21, "y": 1 },
+      "id": 13,
+      "title": "Chain Reorgs",
+      "type": "stat",
+      "targets": [
+        { "expr": "increase(blockchain_reorganizations_reorgs_total[5m])", "legendFormat": "Forks Resolved", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed" } } },
+      "options": { "colorMode": "value", "graphMode": "none" }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "id": 5,
+      "panels": [],
+      "title": "2. S/Kademlia Security & Trust",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 8 },
+      "id": 6,
+      "title": "Malicious Activities Detected",
+      "type": "bargauge",
+      "targets": [
+        { "expr": "increase(skademlia_malicious_activities_total[5m])", "legendFormat": "{{behavior}}", "refId": "A" }
+      ],
+      "options": { "displayMode": "gradient", "orientation": "horizontal" }
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 8 },
+      "id": 7,
+      "title": "Peer Trust Scores",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rate(skademlia_peer_trust_score_sum[1m]) / rate(skademlia_peer_trust_score_count[1m])", "legendFormat": "Peer: {{peer_id}}", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineInterpolation": "stepAfter", "lineWidth": 2, "fillOpacity": 5 },
+          "max": 1.0, "min": 0.0
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 },
+      "id": 8,
+      "panels": [],
+      "title": "3. P2P Network & DHT",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 16 },
+      "id": 9,
+      "title": "Network Throughput (Msg/s)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rate(network_throughput_inbound_messages_total[1m])", "legendFormat": "Inbound", "refId": "A" },
+        { "expr": "rate(network_throughput_outbound_messages_total[1m])", "legendFormat": "Outbound", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15 } } }
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 16 },
+      "id": 14,
+      "title": "Network Latency (RTT)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rate(kademlia_network_latency_milliseconds_sum[1m]) / rate(kademlia_network_latency_milliseconds_count[1m])", "legendFormat": "Peer: {{peer_id}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "drawStyle": "line", "lineWidth": 2 } } }
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+      "gridPos": { "h": 8, "w": 4, "x": 12, "y": 16 },
+      "id": 10,
+      "title": "Routing Table & Storage",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "kademlia_routing_table_size", "legendFormat": "Active Peers", "refId": "A" },
+        { "expr": "kademlia_dht_storage_size", "legendFormat": "Stored Items", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "lineInterpolation": "stepBefore", "lineWidth": 2 } } }
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+      "gridPos": { "h": 8, "w": 4, "x": 16, "y": 16 },
+      "id": 11,
+      "title": "Cache vs Network Hits",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "increase(kademlia_cache_hits_total[1m])", "legendFormat": "Cache Hits", "refId": "A" },
+        { "expr": "increase(kademlia_network_hits_total[1m])", "legendFormat": "Network Hits", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "points", "pointSize": 5 } } }
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
+      "gridPos": { "h": 8, "w": 4, "x": 20, "y": 16 },
+      "id": 15,
+      "title": "Errors & Avg Hops",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "increase(kademlia_rpc_errors_total[1m])", "legendFormat": "RPC Errors", "refId": "A" },
+        { "expr": "rate(kademlia_lookup_hops_sum[1m]) / rate(kademlia_lookup_hops_count[1m])", "legendFormat": "Avg Hops", "refId": "B" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "bar" },
+          "color": { "mode": "palette-classic" }
+        }
+      }
+    }
+  ],
+  "schemaVersion": 38,
+  "title": "P2P Distributed Ledger - Telemetry",
+  "uid": "p2p-node-dash-02",
+  "version": 3
+}

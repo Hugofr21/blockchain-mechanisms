@@ -37,5 +37,7 @@ public class Launcher {
         }).start();
 
         MenuUtils.showMainMenu(peer);
+
+        peer.startBackgroundTasks();
     }
 }

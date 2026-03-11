@@ -9,6 +9,8 @@ services:
       - monitoring
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./services/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./services/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin

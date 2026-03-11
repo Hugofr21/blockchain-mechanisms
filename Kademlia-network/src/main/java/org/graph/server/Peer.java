@@ -1,5 +1,7 @@
 package org.graph.server;
 
+import org.graph.adapter.inbound.network.AntiEntropyTask;
+import org.graph.adapter.inbound.network.HeartbeatEvent;
 import org.graph.application.usecase.blockchain.BlockEventUseCase;
 import org.graph.application.usecase.blockchain.ChainSyncUseCase;
 import org.graph.application.usecase.reputation.ReputationsManager;
@@ -18,6 +20,9 @@ import org.graph.infrastructure.networkTime.HybridLogicalClock;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -44,7 +49,7 @@ public class Peer {
     private ReputationsManager reputationsManager;
     private BrokerEvent mBrokerEvent;
 
-
+    private ScheduledExecutorService backgroundWorkers;
     private volatile boolean running;
 
     public Peer(int port, char[] password) {
@@ -109,6 +114,22 @@ public class Peer {
         }
     }
 
+    public void startBackgroundTasks() {
+        this.backgroundWorkers = Executors.newScheduledThreadPool(2);
+
+        // O Heartbeat corre a cada 5 segundos para limpar nós mortos e disparar pings
+        this.backgroundWorkers.scheduleAtFixedRate(
+                new HeartbeatEvent(this),
+                10, 5, TimeUnit.SECONDS
+        );
+
+        // A Anti-Entropia corre a cada 15 segundos para garantir que não se perderam blocos
+        this.backgroundWorkers.scheduleAtFixedRate(
+                new AntiEntropyTask(this),
+                20, 15, TimeUnit.SECONDS
+        );
+    }
+
     public Node getMyself() { return myself;}
     public boolean getIsRunning() { return running; }
     public KeysInfrastructure getIsKeysInfrastructure() { return keys; }
@@ -141,6 +162,9 @@ public class Peer {
             mLogger.info("Peer shutdown: " + myself.getHost() + ":" + myself.getPort());
         }catch (Exception e){
             System.out.println("[ERROR] to the shutdown server: " + e.getMessage());
+        }
+        if (this.backgroundWorkers != null) {
+            this.backgroundWorkers.shutdownNow();
         }
     }
 }
