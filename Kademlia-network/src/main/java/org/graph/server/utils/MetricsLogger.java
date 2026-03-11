@@ -35,6 +35,10 @@ public class MetricsLogger {
     private static final AtomicLong routingTableSize = new AtomicLong(0);
     private static final AtomicLong dhtStorageSize = new AtomicLong(0);
 
+    private static final AtomicLong mempoolSize = new AtomicLong(0);
+    private static final AtomicLong brokerQueueSize = new AtomicLong(0);
+    private static DoubleHistogram blockMineDuration;
+    private static LongCounter blockchainReorgs;
     public static synchronized void init(int prometheusPort) {
         if (isInitialized) return;
 
@@ -53,7 +57,27 @@ public class MetricsLogger {
                     .buildAndRegisterGlobal();
 
             Meter meter = openTelemetry.getMeter("org.graph.p2p.node");
+            meter.gaugeBuilder("blockchain.mempool.size")
+                    .setDescription("Número de transações pendentes a aguardar mineração")
+                    .setUnit("transactions")
+                    .ofLongs()
+                    .buildWithCallback(m -> m.record(mempoolSize.get()));
 
+            meter.gaugeBuilder("broker.event.queue.size")
+                    .setDescription("Quantidade de mensagens acumuladas na fila de processamento assíncrono")
+                    .setUnit("messages")
+                    .ofLongs()
+                    .buildWithCallback(m -> m.record(brokerQueueSize.get()));
+
+            blockMineDuration = meter.histogramBuilder("blockchain.mine.duration")
+                    .setDescription("Tempo despendido pelo CPU a resolver o Proof-of-Work de um bloco")
+                    .setUnit("ms")
+                    .build();
+
+            blockchainReorgs = meter.counterBuilder("blockchain.reorganizations.total")
+                    .setDescription("Número de vezes que a cadeia principal sofreu um Rollback (Fork resolvido)")
+                    .setUnit("reorgs")
+                    .build();
             networkLatency = meter.histogramBuilder("kademlia.network.latency")
                     .setDescription("Tempo de ida e volta (RTT) das mensagens RPC na DHT")
                     .setUnit("ms")
@@ -206,4 +230,21 @@ public class MetricsLogger {
         routingTableSize.set(currentPeers);
         dhtStorageSize.set(currentStorageItems);
     }
+
+    public static void updateMempoolSize(long currentSize) {
+        if (isInitialized) mempoolSize.set(currentSize);
+    }
+
+    public static void updateBrokerQueueSize(long currentSize) {
+        if (isInitialized) brokerQueueSize.set(currentSize);
+    }
+
+    public static void recordBlockMiningTime(double durationMs) {
+        if (isInitialized) blockMineDuration.record(durationMs);
+    }
+
+    public static void recordChainReorg() {
+        if (isInitialized) blockchainReorgs.add(1);
+    }
+
 }

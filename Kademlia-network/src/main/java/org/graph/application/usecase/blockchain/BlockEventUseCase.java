@@ -2,6 +2,8 @@ package org.graph.application.usecase.blockchain;
 
 import org.graph.adapter.outbound.network.message.block.InventoryPayload;
 import org.graph.adapter.outbound.network.message.block.InventoryType;
+import org.graph.domain.entities.node.Node;
+import org.graph.domain.entities.transaction.Transaction;
 import org.graph.domain.policy.EventTypePolicy;
 import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.adapter.provider.IEventDispatcher;
@@ -55,29 +57,43 @@ public class BlockEventUseCase {
     }
 
     public void handleInv(InventoryPayload payload, ConnectionHandler source) {
-        if (payload.type() != InventoryType.BLOCK) return;
-
         String hash = payload.hash();
 
-        if (!gateway.getBlockchainEngine().getBlockOrganizer().contains(hash)) {
-            System.out.println("[SYNC] Hash unknown announce: " + hash + ". Request data...");
-            sendGetData(hash, source);
+        // 1. Roteamento de Anúncios de BLOCOS
+        if (payload.type() == InventoryType.BLOCK) {
+            if (!gateway.getBlockchainEngine().getBlockOrganizer().contains(hash)) {
+                System.out.println("[SYNC] Hash de Bloco desconhecido anunciado: " + hash.substring(0, 8) + "... Pedindo dados.");
+                sendGetData(hash, source, InventoryType.BLOCK);
+            }
+        }
+        // 2. Roteamento de Anúncios de TRANSAÇÕES
+        else if (payload.type() == InventoryType.TRANSACTION) {
+            if (!gateway.getBlockchainEngine().getTransactionOrganizer().isTransactionKnown(hash)) {
+                System.out.println("[GOSSIP] Hash de Tx desconhecida anunciada: " + hash.substring(0, 8) + "... Pedindo dados.");
+                sendGetData(hash, source, InventoryType.TRANSACTION);
+            }
         }
     }
 
     public void handleGetData(InventoryPayload payload, ConnectionHandler requester) {
-        if (payload.type() != InventoryType.BLOCK) return;
-
         String hash = payload.hash();
-        // --------------------------------------------------------------
 
-        Block block = gateway.getBlockchainEngine().getBlockOrganizer().getBlockByHash(hash);
+        if (payload.type() == InventoryType.BLOCK) {
+            Block block = gateway.getBlockchainEngine().getBlockOrganizer().getBlockByHash(hash);
+            if (block != null) {
+                System.out.println("[UPLOAD] A enviar bloco " + hash.substring(0, 8) + " para " + requester.getRemoteNode().getPort());
+                Message response = new Message(MessageType.BLOCK, block, requester.getPeer().getHybridLogicalClock());
+                dispatcher.sendUnicast(response, requester);
+            }
+        }
 
-        if (block != null) {
-            System.out.println("[UPLOAD] To send block " + hash + " para " + requester.getRemoteNode().getPort());
-
-            Message response = new Message(MessageType.BLOCK, block, requester.getPeer().getHybridLogicalClock());
-            dispatcher.sendUnicast(response, requester);
+        else if (payload.type() == InventoryType.TRANSACTION) {
+            Transaction tx = gateway.getBlockchainEngine().getTransactionOrganizer().getTransactionById(hash);
+            if (tx != null) {
+                System.out.println("[UPLOAD] A enviar transação " + hash.substring(0, 8) + " para " + requester.getRemoteNode().getPort());
+                Message response = new Message(MessageType.TRANSACTION, tx, requester.getPeer().getHybridLogicalClock());
+                dispatcher.sendUnicast(response, requester);
+            }
         }
     }
 
@@ -86,8 +102,8 @@ public class BlockEventUseCase {
 
         switch (result) {
             case ADDED -> {
-                System.out.println("[SYNC] Bloco " + block.getNumberBlock() + " Added! Spreading the word...");
-                propagateInv(block, source);
+                System.out.println("[SYNC] Bloco " + block.getNumberBlock() + " adicionado! A propagar inventário...");
+                propagateBlockInv(block, source);
                 if (source.getRemoteNode() != null) {
                     gateway.getMyself().getReputationsManager().reportEvent(
                             source.getRemoteNode().getNodeId().value(),
@@ -95,48 +111,42 @@ public class BlockEventUseCase {
                     );
                 }
             }
-
             case MISSING_PARENT -> {
-                System.out.println("[SYNC] Gap detected in the block " + block.getNumberBlock());
-                System.out.println("[SYNC] Requesting PAI block: " + block.getHeader().getPreviousBlockHash());
+                System.out.println("[SYNC] Hiato detetado no bloco " + block.getNumberBlock() + ". A pedir pai...");
                 String parentHash = block.getHeader().getPreviousBlockHash();
-                sendGetData(parentHash, source);
+                sendGetData(parentHash, source, InventoryType.BLOCK);
 
                 if (source.getPeer().getmChainSyncController() != null) {
                     source.getPeer().getmChainSyncController().recoverMissingBlock(parentHash);
                 }
             }
-
-            case INVALID -> {
-                System.err.println("[SYNC] Invalid block of " + source.getRemoteNode().getPort());
-                if (source.getRemoteNode() != null) {
-                    gateway.getMyself().getReputationsManager().reportEvent(
-                            source.getRemoteNode().getNodeId().value(),
-                            EventTypePolicy.INVALID_BLOCK
-                    );
-                }
-            }
-
-            case EXISTS -> {
-                System.out.println("[DEBUG] This block to find inside chain " + block.getCurrentBlockHash());
-            }
-            case ORPHAN -> {
-                System.err.println("[WARNING] This block is orphan " + block.getCurrentBlockHash());
-            }
+            case INVALID -> System.err.println("[SYNC] Bloco inválido recebido.");
+            case EXISTS -> System.out.println("[DEBUG] Bloco já existe na cadeia: " + block.getCurrentBlockHash());
+            case ORPHAN -> System.err.println("[WARNING] Bloco armazenado como órfão: " + block.getCurrentBlockHash());
         }
     }
 
-    private void sendGetData(String hash, ConnectionHandler target) {
-        InventoryPayload req = new InventoryPayload(InventoryType.BLOCK, hash);
+    private void sendGetData(String hash, ConnectionHandler target, InventoryType type) {
+        InventoryPayload req = new InventoryPayload(type, hash);
         Message msg = new Message(MessageType.GET_BLOCK, req, target.getPeer().getHybridLogicalClock());
-        dispatcher.sendUnicast(msg,target);
+        dispatcher.sendUnicast(msg, target);
+    }
+    public void propagateBlockInv(Block block, ConnectionHandler excludeSource) {
+        InventoryPayload inv = new InventoryPayload(InventoryType.BLOCK, block.getCurrentBlockHash());
+        Message msg = new Message(MessageType.INV_DATA, inv, excludeSource != null ? excludeSource.getPeer().getHybridLogicalClock() : gateway.getMyself().getHybridLogicalClock());
+
+        Node excludeNode = excludeSource != null ? excludeSource.getRemoteNode() : null;
+        dispatcher.broadcastExcept(msg, excludeNode);
     }
 
-    private void propagateInv(Block block, ConnectionHandler excludeSource) {
-        InventoryPayload inv = new InventoryPayload(InventoryType.BLOCK, block.getCurrentBlockHash());
-        Message msg = new Message(MessageType.INV_DATA, inv, excludeSource.getPeer().getHybridLogicalClock());
-        dispatcher.broadcastExcept(msg, excludeSource.getRemoteNode());
+    public void propagateTransactionInv(Transaction tx, ConnectionHandler excludeSource) {
+        InventoryPayload inv = new InventoryPayload(InventoryType.TRANSACTION, tx.getTxId());
+        Message msg = new Message(MessageType.INV_DATA, inv, excludeSource != null ? excludeSource.getPeer().getHybridLogicalClock() : gateway.getMyself().getHybridLogicalClock());
+
+        Node excludeNode = excludeSource != null ? excludeSource.getRemoteNode() : null;
+        dispatcher.broadcastExcept(msg, excludeNode);
     }
+
 
     public void handleGetBlocksBatch(InventoryPayload payload, ConnectionHandler requester) {
         if (payload.type() != InventoryType.BATCH_REQUEST) return;
@@ -158,7 +168,6 @@ public class BlockEventUseCase {
                 Message response = new Message(MessageType.BLOCK_BATCH, batchToSend, requester.getPeer().getHybridLogicalClock());
                 dispatcher.sendUnicast(response, requester);
             }
-
         } catch (NumberFormatException e) {
             System.err.println("[SYNC] Invalid batch request: " + payload.hash());
         }

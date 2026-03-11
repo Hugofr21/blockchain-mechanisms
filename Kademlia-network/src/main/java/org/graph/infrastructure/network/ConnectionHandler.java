@@ -12,6 +12,7 @@ import org.graph.domain.entities.transaction.Transaction;
 import org.graph.domain.entities.transaction.TransactionType;
 import org.graph.domain.policy.EventTypePolicy;
 import org.graph.domain.valueobject.cryptography.PublicKeyPeer;
+import org.graph.infrastructure.crypt.SecureSession;
 import org.graph.infrastructure.utils.EncapsulationUtils;
 import org.graph.adapter.utils.MessageUtils;
 import org.graph.domain.entities.message.Message;
@@ -28,12 +29,9 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 import static org.graph.adapter.utils.Constants.*;
-import static org.graph.adapter.utils.MessageUtils.readMessage;
-import static org.graph.adapter.utils.MessageUtils.sendMessage;
 
 /**
  * As mensagens são persistidas em fila quando não podem ser processadas
@@ -52,6 +50,9 @@ public class ConnectionHandler implements Runnable {
     private volatile boolean running;
     private Node remoteNode;
 
+    private SecureSession secureSession = null;
+    private boolean isSecure = false;
+
     public ConnectionHandler(Socket socket, Peer myPeer, Logger mLogger) {
         this.socket = socket;
         this.myPeer = myPeer;
@@ -66,6 +67,19 @@ public class ConnectionHandler implements Runnable {
     }
     public Socket getSocket() {
         return socket;
+    }
+
+    public void enableSecureTransport(byte[] ecdhSharedSecret) throws Exception {
+        this.secureSession = new SecureSession(ecdhSharedSecret);
+        this.isSecure = true;
+    }
+
+    public SecureSession getSecureSession() {
+        return secureSession;
+    }
+
+    public boolean isSecure() {
+        return isSecure;
     }
 
     public DataOutputStream getOutputStream() {
@@ -103,7 +117,13 @@ public class ConnectionHandler implements Runnable {
 
             while (myPeer.getIsRunning() && !socket.isClosed() && running) {
                 try {
-                    Message message = readMessage(inputStream);
+                    Message message;
+
+                    if (this.isSecure) {
+                        message = MessageUtils.readSecureMessage(inputStream, this.secureSession);
+                    } else {
+                        message = MessageUtils.readMessage(inputStream);
+                    }
 
                     MetricsLogger.recordInboundMessage(myPeer.getMyself().getPort() + "");
 
@@ -299,13 +319,31 @@ public class ConnectionHandler implements Runnable {
 
             NodeListPayload container = new NodeListPayload(rawList);
             Message response = new Message(MessageType.RESPONSE_NODES, container, myPeer.getHybridLogicalClock());
-            MessageUtils.sendMessage(getOutputStream(), response);
+            sendMessageToPeer(response);
             getOutputStream().flush();
 
             logger.severe("[FIND_NODE] Respondi com " + rawList.size() + " vizinhos.");
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Envia uma mensagem para o nó remoto.
+     * Decide automaticamente se usa o túnel encriptado (AES-GCM) ou o túnel aberto,
+     * dependendo do estado atual da sessão ECDH.
+     */
+    public void sendMessageToPeer(Message message) {
+        try {
+            if (this.isSecure) {
+                MessageUtils.sendSecureMessage(getOutputStream(), message, this.secureSession);
+            } else {
+                MessageUtils.sendMessage(getOutputStream(), message);
+            }
+        } catch (Exception e) {
+            logger.severe("[SECURITY] Falha crítica ao enviar mensagem: " + e.getMessage());
+            this.closeConnection();
         }
     }
 
@@ -358,14 +396,9 @@ public class ConnectionHandler implements Runnable {
     }
 
     private void handlePing(Object payload) {
-       try {
-           sendMessage(outputStream,new Message(MessageType.PONG, payload, myPeer.getHybridLogicalClock()));
-       }catch (Exception e) {
-           System.out.println("[ERROR] Fail as send PING:  " + e.getMessage());
-       }
-
+        Message pongMsg = new Message(MessageType.PONG, payload, myPeer.getHybridLogicalClock());
+        sendMessageToPeer(pongMsg);
     }
-
 
     public void closeConnection() {
         running = false;

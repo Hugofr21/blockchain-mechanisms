@@ -59,8 +59,7 @@ public class ServerHandle implements Runnable {
 
             Optional<Node> handshake = Handshake.doHandshake(
                     myPeer,
-                    handler.getInputStream(),
-                    handler.getOutputStream()
+                    handler
             );
 
             if (handshake.isPresent()) {

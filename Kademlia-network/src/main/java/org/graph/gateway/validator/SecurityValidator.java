@@ -37,7 +37,7 @@ public class SecurityValidator {
         for (Transaction tx : block.getTransactions()) {
 
             // valid signature
-            if (!CryptoUtils.verifySignature(tx.getSender(), tx.getDataSign(), tx.getSignature())) {
+            if (CryptoUtils.verifySignature(tx.getSender(), tx.getDataSign(), tx.getSignature())) {
                return false;
             }
 

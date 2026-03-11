@@ -61,8 +61,7 @@ public record JoinNetwork(Peer myPeer) {
 
             Optional<Node> optBootstrap = Handshake.doHandshake(
                     myPeer,
-                    handler.getInputStream(),
-                    handler.getOutputStream()
+                    handler
             );
 
             if (optBootstrap.isEmpty()) {
@@ -107,9 +106,9 @@ public record JoinNetwork(Peer myPeer) {
             BigInteger targetId = myPeer.getMyself().getNodeId().value();
             FindNodePayload payload = new FindNodePayload(Base64Utils.encode(targetId.toByteArray()));
             Message lookup = new Message(MessageType.FIND_NODE, payload, myPeer.getHybridLogicalClock());
-            MessageUtils.sendMessage(handler.getOutputStream(), lookup);
+            handler.sendMessageToPeer(lookup);
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("[JOIN] Error of to send  Lookup: " + e.getMessage());
         }
     }

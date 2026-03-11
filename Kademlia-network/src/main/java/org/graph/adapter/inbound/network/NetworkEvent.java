@@ -33,7 +33,7 @@ public class NetworkEvent implements IEventDispatcher {
 
         try {
             System.out.println("[DEBUG_UNICAST]: SENDING UNICAST MESSAGE");
-            MessageUtils.sendMessage(context.getOutputStream(), message);
+            MessageUtils.sendSecureMessage(context.getOutputStream(), message, context.getSecureSession());
         } catch (SocketException e) {
             logger.warning("[UNICAST] Broken tunnel to " + context.getRemoteNode().getHost() + ". Removing connection.");
             neighboursConnections.removeConnection(context.getRemoteNode().getNodeId().value());

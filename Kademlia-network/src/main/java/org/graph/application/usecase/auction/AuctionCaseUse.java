@@ -1,5 +1,6 @@
 package org.graph.application.usecase.auction;
 
+import org.graph.application.usecase.blockchain.BlockchainUseCase;
 import org.graph.application.usecase.provider.IBlockListener;
 import org.graph.application.usecase.provider.ITransactionsPublished;
 import org.graph.domain.entities.block.Block;
@@ -235,6 +236,12 @@ public class AuctionCaseUse implements IBlockListener {
         String idKey = ownerId.toString(16);
         long confirmed = userNonces.getOrDefault(idKey, 0L);
         long pending = pendingUserNonces.getOrDefault(idKey, 0L);
+
+        if (serviceTransactions instanceof BlockchainUseCase engine) {
+            if (engine.getTransactionOrganizer().getPendingCount() == 0) {
+                pending = confirmed;
+            }
+        }
         long nextNonce = Math.max(confirmed, pending) + 1;
         pendingUserNonces.put(idKey, nextNonce);
 
@@ -419,7 +426,7 @@ public class AuctionCaseUse implements IBlockListener {
                 if (result instanceof Set<?> subscribers) {
                     System.out.println("[PUB/SUB] Found " + subscribers.size() + " subscribers to notify about auction event.");
 
-                   sendGossipingMsg(myself, tx, subscribers);
+                    sendGossipingMsg(myself, tx, subscribers);
                 }
             } catch (Exception e) {
                 System.err.println("[PUB/SUB] Failed to notify subscribers: " + e.getMessage());

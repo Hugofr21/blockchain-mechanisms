@@ -488,7 +488,6 @@ public class MenuUtils {
         System.out.println("1) View list of BLOCKCHAIN relationships.");
         System.out.println("2) Show the BLOCKCHAIN by prev hash.");
         System.out.println("3) Which size the blockchain has been viewed.");
-        System.out.println("4) [MANUAL] Broadcast Last Block (Gossip/INV).");
         System.out.println("0) Back");
 
         System.out.print("choose an option: ");
@@ -524,16 +523,6 @@ public class MenuUtils {
             case 3:
                 System.out.println("Size of blockchain: ");
                 System.out.println("Total: " + organizer.getChainHeight());
-                break;
-            case 4:
-                Block lastBlock = organizer.getLastBlock();
-                if (lastBlock != null) {
-                    System.out.println("[DEBUG] Starting the propagation of the Block#" + lastBlock.getNumberBlock());
-                    peer.getNetworkGateway().announceBlockToNetwork(lastBlock);
-                    System.out.println("[DEBUG] INV message sent to neighbors.");
-                } else {
-                    System.out.println("[DEBUG] There are no blocks to send (Empty chain?).");
-                }
                 break;
             case 0:
                 return;
@@ -637,11 +626,11 @@ public class MenuUtils {
                 System.out.println("\n[SIMULATION] === INICIANDO STRESS TEST ===");
 
                 BigDecimal priceA = new BigDecimal("1000");
-                String auctionIdA = auctionEngine.createdLocalAuctions(priceA, peer); // Guarda o ID Real
+                String auctionIdA = auctionEngine.createdLocalAuctions(priceA, peer);
                 waitForAuctionInLedger(peer, auctionIdA);
 
                 BigDecimal priceB = new BigDecimal("500");
-                String auctionIdB = auctionEngine.createdLocalAuctions(priceB, peer); // Guarda o ID Real
+                String auctionIdB = auctionEngine.createdLocalAuctions(priceB, peer);
                 waitForAuctionInLedger(peer, auctionIdB);
 
                 System.out.println("[SIMULATION] 3. Firing 40 shots...");
@@ -663,7 +652,7 @@ public class MenuUtils {
         int attempts = 0;
         System.out.print("[SIMULATION] Awaiting mining of " + targetId.substring(0, 8) + "...");
         while (attempts < 30) {
-            if (engine.getWorldState().containsKey(targetId)) { // Espera APENAS por este ID
+            if (engine.getWorldState().containsKey(targetId)) {
                 System.out.println(" Done!");
                 return;
             }

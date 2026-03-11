@@ -124,7 +124,8 @@
 │   │           │   ├── blockhain
 │   │           │   ├── crypt
 │   │           │   │   ├── KeyStorageManager.java
-│   │           │   │   └── KeysInfrastructure.java
+│   │           │   │   ├── KeysInfrastructure.java
+│   │           │   │   └── SecureSession.java
 │   │           │   ├── network
 │   │           │   │   ├── neighbor
 │   │           │   │   │   ├── ConnectionEntry.java

@@ -12,21 +12,28 @@ import java.util.function.Function;
 public class TransactionRule {
     private Set<Transaction> transactions;
     private Set<Transaction> pendingTransactions;
-    private List<String> completedTransactions;
-    private int maxTransactionsPending;
+    private Set<String> completedTransactions;
+    private final int maxTransactionsPending;
     private final Object lock;
     private Function<BigInteger, Long> currentNonceProvider;
 
     public TransactionRule(int maxTransactionsPending) {
         this.transactions = new HashSet<Transaction>();
         this.pendingTransactions = new LinkedHashSet<>();
-        this.completedTransactions = new ArrayList<>();
+        this.completedTransactions = new HashSet<>();
         this.maxTransactionsPending = maxTransactionsPending;
         this.lock = new Object();
     }
 
     public void  setNonceProvider(Function<BigInteger, Long> currentNonceProvider) {
         this.currentNonceProvider = currentNonceProvider;
+    }
+
+    public boolean isTransactionKnown(String txId) {
+        synchronized (lock) {
+            if (completedTransactions.contains(txId)) return true;
+            return pendingTransactions.stream().anyMatch(t -> t.getTxId().equals(txId));
+        }
     }
 
     public void addTransaction(Transaction transaction) {
@@ -61,37 +68,50 @@ public class TransactionRule {
         }
     }
 
+    public void forceClearPending() {
+        synchronized (lock) {
+            pendingTransactions.clear();
+        }
+    }
 
     public List<Transaction> getTransactionsForBlock() {
         synchronized (lock) {
             if (pendingTransactions.isEmpty() || currentNonceProvider == null) return null;
 
             List<Transaction> candidateTxs = new ArrayList<>();
-            List<Transaction> sortedPool = new ArrayList<>(pendingTransactions);
-            sortedPool.sort(Comparator.comparingLong(Transaction::getNonce));
-
-            Map<BigInteger, Long> localExpectedNonces = new HashMap<>();
             List<Transaction> staleTxs = new ArrayList<>();
 
-            for (Transaction tx : sortedPool) {
+            Map<BigInteger, List<Transaction>> bySender = new HashMap<>();
+            for (Transaction tx : pendingTransactions) {
+                bySender.computeIfAbsent(tx.getSenderId(), k -> new ArrayList<>()).add(tx);
+            }
 
-                long expectedNonce = localExpectedNonces.computeIfAbsent(
-                        tx.getSenderId(),
-                        id -> currentNonceProvider.apply(id)
-                );
+            for (Map.Entry<BigInteger, List<Transaction>> entry : bySender.entrySet()) {
+                BigInteger senderId = entry.getKey();
+                List<Transaction> senderTxs = entry.getValue();
 
-                if (tx.getNonce() < expectedNonce) {
-                    staleTxs.add(tx);
-                } else if (tx.getNonce() == expectedNonce) {
-                    candidateTxs.add(tx);
-                    localExpectedNonces.put(tx.getSenderId(), expectedNonce + 1);
+                senderTxs.sort(Comparator.comparingLong(Transaction::getNonce));
+
+                long expectedNonce = currentNonceProvider.apply(senderId);
+
+                for (Transaction tx : senderTxs) {
+                    if (tx.getNonce() < expectedNonce) {
+                        staleTxs.add(tx);
+                    } else if (tx.getNonce() == expectedNonce) {
+                        candidateTxs.add(tx);
+                        expectedNonce++;
+                    } else {
+                        break;
+                    }
                 }
-
-                if (candidateTxs.size() >= maxTransactionsPending) break;
             }
 
             for (Transaction stale : staleTxs) {
                 pendingTransactions.remove(stale);
+            }
+
+            if (candidateTxs.size() > maxTransactionsPending) {
+                candidateTxs = candidateTxs.subList(0, maxTransactionsPending);
             }
 
             return candidateTxs;
@@ -143,4 +163,6 @@ public class TransactionRule {
             }
         }
     }
+
+
 }

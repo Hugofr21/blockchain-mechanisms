@@ -22,7 +22,10 @@ public enum MessageType {
     TRANSACTION((byte) 0x22),
     HELLO_ACK((byte) 0x23),
     GET_BLOCKS_BATCH((byte) 0x24),
-    BLOCK_BATCH((byte) 0x25);
+    BLOCK_BATCH((byte) 0x25),
+    GET_SUBSCRIBERS((byte) 0x26),
+    SUBSCRIBERS_RESPONSE((byte) 0x27),
+    SUBSCRIBE_TOPIC((byte) 0x28);
 
 
     private final byte code;

@@ -1,6 +1,5 @@
 package org.graph.adapter.outbound.network.kademlia;
 
-import org.graph.adapter.inbound.network.Handshake;
 import org.graph.adapter.outbound.network.message.node.NodeInfoPayload;
 import org.graph.adapter.outbound.network.message.node.NodeListPayload;
 import org.graph.adapter.utils.CryptoUtils;
@@ -22,12 +21,7 @@ import org.graph.adapter.provider.IKademliaIController;
 import org.graph.infrastructure.storage.StorageDHT;
 import org.graph.server.utils.MetricsLogger;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.math.BigInteger;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketException;
 import java.security.PublicKey;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -572,21 +566,14 @@ public class KademliaNetwork implements IKademliaIController {
                         .getNeighbourById(target.getNodeId().value());
 
                 if (handler != null && !handler.getSocket().isClosed()) {
-                    try {
-                        MessageUtils.sendMessage(handler.getOutputStream(), request);
-                        System.out.println("[GOSSIP] Notification sent via open tunnel to: " + target.getPort());
-                        return;
-                    } catch (Exception ex) {
-                        System.err.println("[GOSSIP] Tunnel opened to " + target.getPort() + " failed (Ghost). Trying to find a new connection...");
-                    }
+                    handler.sendMessageToPeer(request);
+                    System.out.println("[GOSSIP] Notification sent via tunnel to: " + target.getPort());
+                } else {
+                    System.err.println("[GOSSIP] Tunnel to " + target.getPort() + " is closed or ghosted.");
                 }
-
-
             } catch (Exception e) {
                 System.err.println("[GOSSIP] Failed to send notification to " + target.getPort() + " (Node Offline?).");
             }
-
-
         }).start();
         return null;
     }
@@ -612,31 +599,38 @@ public class KademliaNetwork implements IKademliaIController {
         ConnectionHandler handler = myself.getNeighboursManager()
                 .getNeighbourById(target.getNodeId().value());
 
-
         if (handler != null && !handler.getSocket().isClosed()) {
             try {
-                MessageUtils.sendMessage(handler.getOutputStream(), request);
-                System.out.println("[GOSSIP] Notification sent via open tunnel to: " + target.getPort());
+
+                handler.sendMessageToPeer(request);
+                System.out.println("[DHT RPC] Request sent to: " + target.getPort());
 
                 long startTime = System.currentTimeMillis();
-                Message response = MessageUtils.readMessage(handler.getInputStream());
-                long rttDelay = System.currentTimeMillis() - startTime;
 
+                Message response;
+
+                synchronized (handler.getInputStream()) {
+                    if (handler.isSecure()) {
+                        response = MessageUtils.readSecureMessage(handler.getInputStream(), handler.getSecureSession());
+                    } else {
+                        response = MessageUtils.readMessage(handler.getInputStream());
+                    }
+                }
+
+                long rttDelay = System.currentTimeMillis() - startTime;
                 MetricsLogger.recordLatency(target.getPort() + "", rttDelay);
 
                 if (response != null) {
                     return response.getPayload();
                 }
 
-            }  catch (java.net.SocketTimeoutException e) {
-                System.err.println("[DHT RPC] Timeout waiting for response from " + target.getPort() + " (Node excessively slow or offline).");
+            } catch (java.net.SocketTimeoutException e) {
+                System.err.println("[DHT RPC] Timeout waiting for response from " + target.getPort());
                 myself.getReputationsManager().reportEvent(target.getNodeId().value(), EventTypePolicy.PING_FAIL);
                 MetricsLogger.recordRpcError("TIMEOUT");
-                handler.closeConnection();
             } catch (Exception e) {
                 System.err.println("[DHT RPC] Synchronous communication failed with " + target.getPort() + ": " + e.getMessage());
                 MetricsLogger.recordRpcError("CONNECTION_REFUSED");
-                handler.closeConnection();
             }
         }
         return null;

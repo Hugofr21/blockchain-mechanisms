@@ -1,6 +1,7 @@
 package org.graph.infrastructure.network;
 
 import org.graph.domain.entities.message.Message;
+import org.graph.server.utils.MetricsLogger;
 
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -36,6 +37,7 @@ public class BrokerEvent {
 
     public void submit(Message message, ConnectionHandler source) {
         queue.offer(new MessageWrapper(message, source));
+        MetricsLogger.updateBrokerQueueSize(queue.size());
     }
 
     private void startConsumer() {
@@ -43,6 +45,10 @@ public class BrokerEvent {
             while (running) {
                 try {
                     MessageWrapper item = queue.take();
+
+                    MetricsLogger.updateBrokerQueueSize(queue.size());
+
+
                     item.source.dispatch(item.message);
 
                 } catch (InterruptedException e) {

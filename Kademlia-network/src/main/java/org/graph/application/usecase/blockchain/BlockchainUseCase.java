@@ -124,6 +124,8 @@ public class BlockchainUseCase implements ITransactionsPublished {
     }
 
     private void notifyListeners(Block block) {
+        MetricsLogger.recordChainReorg();
+
         synchronized (listeners) {
             for (IBlockListener listener : listeners) {
                 listener.onBlockCommitted(block);
@@ -181,13 +183,33 @@ public class BlockchainUseCase implements ITransactionsPublished {
     }
 
     public void addTransaction(Transaction tx) {
-        if (tx == null) return;
+        if (tx == null) {
+            System.err.println("[BLOCK_TRANSACTION] Invalid transaction rejected.");
+            return;
+        }
 
-        mTransactionRule.addTransaction(tx);
-        this.lastTxTime = System.currentTimeMillis();
+        boolean isNewAndAdded = false;
+        boolean shouldMine = false;
 
-        if (mTransactionRule.shouldCreateBlock()) {
-            System.out.println("\n[MINER] Mempool full. Delegando mineração...");
+        synchronized (this) {
+            int sizeBefore = mTransactionRule.getPendingCount();
+
+            mTransactionRule.addTransaction(tx);
+
+            if (mTransactionRule.getPendingCount() > sizeBefore) {
+                isNewAndAdded = true;
+                this.lastTxTime = System.currentTimeMillis();
+            }
+
+            shouldMine = mTransactionRule.shouldCreateBlock();
+        }
+
+        if (isNewAndAdded) {
+            myself.getBlockEventManger().propagateTransactionInv(tx, null);
+        }
+
+        if (shouldMine) {
+            System.out.println("\n[MINER] Mempool full. Mining started...");
             triggerAsyncMining();
         }
     }
@@ -199,7 +221,7 @@ public class BlockchainUseCase implements ITransactionsPublished {
         }
 
         boolean minedAndAdded = false;
-
+        long startMineTime = System.currentTimeMillis();
         try {
             List<Transaction> transactions;
             Pair<Integer, String> infoBlock;
@@ -207,6 +229,9 @@ public class BlockchainUseCase implements ITransactionsPublished {
             synchronized (chainStateLock) {
                 transactions = mTransactionRule.getTransactionsForBlock();
                 if (transactions == null || transactions.isEmpty()) {
+                    if (mTransactionRule.getPendingCount() > 0) {
+                        mTransactionRule.forceClearPending();
+                    }
                     this.lastTxTime = System.currentTimeMillis();
                     return;
                 }
@@ -218,7 +243,8 @@ public class BlockchainUseCase implements ITransactionsPublished {
 
             Block newBlock = new Block(1, infoBlock.key(), infoBlock.value(), transactions, currentDifficulty);
             newBlock.mineBlock(currentDifficulty, numThreads);
-
+            long mineDuration = System.currentTimeMillis() - startMineTime;
+            MetricsLogger.recordBlockMiningTime(mineDuration);
 
             synchronized (chainStateLock) {
                 Pair<Integer, String> currentInfo = getInfoBlock();
@@ -230,8 +256,10 @@ public class BlockchainUseCase implements ITransactionsPublished {
 
                 mTransactionRule.cleanPool(transactions);
                 mBlockRule.addLocalBlock(newBlock);
+                MetricsLogger.updateMempoolSize(mTransactionRule.getPendingCount());
                 MetricsLogger.updateChainHeight(mBlockRule.getChainHeight());
                 this.lastTxTime = System.currentTimeMillis();
+
                 minedAndAdded = true;
             }
 
@@ -246,8 +274,8 @@ public class BlockchainUseCase implements ITransactionsPublished {
         } finally {
             isMining.set(false);
 
-            if (mTransactionRule.shouldCreateBlock()) {
-                System.out.println("[MINER] Mempool remains full. Starting mining of the next block...");
+            if (minedAndAdded && mTransactionRule.shouldCreateBlock()) {
+                System.out.println("[MINER] Mempool continua cheia. A iniciar mineração do próximo bloco...");
                 triggerAsyncMining();
             }
         }
