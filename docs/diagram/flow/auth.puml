@@ -1,28 +1,27 @@
-@startuml
-title P2P Join Process: Authentication, Reputation & Discovery
+@startuml AuthenticationFlow
+title P2P Join Process: Authentication, Secure Tunnel (ECDHE) & Discovery
 skinparam roundCorner 10
 skinparam sequenceMessageAlign center
 skinparam participantBorderColor #005A9C
 skinparam participantBackgroundColor #E0F0FF
 autonumber
 
-
 box "Local Peer (My Node)" #F9F9F9
     participant "Peer" as P
     participant "Handshake\nUtility" as HS
+    participant "Connection\nHandler" as CH
+    participant "Secure\nSession" as SEC
     participant "Reputation\nManager" as REP
     participant "Routing\nTable" as RT
     participant "ChainSync\nManager" as SYNC
     participant "Kademlia\nNetwork" as KAD
-    participant "Connection\nHandler" as CH
 end box
 
 box "Remote Network" #EFEFEF
     participant "Bootstrap\nNode" as B
 end box
 
-
-group "Phase1 – Cryptographic Authentication"
+group "Phase 1 – Cryptographic Authentication & Secure Tunnel (ECDH + AES-GCM)"
     P -> P : new Socket(bootstrapIP)
     P -> CH : new ConnectionHandler(socket)
     activate CH
@@ -30,46 +29,49 @@ group "Phase1 – Cryptographic Authentication"
     P -> HS : doHandshake(CH)
     activate HS
 
+    HS -> HS : generateEphemeralKeys(ECDH)
+    HS -> CH : send(HELLO)
+    note right of CH: Payload: pubKeyA, clientNonce, \nephemeralPubKeyA
+    CH -> B : [TCP Plaintext] HELLO
 
-    HS -> CH : send(HELLO(pubKeyA, clientNonce))
-    CH -> B : [TCP] HELLO(pubKeyA, clientNonce)
+    B -> B : generateEphemeralKeys(ECDH)
+    B --> CH : [TCP Plaintext] HELLO_RESPONSE
+    note left of B: Payload: pubKeyB, challengeB, \nephemeralPubKeyB
 
+    CH --> HS : receive(HELLO_RESPONSE)
 
-    B -> B : generate(challengeB)
-    B -> B : sign(HELLO(pubKeyA, clientNonce, challengeB))
-    B --> CH : [TCP] HELLO_RESPONSE(pubKeyB, challengeB, signatureB)
+    HS -> HS : computeSharedSecret(ephemeralPrivA, ephemeralPubB)
+    HS -> CH : enableSecureTransport(sharedSecret)
+    CH -> SEC ** : init(sharedSecret, AES-256)
+    
+    note over HS, SEC
+        Tunnel is now locked. All subsequent 
+        traffic will use AES-GCM encryption.
+    end note
 
-    CH --> HS : receive(HELLO_RESPONSE(...))
+    HS -> HS : sign(challengeB)
+    HS -> CH : sendSecureMessage(HELLO_ACK)
+    CH -> SEC : encrypt(HELLO_ACK, Nonce)
+    SEC --> CH : ciphertext + GCM Tag
+    CH -> B : [TCP Encrypted AES-GCM] HELLO_ACK
 
-    HS -> HS : validateRemoteSignature()
-    alt Invalid signature
+    B -> B : verify signature & encrypt ACK
+    B --> CH : [TCP Encrypted AES-GCM] HELLO_ACK
+    CH -> SEC : decrypt(ciphertext, GCM Tag)
+    SEC --> CH : plaintext payload
+    CH --> HS : finalConfirm
+    
+    HS -> HS : validateRemoteIdentity(PoW, Signature)
+    alt Invalid Identity/PoW
         HS --> P : throw SecurityException
         P -> CH : close()
-        deactivate CH
-    else Valid signature
-
-        HS -> HS : sign(challengeB)
-        HS -> CH : send(ACK(signedChallengeB))
-        CH -> B : [TCP] ACK(signedChallengeB)
-
-
-        B -> B : verify(signedChallengeB)
-        alt verification fails
-            B --> CH : [TCP] AUTH_FAILURE
-            CH --> HS : error
-            HS --> P : Optional.empty()
-        else verification ok
-            B --> CH : [TCP] AUTH_SUCCESS
-            CH --> HS : success payload
-            HS --> P : Optional.of(RemoteNode(B))
-        end
+    else Valid Identity
+        HS --> P : Optional.of(RemoteNode(B))
     end
     deactivate HS
-    deactivate CH
 end
 
-
-group "Phase2 – Reputation Registration"
+group "Phase 2 – Reputation Registration"
     P -> REP : reportEvent(B, PING_SUCCESS)
     activate REP
     note right of REP
@@ -83,30 +85,30 @@ group "Phase2 – Reputation Registration"
     activate RT
     RT -> REP : getTrustFactor(B)
     RT -> RT : addOrUpdate(B)
-    note right of RT
-        Node accepted because
-        handshake proved identity.
-    end note
     deactivate RT
 
-    P -> CH : startReaderThread()
-    activate CH
-    deactivate CH
+    P -> CH : startReaderThread(run)
+    note right of CH
+        Thread starts intercepting 
+        AES-GCM messages
+    end note
 end
 
-
-group "Phase3 – Chain Height Check"
-    P -> SYNC : startSync(CH)
+group "Phase 3 – Chain Height Check (Over Secure Tunnel)"
+    P -> SYNC : startInitialSync(CH)
     activate SYNC
 
-    SYNC -> CH : send(GET_STATUS)
-    CH -> B : [MSG] GET_STATUS
-    B --> CH : [MSG] STATUS_RESPONSE(height, topHash)
-
+    SYNC -> CH : sendMessageToPeer(GET_STATUS)
+    CH -> SEC : encrypt()
+    CH -> B : [TCP Encrypted AES-GCM] GET_STATUS
+    B --> CH : [TCP Encrypted AES-GCM] STATUS_RESPONSE
+    CH -> SEC : decrypt()
+    
     CH --> SYNC : handleResponse(...)
     SYNC -> SYNC : compareHeights()
     opt Remote height > local height
-        SYNC -> CH : send(GET_BLOCK, topHash)
+        SYNC -> CH : sendMessageToPeer(GET_BLOCK, topHash)
+        CH -> B : [TCP Encrypted AES-GCM] GET_BLOCK
         note right of SYNC
             Initiate reverse download
             (missing parents)
@@ -115,14 +117,15 @@ group "Phase3 – Chain Height Check"
     deactivate SYNC
 end
 
-
-group "Phase4 – Network Discovery (Bootstrap)"
-    P -> KAD : findNode(myNodeId)
+group "Phase 4 – Network Discovery (Bootstrap Over Secure Tunnel)"
+    P -> KAD : triggerBootstrapLookup()
     activate KAD
 
-    KAD -> CH : send(FIND_NODE, target=myNodeId)
-    CH -> B : [MSG] FIND_NODE
-    B --> CH : [MSG] NODES_RESPONSE(list<Node>)
+    KAD -> CH : sendMessageToPeer(FIND_NODE)
+    CH -> SEC : encrypt()
+    CH -> B : [TCP Encrypted AES-GCM] FIND_NODE
+    B --> CH : [TCP Encrypted AES-GCM] NODES_RESPONSE
+    CH -> SEC : decrypt()
 
     CH --> KAD : return list<Node>
 
@@ -131,7 +134,7 @@ group "Phase4 – Network Discovery (Bootstrap)"
         KAD -> RT  : updateNode(neighbour)
         note right of KAD
             Populate routing table
-            with new peers
+            with new peers securely
         end note
     end
     deactivate KAD

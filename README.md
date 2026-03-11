@@ -195,12 +195,7 @@ Entidades & Value Objects
 Descrever e organizar os casos de teste implementados para validar as principais propriedades do sistema descentralizado (tolerância a falhas, segurança contra ataques e funcionalidade de leilões).
 
 ---
-
 ## Test Scenarios
-
-
-## Test Scenarios
-
 - [X] **Desligamento de nós (tolerância a falhas)**: Simular a indisponibilidade de alguns nós e verificar se o sistema continua operando corretamente, mantendo a **preservação de dados imutáveis**.
 - [X] **Ataque Eclipse a um nó**: Um nó tenta isolar outros nós da rede, testando a resiliência do mecanismo de descoberta e das rotas de comunicação.
 - [X] **Ataque Sybil**: Tentar inserir identidades falsas que sobrescrevam ou corrompam o estado do ledger, verificando a capacidade do protocolo de detectar e rejeitar esses nós.
