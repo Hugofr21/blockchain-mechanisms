@@ -170,7 +170,7 @@ public class ConnectionHandler implements Runnable {
 
    public void dispatch(Message message) {
         switch (message.getType()) {
-            case PING -> handlePing(message.getPayload());
+            case PING -> handlePing(message);
             case PONG -> handlePong(message.getPayload());
             case FIND_NODE -> handleFindNode(message.getPayload());
             case FIND_VALUE -> handleFindValue(message.getPayload());
@@ -393,10 +393,15 @@ public class ConnectionHandler implements Runnable {
 
 
     private void handlePong(Object payload) {
+        System.out.println("[PONG] Received a pong: " + payload);
+
     }
 
-    private void handlePing(Object payload) {
-        Message pongMsg = new Message(MessageType.PONG, payload, myPeer.getHybridLogicalClock());
+    private void handlePing(Message message) {
+        Message pongMsg = new Message(MessageType.PONG, "PONG", myPeer.getHybridLogicalClock());
+        long timestampSent = (Long) message.getPayload();
+        long rttDelay = System.currentTimeMillis() -  timestampSent;
+        MetricsLogger.recordLatency(myPeer.getMyself().getPort() + "", rttDelay);
         sendMessageToPeer(pongMsg);
     }
 

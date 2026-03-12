@@ -202,6 +202,7 @@ public class BlockRule {
     }
 
     public boolean contains(String hash) {
+        if (hash == null) return false;
         return blockMap.containsKey(hash);
     }
 

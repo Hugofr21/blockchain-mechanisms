@@ -6,6 +6,8 @@ import org.graph.adapter.provider.IEventDispatcher;
 import org.graph.adapter.utils.MessageUtils;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.node.Node;
+import org.graph.server.utils.MetricsLogger;
+
 import java.math.BigInteger;
 import java.net.SocketException;
 import java.util.List;
@@ -34,13 +36,16 @@ public class NetworkEvent implements IEventDispatcher {
         try {
             System.out.println("[DEBUG_UNICAST]: SENDING UNICAST MESSAGE");
             MessageUtils.sendSecureMessage(context.getOutputStream(), message, context.getSecureSession());
+            MetricsLogger.recordOutboundMessage(String.valueOf(context.getRemoteNode().getPort()));
         } catch (SocketException e) {
             logger.warning("[UNICAST] Broken tunnel to " + context.getRemoteNode().getHost() + ". Removing connection.");
             neighboursConnections.removeConnection(context.getRemoteNode().getNodeId().value());
+            MetricsLogger.recordRpcError("BROKEN_TUNNEL");
         } catch (Exception e) {
             logger.severe("[UNICAST] Fatal error to be sent to " + context.getRemoteNode().getHost() + ": " + e.toString());
             e.printStackTrace();
             neighboursConnections.removeConnection(context.getRemoteNode().getNodeId().value());
+            MetricsLogger.recordRpcError("SEND_FATAL_ERROR");
         }
     }
 

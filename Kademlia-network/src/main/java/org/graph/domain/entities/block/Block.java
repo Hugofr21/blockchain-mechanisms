@@ -4,6 +4,7 @@ import org.graph.application.usecase.mining.MinerThreadBlock;
 import org.graph.application.usecase.mining.MiningResultBlock;
 import org.graph.domain.entities.transaction.Transaction;
 import org.graph.domain.entities.tree.MerkleTree;
+import org.graph.domain.valueobject.utils.HashUtils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -33,14 +34,34 @@ public class Block implements Serializable {
     public BlockHeader getHeader() { return header; }
     public List<Transaction> getTransactions() { return transactions; }
 
+    // Nota: Este comportamento foi introduzido exclusivamente para efeitos de teste.
+    public void setCurrentHash(String hash) { this.hashCache = hash;}
 
     /**
+     * Executa o processo de mineração do bloco através da procura de um valor
+     * de {@code nonce} que produza um hash SHA-256 compatível com o nível de
+     * dificuldade especificado. A dificuldade é definida pelo número de zeros
+     * consecutivos exigidos no prefixo do hash resultante, característica típica
+     * dos mecanismos de consenso baseados em Proof of Work (PoW).
      *
-     * @param difficulty number prefix
-     * @param numberThread number de task getting nonce
-     * <p>
+     * O método distribui o processo de procura do {@code nonce} por múltiplas
+     * tarefas concorrentes, permitindo explorar paralelismo computacional. Cada
+     * thread executa tentativas independentes de geração de hash, variando o
+     * valor do nonce até que uma combinação válida seja encontrada. Quando um
+     * dos workers encontra um hash que satisfaz a dificuldade imposta, o
+     * processo de mineração é interrompido e o bloco passa a possuir uma prova
+     * de trabalho válida.
+     *
+     * Esta abordagem reduz o tempo esperado de descoberta do nonce através da
+     * utilização eficiente de recursos de processamento multicore, mantendo o
+     * comportamento probabilístico característico do algoritmo de mineração.
+     *
+     * @param difficulty nível de dificuldade da mineração, representado pelo
+     *                   número de zeros consecutivos exigidos no prefixo do
+     *                   hash SHA-256 do bloco
+     * @param numberThread número de threads (tarefas concorrentes) utilizadas
+     *                     no processo de procura do nonce
      */
-
     public void mineBlock(int difficulty, int numberThread) {
         long startTime = System.currentTimeMillis();
         AtomicBoolean found = new AtomicBoolean(false);
@@ -103,40 +124,67 @@ public class Block implements Serializable {
     }
 
     /**
-     * Valida se o bloco atual é válido em relação ao bloco pai (último bloco da cadeia).
+     * Executa a validação estrutural e temporal do bloco atual em relação ao
+     * bloco imediatamente anterior da cadeia (bloco pai). Este procedimento
+     * constitui uma etapa fundamental do mecanismo de consenso, assegurando
+     * que o bloco respeita as propriedades de continuidade, integridade
+     * criptográfica e coerência temporal exigidas pela blockchain.
      *
-     * @param parent último bloco da blockchain (bloco anterior)
-     * @return true se o bloco for válido relativamente ao bloco pai; false caso contrário
+     * A verificação compara o estado do bloco candidato com o estado do bloco
+     * pai fornecido como referência, garantindo que a ligação entre ambos
+     * preserva a estrutura encadeada da cadeia de blocos. Qualquer inconsistência
+     * detetada implica a rejeição do bloco, impedindo a sua inclusão na cadeia.
      *
-     * Regras de validação:
-     * 1. O campo previousHash deve corresponder ao hash do bloco pai.
-     * 2. O número do bloco (blockNumber) deve ser sequencial em relação ao bloco pai.
-     * 3. O timestamp do bloco deve ser posterior ao timestamp do bloco pai.
-     * 4. O timestamp deve respeitar limites válidos para evitar ataques do tipo Time Warp.
+     * O processo de validação aplica as seguintes restrições:
+     *
+     * - Continuidade criptográfica: o campo {@code previousHash} deve coincidir
+     *   exatamente com o hash criptográfico do bloco pai. Esta condição garante
+     *   a integridade da ligação entre blocos e impede a inserção arbitrária de
+     *   blocos na cadeia.
+     *
+     * - Sequência estrutural: o identificador sequencial do bloco
+     *   ({@code blockNumber}) deve ser exatamente o sucessor do número do bloco
+     *   pai, preservando a ordem lógica da cadeia.
+     *
+     * - Coerência temporal: o {@code timestamp} do bloco atual deve ser
+     *   estritamente posterior ao {@code timestamp} do bloco pai, assegurando
+     *   consistência cronológica entre blocos consecutivos.
+     *
+     * - Limites temporais válidos: o {@code timestamp} deve respeitar os limites
+     *   definidos pelo protocolo para prevenir manipulações de tempo conhecidas
+     *   como ataques do tipo <i>Time Warp</i>, nas quais um nó tenta distorcer a
+     *   linha temporal da cadeia para influenciar o processo de validação ou
+     *   ajuste de dificuldade.
+     *
+     * Caso qualquer uma destas condições falhe, o bloco deve ser considerado
+     * inválido e rejeitado pelo nó validador.
+     *
+     * @param parent bloco imediatamente anterior na blockchain, utilizado como
+     *               referência para validação estrutural e temporal
+     *
+     * @return {@code true} se todas as regras de validação forem satisfeitas;
+     *         {@code false} caso seja detetada qualquer inconsistência
      */
 
     public boolean isValidBlock(Block parent){
-        // 1. Validação de Gênesis
         if (parent == null) {
             boolean isGenesis = this.numberBlock == 0;
             if(!isGenesis) System.out.println("[DEBUG] Rejected: Father is null and it is not Genesis.");
             return this.numberBlock == 0;
         }
 
-        // 2. Encadeamento (Chain Link)
         if (!this.header.getPreviousBlockHash().equals(parent.getCurrentBlockHash())) {
             System.out.println("Invalid Previous Hash");
             return false;
         }
 
-        // 3. Sequencialidade
+
         if (this.numberBlock != parent.getNumberBlock() + 1) {
             System.out.println("Invalid Sequence Number");
             return false;
         }
 
-        // 4. Timestamp (Proteção contra Time Warp attack)
-        // O bloco não pode ser mais velho que o pai, nem muito no futuro
+
         if (this.header.getTimestamp() <= parent.getHeader().getTimestamp()) {
             System.out.println("Timestamp too old");
             return false;
@@ -181,6 +229,40 @@ public class Block implements Serializable {
     }
 
 
+    /**
+     * Recalcula o hash criptográfico do bloco utilizando o algoritmo SHA-256 a partir
+     * do estado atual de todos os campos que compõem a sua representação imutável.
+     *
+     * O valor gerado funciona como identificador único do bloco dentro da cadeia e
+     * constitui o principal mecanismo de verificação de integridade estrutural. O
+     * cálculo do hash incorpora tipicamente os elementos fundamentais do bloco,
+     * incluindo o identificador do bloco anterior (previousHash), o conjunto de
+     * transações, o timestamp e o nonce utilizado no processo de mineração.
+     *
+     * Em sistemas baseados em Proof of Work (PoW), qualquer modificação em qualquer
+     * um destes componentes provoca necessariamente a alteração completa do hash
+     * resultante devido às propriedades de avalanche dos algoritmos criptográficos
+     * de hash. Consequentemente, a alteração de dados invalida imediatamente o
+     * resultado previamente obtido durante o processo de mineração.
+     *
+     * Este comportamento garante duas propriedades essenciais do sistema:
+     * integridade dos dados armazenados no bloco e imutabilidade prática da cadeia
+     * de blocos. Para que um bloco adulterado volte a ser considerado válido, seria
+     * necessário recomputar a prova de trabalho não apenas desse bloco, mas também
+     * de todos os blocos subsequentes, o que se torna computacionalmente inviável
+     * em redes distribuídas suficientemente grandes.
+     *
+     * @return String contendo o hash SHA-256 codificado em formato hexadecimal,
+     *         representando o estado criptográfico atual do bloco.
+     */
 
+    public String recalculateHash() {
+        try {
+            String dataToHash = header.getPayloadForMining() + header.getNonce();
+            return HashUtils.calculateSha256(dataToHash);
 
+        } catch (Exception e) {
+            throw new RuntimeException("Falha ao calcular o Hash do Bloco: " + e.getMessage());
+        }
+    }
 }

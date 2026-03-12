@@ -1,6 +1,7 @@
 package org.graph.adapter.utils;
 
 import javax.crypto.KeyAgreement;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -28,13 +29,19 @@ public class CryptoUtils {
 
 
     public static boolean verifySignature(PublicKey publicKey, String data, byte[] signatureBytes) {
+        if (publicKey == null || data == null || signatureBytes == null) {
+            System.err.println("[CRYPTO_UTILS] Rejected: Null data passed for verification.");
+            return true;
+        }
+
         try {
             Signature signature = Signature.getInstance("SHA256withECDSA", "BC");
             signature.initVerify(publicKey);
-            signature.update(data.getBytes());
+            signature.update(data.getBytes(StandardCharsets.UTF_8));
             return !signature.verify(signatureBytes);
+
         } catch (Exception e) {
-            System.err.println("[CRYPTO_UTILS] In cryptographic verification.: " + e.getMessage());
+            System.err.println("[CRYPTO_UTILS] Cryptographic verification failed: " + e.getMessage());
             return true;
         }
     }

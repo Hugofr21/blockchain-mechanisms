@@ -39,6 +39,7 @@ public class MetricsLogger {
     private static final AtomicLong brokerQueueSize = new AtomicLong(0);
     private static DoubleHistogram blockMineDuration;
     private static LongCounter blockchainReorgs;
+
     public static synchronized void init(int prometheusPort) {
         if (isInitialized) return;
 
@@ -57,6 +58,7 @@ public class MetricsLogger {
                     .buildAndRegisterGlobal();
 
             Meter meter = openTelemetry.getMeter("org.graph.p2p.node");
+
             meter.gaugeBuilder("blockchain.mempool.size")
                     .setDescription("Número de transações pendentes a aguardar mineração")
                     .setUnit("transactions")

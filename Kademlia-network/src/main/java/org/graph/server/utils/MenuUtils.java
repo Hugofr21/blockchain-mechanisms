@@ -5,8 +5,11 @@ import org.graph.adapter.outbound.network.message.auction.AuctionPayload;
 import org.graph.domain.entities.auctions.Bid;
 import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.auctions.AuctionState;
+import org.graph.domain.entities.message.Message;
+import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.transaction.Transaction;
 import org.graph.domain.entities.transaction.TransactionType;
+import org.graph.domain.policy.EventTypePolicy;
 import org.graph.domain.valueobject.utils.HashUtils;
 import org.graph.server.Peer;
 import org.graph.domain.entities.node.Node;
@@ -73,6 +76,7 @@ public class MenuUtils {
         System.out.println("3) Security Test: Simulate Duplicate Bids (Replay Attack)");
         System.out.println("4) Rollback an auction bid by bid.");
         System.out.println("5) Auction open, add multiple bids.");
+        System.out.println("6) Simulate Block (Fake Identity Injection).");
         System.out.println("0) Return");
         System.out.print("Choose the attack vector: ");
 
@@ -85,22 +89,76 @@ public class MenuUtils {
             case 3: simulateDuplicateBidAttack(peer); break;
             case 4: simulateNaiveRollbackAttack(peer); break;
             case 5: simulateAuctionOpenMultipleBids(peer); break;
+            case 6: simulateAttackBlock(peer); break;
             case 0: return;
             default: System.out.println("Invalid option.");
 
         }
     }
 
+    private static void simulateAttackBlock(Peer peer) {
+        System.out.println("\n[SIMULATION] Starting Poisoned Block Attack (Acting as the Attacker)...");
+
+        new Thread(() -> {
+            try {
+
+                List<Node> neighbors = peer.getNeighboursManager().getActiveNeighbours();
+                if (neighbors.isEmpty()) {
+                    System.err.println("[SIMULATION] Error: No active neighbors found. Connect to a network first.");
+                    return;
+                }
+
+
+                Node targetNeighbor = neighbors.getFirst();
+
+
+                System.out.println("[SIMULATION] Forging poisoned block...");
+                Block poisonedBlock = new Block(
+                        1,
+                        peer.getNetworkGateway().getBlockchainEngine().getBlockOrganizer().getChainHeight() + 1,
+                        "00631425ea719c4f88f090c3f1f079c98ae9ceb6215813e779ef3cbe071b981621",
+                        new ArrayList<>(),
+                        peer.getMyself().getNETWORK_DIFFICULTY()
+                );
+
+                poisonedBlock.setCurrentHash("00f72c1bc26f96f44374911f6e8d6ab4a8b5e43c321136dbd83edb6e71acdf51c7");
+
+
+
+                System.out.println("[SIMULATION] Dispatching poisoned block via secure tunnel to neighbor on port: " + targetNeighbor.getPort());
+
+                Message attackMsg = new Message(
+                        MessageType.BLOCK,
+                        poisonedBlock,
+                        peer.getHybridLogicalClock()
+                );
+
+
+                peer.getMkademliaNetwork().sendRPCAsync(targetNeighbor, attackMsg);
+
+
+                System.out.println("\n[SIMULATION COMPLETED] Payload delivered.");
+                System.out.println(" ARCHITECTURAL NOTE ON METRICS:");
+                System.out.println(" Since your node originated the attack, your local dashboard will remain unchanged.");
+                System.out.println(" To validate the defense, observe the logs or the Grafana of the victim node (" + targetNeighbor.getPort() + ").");
+                System.out.println(" The victim node should cut its reputation (TrustScore) and log 'POISONED_BLOCK'.");
+
+            } catch (Exception e) {
+                System.err.println("[CRITICAL ERROR] Simulation failed: " + e.getMessage());
+            }
+        }).start();
+    }
+
     private static void simulateAuctionOpenMultipleBids(Peer peer) {
         var auctionEngine = peer.getNetworkGateway().getAuctionEngine();
         var ledger = auctionEngine.getWorldState();
 
-        System.out.print("\n[SIMULAÇÃO] Introduza o Auction ID (Hash): ");
+        System.out.print("\n[SIMULATION] Enter the auction ID (Hash): ");
         String auctionId = scanner.nextLine().trim();
 
         AuctionState state = ledger.get(auctionId);
         if (state == null) {
-            System.err.println("[ERROR] Leilão não encontrado no Ledger local.");
+            System.err.println("[ERROR] Auction not found in the local Ledger.");
             return;
         }
 

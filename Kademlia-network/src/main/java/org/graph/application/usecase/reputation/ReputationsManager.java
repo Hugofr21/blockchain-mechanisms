@@ -3,6 +3,7 @@ package org.graph.application.usecase.reputation;
 import org.graph.application.usecase.provider.IReputationsManager;
 import org.graph.domain.policy.EventTypePolicy;
 import org.graph.domain.policy.reputation.ProofOfReputationPolicy;
+import org.graph.server.utils.MetricsLogger;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -60,7 +61,7 @@ public class ReputationsManager implements IReputationsManager {
         if (event == EventTypePolicy.INVALID_BLOCK || event == EventTypePolicy.PING_FAIL) {
             System.out.printf("[REPUTATION] Node %s penalized (%s). Novo Score: %.2f%n", nodeId, event, newScore);
         }
-
+        MetricsLogger.recordTrustScore(nodeId.toString(), proof.getTrustFactor());
     }
 
     public boolean removeProofOfReputation(BigInteger nodeId){
@@ -73,8 +74,12 @@ public class ReputationsManager implements IReputationsManager {
 
 
 
-    public void applyDecayAll(BigInteger nodeId){
+    public void applyDecayAll(){
         reputationMap.values().forEach(ProofOfReputationPolicy::applyDecay);
+        reputationMap.forEach((nodeId, proof) -> {
+            proof.applyDecay();
+            MetricsLogger.recordTrustScore(nodeId.toString(), proof.getTrustFactor());
+        });
     }
 
 

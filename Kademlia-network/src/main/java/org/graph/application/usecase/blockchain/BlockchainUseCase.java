@@ -156,22 +156,18 @@ public class BlockchainUseCase implements ITransactionsPublished {
 
         Transaction tx = new Transaction(
                 TransactionType.REGULAR_TRANSFER,
-                myself.getIsKeysInfrastructure().getOwnerPublicKey(),
+                null,
                 genesisData,
-                myself.getMyself().getNodeId().value(),
+                BigInteger.ZERO,
                 0L,
-                myself.getHybridLogicalClock().getPhysicalClock()
+                1700000000000L
         );
 
-        try {
-            tx.setSignature(myself.getIsKeysInfrastructure().signMessage(tx.getDataSign()));
-        } catch (Exception e) {
-            System.err.println("[4] Failed to sign transaction Genesis: " + e.getMessage());
-            return;
-        }
-
         genesisTx.add(tx);
-        Block genesis = new Block(1, 0, "0", genesisTx, currentDifficulty);
+
+        String genesisPrevHash = "0000000000000000000000000000000000000000000000000000000000000000";
+        Block genesis = new Block(1, 0, genesisPrevHash, genesisTx, currentDifficulty);
+
         genesis.mineBlock(currentDifficulty, numThreads);
 
         synchronized (chainStateLock) {

@@ -116,17 +116,22 @@ public class Peer {
 
     public void startBackgroundTasks() {
         this.backgroundWorkers = Executors.newScheduledThreadPool(2);
-
-        // O Heartbeat corre a cada 5 segundos para limpar nós mortos e disparar pings
         this.backgroundWorkers.scheduleAtFixedRate(
                 new HeartbeatEvent(this),
                 10, 5, TimeUnit.SECONDS
         );
 
-        // A Anti-Entropia corre a cada 15 segundos para garantir que não se perderam blocos
         this.backgroundWorkers.scheduleAtFixedRate(
                 new AntiEntropyTask(this),
                 20, 15, TimeUnit.SECONDS
+        );
+
+        this.backgroundWorkers.scheduleAtFixedRate(
+                () -> {
+                    reputationsManager.applyDecayAll();
+                    System.out.println("[REPUTATION] Time decay applied to all peers.");
+                },
+                1, 1, TimeUnit.MINUTES
         );
     }
 
