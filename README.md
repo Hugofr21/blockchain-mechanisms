@@ -4,6 +4,40 @@
 
 ---
 
+
+
+# Iniciar o projeto
+
+Para simular uma rede privada utilizando os algoritmos Kademlia, vamos iniciar o projeto com Docker.
+
+```
+cd./blockchain-mechanisms/Kademlia-network
+dockercomposebuild--no-cache
+dockercomposeup-d
+```
+
+Em seguida, abra no terminal cada instância do processo usando o comando `docker attach`, associado a cada serviço. Abaixo segue um exemplo atual do `docker compose`:
+
+```
+dockerattachbootstrap-node# bootstrap
+dockerattachpeer-8001# peer 1
+dockerattachpeer-8002# peer 2
+dockerattachpeer-8003# peer 3
+dockerattachpeer-8004# peer 4
+dockerattachpeer-8005# peer 5
+dockerattachpeer-8006# peer 6
+dockerattachpeer-8007# peer 7
+dockerattachpeer-8008# peer 8
+dockerattachpeer-8009# peer 9
+dockerattachpeer-8010# peer 10
+```
+
+Ao iniciar cada processo, ao executar o comando `docker attach peer-8010`, pressione as teclas de 1 a 5 — o menu de opções deve aparecer.
+
+---
+
+
+
 # Table of contents
 
 1. [Tolerance Mechanism](./docs/toleranceMechanism/README.md)
@@ -195,7 +229,9 @@ Entidades & Value Objects
 Descrever e organizar os casos de teste implementados para validar as principais propriedades do sistema descentralizado (tolerância a falhas, segurança contra ataques e funcionalidade de leilões).
 
 ---
+
 ## Test Scenarios
+
 - [X] **Desligamento de nós (tolerância a falhas)**: Simular a indisponibilidade de alguns nós e verificar se o sistema continua operando corretamente, mantendo a **preservação de dados imutáveis**.
 - [X] **Ataque Eclipse a um nó**: Um nó tenta isolar outros nós da rede, testando a resiliência do mecanismo de descoberta e das rotas de comunicação.
 - [X] **Ataque Sybil**: Tentar inserir identidades falsas que sobrescrevam ou corrompam o estado do ledger, verificando a capacidade do protocolo de detectar e rejeitar esses nós.
@@ -205,4 +241,3 @@ Descrever e organizar os casos de teste implementados para validar as principais
 - [X] **Simulação de licitações duplicadas e rejeição de valores baixos em leilão**: Validar que transações duplicadas são detectadas e rejeitadas, e que lances abaixo do valor mínimo configurado são descartados, garantindo a integridade dos dados no ledger.
 - [X] **Simulação de concorrência de licitações**: Validar que múltiplas licitações num leilão enviadas sequencialmente em todas as máquinas são lidas pela mesma ordem e rejeitadas caso não cumpram com as regras de negócio.
 - [X] **Simulação de condições de corrida em leilões**: Criar vários leilões simultaneamente e enviar licitações com pedidos concorrentes de dados para verificar integridade e consistência.
-
