@@ -3,16 +3,29 @@ global:
 
 scrape_configs:
   - job_name: 'p2p_node'
+    metrics_path: '/'
     static_configs:
       - targets:
-          - 'host.docker.internal:9001' # Onde o Prometheus vai ler o Peer 5001
-          - 'host.docker.internal:9002' # Onde o Prometheus vai ler o Peer 8001
-          - 'host.docker.internal:9003' # Onde o Prometheus vai ler o Peer 8002
-          - 'host.docker.internal:9004' # Onde o Prometheus vai ler o Peer 8003
-          - 'host.docker.internal:9005' # Onde o Prometheus vai ler o Peer 8004
-          - 'host.docker.internal:9006' # Onde o Prometheus vai ler o Peer 8005
-          - 'host.docker.internal:9007' # Onde o Prometheus vai ler o Peer 8006
-          - 'host.docker.internal:9008' # Onde o Prometheus vai ler o Peer 8007
-          - 'host.docker.internal:9009' # Onde o Prometheus vai ler o Peer 8008
-          - 'host.docker.internal:9010' # Onde o Prometheus vai ler o Peer 8009
-          - 'host.docker.internal:9011' # Onde o Prometheus vai ler o Peer 8010
+        - 'bootstrap-node:9001' # O bootstrap usa 5001 + 4000 = 9001
+        - 'peer-8001:9001'      # 8001 + 1000 = 9001
+        - 'peer-8002:9002'      # 8002 + 1000 = 9002
+        - 'peer-8003:9003'      # 8003 + 1000 = 9003
+        - 'peer-8004:9004'
+        - 'peer-8005:9005'
+        - 'peer-8006:9006'
+        - 'peer-8007:9007'
+        - 'peer-8008:9008'
+        - 'peer-8009:9009'
+        - 'peer-8010:9010'
+# localhost
+#          - 'host.docker.internal:9001' # Onde o Prometheus vai ler o Peer 5001
+#          - 'host.docker.internal:9002' # Onde o Prometheus vai ler o Peer 8001
+#          - 'host.docker.internal:9003' # Onde o Prometheus vai ler o Peer 8002
+#          - 'host.docker.internal:9004' # Onde o Prometheus vai ler o Peer 8003
+#          - 'host.docker.internal:9005' # Onde o Prometheus vai ler o Peer 8004
+#          - 'host.docker.internal:9006' # Onde o Prometheus vai ler o Peer 8005
+#          - 'host.docker.internal:9007' # Onde o Prometheus vai ler o Peer 8006
+#          - 'host.docker.internal:9008' # Onde o Prometheus vai ler o Peer 8007
+#          - 'host.docker.internal:9009' # Onde o Prometheus vai ler o Peer 8008
+#          - 'host.docker.internal:9010' # Onde o Prometheus vai ler o Peer 8009
+#          - 'host.docker.internal:9011' # Onde o Prometheus vai ler o Peer 8010

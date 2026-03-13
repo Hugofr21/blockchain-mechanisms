@@ -27,6 +27,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -399,8 +400,19 @@ public class ConnectionHandler implements Runnable {
 
     private void handlePing(Message message) {
         Message pongMsg = new Message(MessageType.PONG, "PONG", myPeer.getHybridLogicalClock());
-        long timestampSent = (Long) message.getPayload();
-        long rttDelay = System.currentTimeMillis() -  timestampSent;
+
+        Object payload = message.getPayload();
+        long timestampSent;
+
+        if (payload instanceof byte[]) {
+            timestampSent = ByteBuffer.wrap((byte[]) payload).getLong();
+        } else if (payload instanceof Long) {
+            timestampSent = (Long) payload;
+        } else {
+            timestampSent = System.currentTimeMillis();
+        }
+
+        long rttDelay = System.currentTimeMillis() - timestampSent;
         MetricsLogger.recordLatency(myPeer.getMyself().getPort() + "", rttDelay);
         sendMessageToPeer(pongMsg);
     }

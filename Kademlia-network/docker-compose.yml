@@ -3,6 +3,9 @@ name: observability-stack
 networks:
   monitoring:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
 
 volumes:
   prometheus_data:
@@ -11,3 +14,153 @@ volumes:
 include:
   - services/prometheus/index.yaml
   - services/grafana/index.yaml
+
+x-peer-common: &peer-common
+  build: .
+  networks:
+    monitoring:
+  stdin_open: true
+  tty: true
+
+services:
+  bootstrap-node:
+    <<: *peer-common
+    container_name: bootstrap-node
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.2
+    environment:
+      - VAULT_SECRET_PASS=admin
+    ports:
+      - "5001:5001"
+      - "9001:9001"
+    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.LauncherBootstrap", "0.0.0.0"]
+  peer-8001:
+    <<: *peer-common
+    container_name: peer-8001
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.11
+    environment:
+      - VAULT_SECRET_PASS=admin
+    ports:
+      - "8001:8001"
+      - "9002:9001"
+    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.11", "8001", "172.23.0.2"]
+
+  peer-8002:
+    <<: *peer-common
+    container_name: peer-8002
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.12
+    environment:
+      - VAULT_SECRET_PASS=admin
+    ports:
+      - "8002:8002"
+      - "9003:9002"
+    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.12", "8002", "172.23.0.2"]
+
+  peer-8003:
+    <<: *peer-common
+    container_name: peer-8003
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.13
+    environment:
+      - VAULT_SECRET_PASS=admin
+    ports:
+      - "8003:8003"
+      - "9004:9003"
+    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.13", "8003", "172.23.0.2"]
+
+  peer-8004:
+    <<: *peer-common
+    container_name: peer-8004
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.14
+    environment:
+      - VAULT_SECRET_PASS=admin
+    ports:
+      - "8004:8004"
+      - "9005:9004"
+    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.14", "8004", "172.23.0.2"]
+
+  peer-8005:
+    <<: *peer-common
+    container_name: peer-8005
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.15
+    environment:
+      - VAULT_SECRET_PASS=admin
+    ports:
+      - "8005:8005"
+      - "9006:9005"
+    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.15", "8005", "172.23.0.2"]
+
+  peer-8006:
+    <<: *peer-common
+    container_name: peer-8006
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.16
+    environment:
+      - VAULT_SECRET_PASS=admin
+    ports:
+      - "8006:8006"
+      - "9007:9006"
+    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.16", "8006", "172.23.0.2"]
+
+  peer-8007:
+    <<: *peer-common
+    container_name: peer-8007
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.17
+    environment:
+      - VAULT_SECRET_PASS=admin
+    ports:
+      - "8007:8007"
+      - "9008:9007"
+    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.17", "8007", "172.23.0.2"]
+
+  peer-8008:
+    <<: *peer-common
+    container_name: peer-8008
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.18
+    environment:
+      - VAULT_SECRET_PASS=admin
+    ports:
+      - "8008:8008"
+      - "9009:9008"
+    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.18", "8008", "172.23.0.2"]
+
+  peer-8009:
+    <<: *peer-common
+    container_name: peer-8009
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.19
+    environment:
+      - VAULT_SECRET_PASS=admin
+    ports:
+      - "8009:8009"
+      - "9010:9009"
+    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.19", "8009", "172.23.0.2"]
+
+  peer-8010:
+    <<: *peer-common
+    container_name: peer-8010
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.20
+    environment:
+      - VAULT_SECRET_PASS=admin
+    ports:
+      - "8010:8010"
+      - "9011:9010"
+    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.20", "8010", "172.23.0.2"]

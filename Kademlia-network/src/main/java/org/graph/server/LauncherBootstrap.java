@@ -27,17 +27,27 @@ import static org.graph.server.utils.Constants.BOOTSTRAP_PORT;
 
 public class LauncherBootstrap {
     public static void main(String[] args) throws IOException, URISyntaxException {
+        if (args.length < 1) {
+            System.err.println("[ERRO FATAL] Argumentos insuficientes. Esperado: <host_local>");
+            System.exit(1);
+        }
+
         System.out.println("\n================== BOOTSTRAPPING ================");
+
+        String host = args[0];
         char[] nodeSecret = SecurityBootstrapper.obtainNodePassword();
         int prometheusPort = BOOTSTRAP_PORT + 4000;
+
         MetricsLogger.init(prometheusPort);
-        Peer peer = new Peer(BOOTSTRAP_PORT, nodeSecret);
+        Peer peer = new Peer(host, BOOTSTRAP_PORT, nodeSecret);
         peer.startPeer();
 
         peer.getNetworkGateway().getBlockchainEngine().createGenesisBlock();
         System.out.println("[BOOTSTRAPPING] Initialized bootstrap: " + peer.getMyself());
 
         java.util.Arrays.fill(nodeSecret, '\0');
+
+        peer.startBackgroundTasks();
 
         MenuUtils.showMainMenu(peer);
     }

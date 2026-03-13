@@ -52,7 +52,7 @@ public class Peer {
     private ScheduledExecutorService backgroundWorkers;
     private volatile boolean running;
 
-    public Peer(int port, char[] password) {
+    public Peer(String host,int port, char[] password) {
         this.keys = new KeysInfrastructure(this, port, password);
         this.hybridLogicalClock = new HybridLogicalClock();
         this.networkGateway = new NetworkGateway(this);
@@ -65,7 +65,7 @@ public class Peer {
             throw new RuntimeException("[CRITICAL] Failed to initialize Peer identity via Mining.", e);
         }
 
-        this.myself = new Node(HOST, port, proofOfWork.nodeId(),   proofOfWork.nonce(), NETWORK_DIFFICULTY);
+        this.myself = new Node(host, port, proofOfWork.nodeId(),   proofOfWork.nonce(), NETWORK_DIFFICULTY);
         this.keys.getOwnerKeyPair().setPeerId(this.myself.getNodeId().value());
 
         createdFileLog(myself);
