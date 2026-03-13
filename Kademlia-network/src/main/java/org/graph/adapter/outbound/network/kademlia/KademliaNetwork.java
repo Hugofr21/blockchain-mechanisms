@@ -130,10 +130,10 @@ public class KademliaNetwork implements IKademliaIController {
         queried.add(myself.getMyself().getNodeId().value());
 
         boolean madeProgress = true;
-
+        int totalHops = 0;
         while (madeProgress && !shortlist.isEmpty()) {
             madeProgress = false;
-
+            totalHops++;
             List<Node> toQuery = shortlist.stream()
                     .filter(n -> !queried.contains(n.getNodeId().value()))
                     .limit(MAX_ALPHA)
@@ -227,7 +227,7 @@ public class KademliaNetwork implements IKademliaIController {
                 shortlist.pollLast();
             }
         }
-
+        MetricsLogger.recordLookupHops("FIND_NODE", totalHops);
         MetricsLogger.updateTopologyMetrics(
                 myself.getNeighboursManager().getActiveNeighbours().size(),
                 this.storage.size()
@@ -401,7 +401,13 @@ public class KademliaNetwork implements IKademliaIController {
                             System.out.println("[DHT] Path Caching: Optimization injected into the node " + closestNodeWithoutValue.getPort());
                         }
 
-                        return type.cast(response);
+                        if (response != null) {
+                            MetricsLogger.recordOperationStatus("FIND_VALUE", "SUCCESSFUL");
+                            return type.cast(response);
+                        } else {
+                            MetricsLogger.recordOperationStatus("FIND_VALUE", "UNSUCCESSFUL");
+                            return null;
+                        }
                     }
                 }
             }
@@ -618,7 +624,7 @@ public class KademliaNetwork implements IKademliaIController {
                 }
 
                 long rttDelay = System.currentTimeMillis() - startTime;
-                MetricsLogger.recordLatency(target.getPort() + "", rttDelay);
+                MetricsLogger.recordLatency(target.getNodeId().value(), (double) rttDelay);
 
                 if (response != null) {
                     return response.getPayload();

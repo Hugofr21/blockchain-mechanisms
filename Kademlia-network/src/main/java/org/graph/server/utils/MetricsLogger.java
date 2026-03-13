@@ -10,6 +10,7 @@ import io.opentelemetry.exporter.prometheus.PrometheusHttpServer;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.metrics.SdkMeterProvider;
 
+import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MetricsLogger {
@@ -147,9 +148,10 @@ public class MetricsLogger {
         }
     }
 
-    public static void recordLatency(String peerId, double latencyMs) {
+    public static void recordLatency(BigInteger peerId, double latencyMs) {
         if (!isInitialized) return;
-        Attributes attrs = Attributes.of(AttributeKey.stringKey("peer.id"), peerId);
+        String peerIdStr = peerId.toString(16);
+        Attributes attrs = Attributes.of(AttributeKey.stringKey("peer_id"), peerIdStr);
         networkLatency.record(latencyMs, attrs);
     }
 

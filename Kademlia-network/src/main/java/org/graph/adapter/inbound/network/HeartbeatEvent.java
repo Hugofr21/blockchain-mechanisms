@@ -74,7 +74,8 @@ public class HeartbeatEvent implements Runnable {
     private void triggerAsyncPing(BigInteger nodeId) {
         Node target = myself.getNeighboursManager().getNeighbourByIdNode(nodeId);
         if (target != null) {
-            Message pingMsg = new Message(MessageType.PING, System.currentTimeMillis(), myself.getHybridLogicalClock());
+            long startNano = System.nanoTime();
+            Message pingMsg = new Message(MessageType.PING, startNano, myself.getHybridLogicalClock());
             myself.getMkademliaNetwork().sendRPCAsync(target, pingMsg);
         }
     }

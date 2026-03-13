@@ -398,22 +398,17 @@ public class ConnectionHandler implements Runnable {
 
     }
 
-    private void handlePing(Message message) {
+    private void handlePing(Message pongMessage) {
         Message pongMsg = new Message(MessageType.PONG, "PONG", myPeer.getHybridLogicalClock());
 
-        Object payload = message.getPayload();
-        long timestampSent;
+        long endNano = System.nanoTime();
+        Object payload = pongMessage.getPayload();
 
-        if (payload instanceof byte[]) {
-            timestampSent = ByteBuffer.wrap((byte[]) payload).getLong();
-        } else if (payload instanceof Long) {
-            timestampSent = (Long) payload;
-        } else {
-            timestampSent = System.currentTimeMillis();
+        if (payload instanceof Long startNano) {
+            long durationNano = endNano - startNano;
+            double rttMs = durationNano / 1_000_000.0;
+            MetricsLogger.recordLatency(remoteNode.getNodeId().value(), rttMs);
         }
-
-        long rttDelay = System.currentTimeMillis() - timestampSent;
-        MetricsLogger.recordLatency(myPeer.getMyself().getPort() + "", rttDelay);
         sendMessageToPeer(pongMsg);
     }
 
