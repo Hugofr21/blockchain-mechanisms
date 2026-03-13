@@ -10,26 +10,26 @@
 
 Para simular uma rede privada utilizando os algoritmos Kademlia, vamos iniciar o projeto com Docker.
 
-```
+```bash
 cd./blockchain-mechanisms/Kademlia-network
-dockercomposebuild--no-cache
-dockercomposeup-d
+docker compose build--no-cache
+docker compose up-d
 ```
 
 Em seguida, abra no terminal cada instância do processo usando o comando `docker attach`, associado a cada serviço. Abaixo segue um exemplo atual do `docker compose`:
 
-```
-dockerattachbootstrap-node# bootstrap
-dockerattachpeer-8001# peer 1
-dockerattachpeer-8002# peer 2
-dockerattachpeer-8003# peer 3
-dockerattachpeer-8004# peer 4
-dockerattachpeer-8005# peer 5
-dockerattachpeer-8006# peer 6
-dockerattachpeer-8007# peer 7
-dockerattachpeer-8008# peer 8
-dockerattachpeer-8009# peer 9
-dockerattachpeer-8010# peer 10
+```bash
+docker attach bootstrap-node # bootstrap
+docker attach peer-8001 # peer 1
+docker attach peer-8002 # peer 2
+docker attach peer-8003 # peer 3
+docker attach peer-8004 # peer 4
+docker attach peer-8005 # peer 5
+docker attach peer-8006 # peer 6
+docker attach peer-8007 # peer 7
+docker attach peer-8008 # peer 8
+docker attach peer-8009 # peer 9
+docker attach peer-8010 # peer 10
 ```
 
 Ao iniciar cada processo, ao executar o comando `docker attach peer-8010`, pressione as teclas de 1 a 5 — o menu de opções deve aparecer.
