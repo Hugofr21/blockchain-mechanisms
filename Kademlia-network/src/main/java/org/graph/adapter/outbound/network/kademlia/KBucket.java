@@ -40,30 +40,50 @@ public class KBucket { ;
         }
 
         /**
-         * Política de bucket cheio – Defesa contra ataques Sybil.
+         * Política aplicada quando um K-Bucket atinge a sua capacidade máxima,
+         * incorporando mecanismos adicionais de mitigação contra ataques Sybil.
          *
          * <p>
-         * No Kademlia padrão, quando um bucket está cheio, o nó mais antigo (head do mapa)
-         * é pingado. Se responder, o novo nó é descartado. Esta abordagem garante
-         * estabilidade, mas não considera a reputação dos nós.
+         * No algoritmo Kademlia original, quando um bucket está cheio, o nó menos
+         * recentemente observado (head da estrutura ordenada por LRU) é submetido
+         * a um teste de liveness através de uma mensagem de ping. Caso esse nó
+         * responda, assume-se que continua operacional e o novo nó candidato é
+         * simplesmente descartado. Este comportamento favorece a estabilidade
+         * estrutural da tabela de encaminhamento, privilegiando nós com histórico
+         * prolongado de disponibilidade. Contudo, o modelo clássico não incorpora
+         * qualquer noção de reputação ou confiabilidade.
          * </p>
          *
          * <p>
-         * Extensão S-Kademlia: Se o nó antigo tiver um nível de Trust muito baixo
-         * e o nó novo tiver um Trust alto, podemos considerar substituir o nó antigo.
-         * A decisão baseia-se em:
+         * A variante S-Kademlia introduz um critério adicional baseado em confiança
+         * (Trust). Caso o nó mais antigo apresente um nível de confiança inferior a
+         * um limiar definido e o novo nó apresente um valor de Trust significativamente
+         * superior, o sistema pode considerar a substituição do nó antigo. Esta
+         * decisão não é tomada de forma automática, sendo condicionada por dois
+         * fatores principais:
+         * </p>
+         *
          * <ul>
-         *   <li>Evicção baseada em Trust.</li>
-         *   <li>Validação de PoW do nó novo.</li>
+         *   <li>Avaliação comparativa de Trust entre o nó existente e o nó candidato,
+         *   permitindo evicção seletiva de nós potencialmente maliciosos ou pouco
+         *   confiáveis.</li>
+         *   <li>Validação do mecanismo de Proof-of-Work (PoW) apresentado pelo nó
+         *   candidato, utilizado como barreira computacional para limitar a criação
+         *   massiva de identidades Sybil.</li>
          * </ul>
-         * Caso contrário, preservamos a estabilidade para resistir a ataques de
-         * Sybil flooding.
+         *
+         * <p>
+         * Na ausência destas condições, mantém-se o comportamento conservador do
+         * Kademlia original, preservando nós estáveis na tabela e reduzindo a
+         * probabilidade de ataques de flooding baseados na inserção massiva de
+         * identidades controladas por um adversário.
          * </p>
          *
          * <p>
-         * O method retorna {@code false} para indicar que o caller deve testar
-         * o nó menos recentemente visto ({@code leastRecentlySeen}) antes de
-         * descartar qualquer nó.
+         * Este método retorna {@code false} para sinalizar que a decisão final ainda
+         * depende da verificação de disponibilidade do nó menos recentemente visto
+         * ({@code leastRecentlySeen}). O código chamador deverá executar o teste de
+         * conectividade antes de descartar qualquer entrada existente no bucket.
          * </p>
          */
 
@@ -88,6 +108,29 @@ public class KBucket { ;
     public synchronized Node getLeastRecentlySeen() {
         Iterator<Node> it = nodes.values().iterator();
         return it.hasNext() ? it.next() : null;
+    }
+
+    /**
+     * Atualiza a posição de um nó dentro do K-Bucket segundo a política de
+     * recência (LRU – Least Recently Used) e renova o instante temporal de
+     * referência para operações de refresh.
+     *
+     * A implementação explora o comportamento interno de um LinkedHashMap
+     * configurado com o parâmetro accessOrder=true, no qual qualquer acesso
+     * a uma entrada provoca automaticamente a sua deslocação para o final da
+     * estrutura de iteração. Este mecanismo preserva a ordenação baseada no
+     * momento do último acesso, permitindo que nós recentemente contactados
+     * sejam mantidos como mais ativos enquanto entradas menos utilizadas
+     * permanecem nas posições iniciais e tornam-se candidatas naturais à
+     * substituição quando a capacidade do K-Bucket é atingida.
+     */
+    public synchronized boolean touchNode(BigInteger nodeId) {
+        if (nodes.containsKey(nodeId)) {
+            nodes.get(nodeId);
+            this.updateRefreshTime();
+            return true;
+        }
+        return false;
     }
 
     public synchronized Node getClosestNode() {

@@ -8,6 +8,8 @@ import org.graph.domain.entities.node.Node;
 import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.server.Peer;
 import org.graph.adapter.utils.MessageUtils;
+import org.graph.server.utils.MetricsLogger;
+
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
@@ -48,6 +50,8 @@ public record JoinNetwork(Peer myPeer) {
 
     public void attemptJoin(String bootstrapHost, int bootstrapPort) {
         System.out.println("[JOIN] Connecting to Bootstrap " + bootstrapHost + ":" + bootstrapPort);
+        MetricsLogger.recordBootstrapAttempt();
+        long start = System.nanoTime();
 
         Socket socket = null;
 
@@ -66,9 +70,11 @@ public record JoinNetwork(Peer myPeer) {
 
             if (optBootstrap.isEmpty()) {
                 System.err.println("[JOIN] Handshake rejected by Bootstrap.");
+                MetricsLogger.recordOperationStatus("JOIN", "REJECTED");
                 socket.close();
                 return;
             }
+
 
             Node bootstrapNode = optBootstrap.get();
             System.out.println("[JOIN] Bootstrap authenticated! ID: " + bootstrapNode.getNodeId());
@@ -79,9 +85,13 @@ public record JoinNetwork(Peer myPeer) {
             myPeer.getRoutingTable().addNode(bootstrapNode, myPeer);
 
             new Thread(handler).start();
+            myPeer.getmChainSyncController().startInitialSync(handler);
 
-           myPeer.getmChainSyncController().startInitialSync(handler);
-            triggerBootstrapLookup(handler);
+            long duration = (System.nanoTime() - start) / 1_000_000;
+            MetricsLogger.recordOperationStatus("JOIN", "SUCCESSFUL");
+            MetricsLogger.recordBootstrapLatency(duration);
+
+           triggerBootstrapLookup(handler);
 
 
         } catch (IOException e) {
@@ -89,6 +99,9 @@ public record JoinNetwork(Peer myPeer) {
             if (socket != null && !socket.isClosed()) {
                 try { socket.close(); } catch (IOException ex) { }
             }
+            MetricsLogger.recordOperationStatus("JOIN", "FAILED");
+            MetricsLogger.recordRpcError("BOOTSTRAP_UNREACHABLE");
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

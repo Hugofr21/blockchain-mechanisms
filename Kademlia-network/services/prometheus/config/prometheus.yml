@@ -6,17 +6,17 @@ scrape_configs:
     metrics_path: '/'
     static_configs:
       - targets:
-        - 'bootstrap-node:9001' # O bootstrap usa 5001 + 4000 = 9001
-        - 'peer-8001:9001'      # 8001 + 1000 = 9001
-        - 'peer-8002:9002'      # 8002 + 1000 = 9002
-        - 'peer-8003:9003'      # 8003 + 1000 = 9003
-        - 'peer-8004:9004'
-        - 'peer-8005:9005'
-        - 'peer-8006:9006'
-        - 'peer-8007:9007'
-        - 'peer-8008:9008'
-        - 'peer-8009:9009'
-        - 'peer-8010:9010'
+        - 'bootstrap-node:9001'
+        - 'peer-8001:9002'
+        - 'peer-8002:9003'
+        - 'peer-8003:9004'
+        - 'peer-8004:9005'
+        - 'peer-8005:9006'
+        - 'peer-8006:9007'
+        - 'peer-8007:9008'
+        - 'peer-8008:9009'
+        - 'peer-8009:9010'
+        - 'peer-8010:9011'
 # localhost
 #          - 'host.docker.internal:9001' # Onde o Prometheus vai ler o Peer 5001
 #          - 'host.docker.internal:9002' # Onde o Prometheus vai ler o Peer 8001

@@ -126,7 +126,7 @@ public class ConnectionHandler implements Runnable {
                         message = MessageUtils.readMessage(inputStream);
                     }
 
-                    MetricsLogger.recordInboundMessage(myPeer.getMyself().getPort() + "");
+                    MetricsLogger.recordInboundMessage(myPeer.getMyself().getNodeId().value());
 
                     logger.severe("Received message: " + message.toString());
 
@@ -395,10 +395,14 @@ public class ConnectionHandler implements Runnable {
 
     private void handlePong(Object payload) {
         System.out.println("[PONG] Received a pong: " + payload);
-
+        myPeer.getNeighboursManager().updateTimestamp(remoteNode.getNodeId().value());
+        myPeer.getRoutingTable().touchNode(remoteNode.getNodeId().value());
     }
 
     private void handlePing(Message pongMessage) {
+
+        myPeer.getNeighboursManager().updateTimestamp(remoteNode.getNodeId().value());
+        myPeer.getRoutingTable().touchNode(remoteNode.getNodeId().value());
         Message pongMsg = new Message(MessageType.PONG, "PONG", myPeer.getHybridLogicalClock());
 
         long endNano = System.nanoTime();
@@ -409,6 +413,7 @@ public class ConnectionHandler implements Runnable {
             double rttMs = durationNano / 1_000_000.0;
             MetricsLogger.recordLatency(remoteNode.getNodeId().value(), rttMs);
         }
+
         sendMessageToPeer(pongMsg);
     }
 

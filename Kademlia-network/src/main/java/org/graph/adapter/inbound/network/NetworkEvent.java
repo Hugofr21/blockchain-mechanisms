@@ -36,7 +36,7 @@ public class NetworkEvent implements IEventDispatcher {
         try {
             System.out.println("[DEBUG_UNICAST]: SENDING UNICAST MESSAGE");
             MessageUtils.sendSecureMessage(context.getOutputStream(), message, context.getSecureSession());
-            MetricsLogger.recordOutboundMessage(String.valueOf(context.getRemoteNode().getPort()));
+            MetricsLogger.recordOutboundMessage(context.getRemoteNode().getNodeId().value());
         } catch (SocketException e) {
             logger.warning("[UNICAST] Broken tunnel to " + context.getRemoteNode().getHost() + ". Removing connection.");
             neighboursConnections.removeConnection(context.getRemoteNode().getNodeId().value());
@@ -62,10 +62,10 @@ public class NetworkEvent implements IEventDispatcher {
 
     /**
      * Verifica no [ConnectionHandler] se o remoteNode não está null.
-     *
+     * <p>
      * Um socket deve estar aberto para permitir comunicação.
      * Em caso de falha normal, a mensagem pode ficar perdida.
-     *
+     * <p>
      * Não realizamos aqui verificações de conexões contra a estrutura
      * de broadcast, pois isso é tratado pelo mecanismo de heartbeat.
      **/

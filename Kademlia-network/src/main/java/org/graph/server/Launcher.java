@@ -12,7 +12,7 @@ public class Launcher {
         MenuUtils.printMenu(args);
 
         if (args.length < 3) {
-            System.err.println("[ERRO FATAL] Argumentos insuficientes. Esperado: <host_local> <porta_local> <host_bootstrap>");
+            System.err.println("[ERRO FATAL] Inefficient arguments. Expected <host_local> <porta_local> <host_bootstrap>");
             System.exit(1);
         }
 
@@ -20,9 +20,9 @@ public class Launcher {
         String host = args[0];
         int port = Integer.parseInt(args[1]);
         String bootstrapHost = args[2];
-
+        int prometheusPort = Integer.parseInt(args[3]);
         char[] nodeSecret = SecurityBootstrapper.obtainNodePassword();
-        int prometheusPort = port + 1000;
+
         MetricsLogger.init(prometheusPort);
 
         Peer peer = new Peer(host, port, nodeSecret);

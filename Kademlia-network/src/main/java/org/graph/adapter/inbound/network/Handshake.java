@@ -10,6 +10,7 @@ import org.graph.domain.entities.node.NodeId;
 import org.graph.adapter.utils.CryptoUtils;
 import org.graph.adapter.outbound.network.message.network.HandshakePayload;
 import org.graph.server.Peer;
+import org.graph.server.utils.MetricsLogger;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -79,6 +80,8 @@ public final class Handshake {
     public static Optional<Node> doHandshake(Peer myself, ConnectionHandler handler) throws Exception {
         Logger logger = myself.getLogger();
 
+        long startTime = System.nanoTime();
+
         DataInputStream in = handler.getInputStream();
         DataOutputStream out = handler.getOutputStream();
         KeyPair ephemeralKeyPair = CryptoUtils.generateEphemeralKeyPair();
@@ -99,7 +102,20 @@ public final class Handshake {
         MessageUtils.sendMessage(out, new Message(MessageType.HELLO, initPayload, myself.getHybridLogicalClock().next()));
 
 
-        Message response = MessageUtils.readMessage(in);
+        Message response;
+        try {
+            response = MessageUtils.readMessage(in);
+        } catch (IOException e) {
+            // SRE: Logar como INFO ou WARNING, pois Peer Disconnect é normal em P2P
+            logger.info("[HANDSHAKE] Remote peer closed connection before HELLO response. Host: " + handler.getSocket().getInetAddress());
+
+            // Essencial para o seu Dashboard de SRE:
+            MetricsLogger.recordRpcError("HANDSHAKE_EOF_PREMATURE");
+            MetricsLogger.recordOperationStatus("JOIN", "FAILED_NETWORK");
+
+            return Optional.empty();
+        }
+
         if (response == null || response.getType() != MessageType.HELLO) {
             logger.warning("Invalid handshake response structure.");
             return Optional.empty();
@@ -108,8 +124,13 @@ public final class Handshake {
         HandshakePayload remotePayload = MessageUtils.extractHandshakePayload(response, logger);
         if (remotePayload == null) return Optional.empty();
 
+
+
         Node remoteNode = new Node(remotePayload.host(), remotePayload.port(), remotePayload.id(), remotePayload.nonce(), remotePayload.networkDifficulty());
 
+        long endTime = System.nanoTime();
+        double handshakeLatencyMs = (endTime - startTime) / 1_000_000.0;
+        MetricsLogger.recordLatency(remoteNode.getNodeId().value(), handshakeLatencyMs);
 
         byte[] sharedSecret = CryptoUtils.computeSharedSecret(ephemeralKeyPair.getPrivate(), remotePayload.ephemeralPublicKey());
 
@@ -128,9 +149,12 @@ public final class Handshake {
         Message finalConfirm = MessageUtils.readSecureMessage(in, handler.getSecureSession());
 
         if (finalConfirm == null || finalConfirm.getType() != MessageType.HELLO_ACK) {
+
             logger.severe("Mutual authentication failed. Remote node dropped the connection.");
             return Optional.empty();
         }
+
+
 
         byte[] remoteSignature = MessageUtils.extractSignature(finalConfirm.getPayload(), logger);
 

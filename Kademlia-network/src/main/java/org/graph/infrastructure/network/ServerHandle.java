@@ -85,7 +85,9 @@ public class ServerHandle implements Runnable {
             if (!success) {
                 try {
                     if (socket != null && !socket.isClosed()) socket.close();
-                } catch (IOException e) { /* ignorar */ }
+                } catch (IOException e) {
+                    System.err.println("Error closing socket: " + e.getMessage());
+                }
             }
         }
     }

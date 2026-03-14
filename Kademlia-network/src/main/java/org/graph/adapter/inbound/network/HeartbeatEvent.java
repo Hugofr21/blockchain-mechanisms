@@ -52,7 +52,7 @@ public class HeartbeatEvent implements Runnable {
             long diff = now - lastSeen;
 
             if (diff > TIME_LIMIT_FAIL_CONNECTIONS) {
-                myself.getLogger().info("[HEARTBEAT] Ghost node detected (Timeout: " + diff + "ms). Purging: " + nodeId);
+                System.err.println("[HEARTBEAT] Ghost node detected (Timeout: " + diff + "ms). Purging: " + nodeId);
                 purgeDeadNode(nodeId);
             } else if (diff > TIME_TO_SEND_PING) {
                 triggerAsyncPing(nodeId);

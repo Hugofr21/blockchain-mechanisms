@@ -8,9 +8,13 @@ import io.opentelemetry.api.metrics.LongCounter;
 import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.exporter.prometheus.PrometheusHttpServer;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.metrics.Aggregation;
+import io.opentelemetry.sdk.metrics.InstrumentSelector;
 import io.opentelemetry.sdk.metrics.SdkMeterProvider;
+import io.opentelemetry.sdk.metrics.View;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MetricsLogger {
@@ -41,6 +45,11 @@ public class MetricsLogger {
     private static DoubleHistogram blockMineDuration;
     private static LongCounter blockchainReorgs;
 
+    private static final AttributeKey<String> PEER_ID_KEY = AttributeKey.stringKey("peer_id");
+
+    private static LongCounter bootstrapAttempts;
+    private static DoubleHistogram bootstrapLatency;
+
     public static synchronized void init(int prometheusPort) {
         if (isInitialized) return;
 
@@ -52,6 +61,24 @@ public class MetricsLogger {
 
             SdkMeterProvider meterProvider = SdkMeterProvider.builder()
                     .registerMetricReader(prometheusServer)
+                    .registerView(
+                            InstrumentSelector.builder().setName("kademlia.network.latency").build(),
+                            View.builder().setAggregation(
+                                    Aggregation.explicitBucketHistogram(Arrays.asList(0.1, 0.5, 1.0, 2.5, 5.0, 10.0, 50.0))
+                            ).build()
+                    )
+                    .registerView(
+                            InstrumentSelector.builder().setName("skademlia.peer.trust_score").build(),
+                            View.builder().setAggregation(
+                                    Aggregation.explicitBucketHistogram(Arrays.asList(0.0, 0.2, 0.4, 0.6, 0.8, 1.0))
+                            ).build()
+                    )
+                    .registerView(
+                            InstrumentSelector.builder().setName("kademlia.bootstrap.latency").build(),
+                            View.builder().setAggregation(
+                                    Aggregation.explicitBucketHistogram(Arrays.asList(50.0, 100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0))
+                            ).build()
+                    )
                     .build();
 
             OpenTelemetry openTelemetry = OpenTelemetrySdk.builder()
@@ -71,6 +98,15 @@ public class MetricsLogger {
                     .setUnit("messages")
                     .ofLongs()
                     .buildWithCallback(m -> m.record(brokerQueueSize.get()));
+
+            bootstrapAttempts = meter.counterBuilder("kademlia.bootstrap.attempts.total")
+                    .setDescription("Total de tentativas de entrada na rede (Join)")
+                    .build();
+
+            bootstrapLatency = meter.histogramBuilder("kademlia.bootstrap.latency")
+                    .setDescription("Tempo total para completar o processo de Bootstrap e Handshake")
+                    .setUnit("ms")
+                    .build();
 
             blockMineDuration = meter.histogramBuilder("blockchain.mine.duration")
                     .setDescription("Tempo despendido pelo CPU a resolver o Proof-of-Work de um bloco")
@@ -150,20 +186,22 @@ public class MetricsLogger {
 
     public static void recordLatency(BigInteger peerId, double latencyMs) {
         if (!isInitialized) return;
-        String peerIdStr = peerId.toString(16);
-        Attributes attrs = Attributes.of(AttributeKey.stringKey("peer_id"), peerIdStr);
+        String idHex = peerId.toString(16);
+        Attributes attrs = Attributes.of(PEER_ID_KEY, idHex);
         networkLatency.record(latencyMs, attrs);
     }
 
-    public static void recordInboundMessage(String peerId) {
+    public static void recordInboundMessage(BigInteger peerId) {
         if (!isInitialized) return;
-        Attributes attrs = Attributes.of(AttributeKey.stringKey("peer.id"), peerId);
+        String peerIdStr = peerId.toString(16);
+        Attributes attrs = Attributes.of(PEER_ID_KEY, peerIdStr);
         inboundThroughput.add(1, attrs);
     }
 
-    public static void recordOutboundMessage(String peerId) {
+    public static void recordOutboundMessage(BigInteger peerId){
         if (!isInitialized) return;
-        Attributes attrs = Attributes.of(AttributeKey.stringKey("peer.id"), peerId);
+        String peerIdStr = peerId.toString(16);
+        Attributes attrs = Attributes.of(AttributeKey.stringKey("peer.id"), peerIdStr);
         outboundThroughput.add(1, attrs);
     }
 
@@ -197,7 +235,19 @@ public class MetricsLogger {
         );
         skademliaMaliciousActivities.add(1, attrs);
     }
+    /**
+     * Incrementa o contador de tentativas de ligação ao nó de Bootstrap.
+     */
+    public static void recordBootstrapAttempt() {
+        if (isInitialized) bootstrapAttempts.add(1);
+    }
 
+    /**
+     * Regista a latência total do processo de Join/Bootstrap.
+     */
+    public static void recordBootstrapLatency(double durationMs) {
+        if (isInitialized) bootstrapLatency.record(durationMs);
+    }
     /**
      * Regista o Trust Score atualizado de um Peer específico
      */

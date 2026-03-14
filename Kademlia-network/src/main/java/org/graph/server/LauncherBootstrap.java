@@ -28,7 +28,7 @@ import static org.graph.server.utils.Constants.BOOTSTRAP_PORT;
 public class LauncherBootstrap {
     public static void main(String[] args) throws IOException, URISyntaxException {
         if (args.length < 1) {
-            System.err.println("[ERRO FATAL] Argumentos insuficientes. Esperado: <host_local>");
+            System.err.println("[ERRO FATAL] Inefficient  arguments. Expected: <host_local>");
             System.exit(1);
         }
 
@@ -36,7 +36,7 @@ public class LauncherBootstrap {
 
         String host = args[0];
         char[] nodeSecret = SecurityBootstrapper.obtainNodePassword();
-        int prometheusPort = BOOTSTRAP_PORT + 4000;
+        int prometheusPort = 9001;
 
         MetricsLogger.init(prometheusPort);
         Peer peer = new Peer(host, BOOTSTRAP_PORT, nodeSecret);

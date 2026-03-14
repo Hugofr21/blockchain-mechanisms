@@ -7,6 +7,7 @@ import org.graph.infrastructure.utils.SerializationUtils;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.logging.Logger;
 

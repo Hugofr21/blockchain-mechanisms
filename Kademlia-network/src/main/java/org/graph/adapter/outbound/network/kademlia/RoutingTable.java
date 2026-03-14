@@ -184,13 +184,13 @@ public class RoutingTable {
     private synchronized boolean isGlobalIpLimitExceeded(String host) {
         if (host == null || host.isEmpty()) return true;
 
-//        if (host.equals("127.0.0.1") || host.equalsIgnoreCase("localhost") || host.equals("::1")) {
-//            return false;
-//        }
-
-        if (host.startsWith("172.23.")) {
+        if (host.equals("127.0.0.1") || host.equalsIgnoreCase("localhost") || host.equals("::1")) {
             return false;
         }
+
+//        if (host.startsWith("172.23.")) {
+//            return false;
+//        }
 
         long globalCount = 0;
         for (KBucket bucket : buckets) {
@@ -295,5 +295,32 @@ public class RoutingTable {
         return localNode.getNodeId().value().xor(targetDistance);
 
 
+    }
+
+    /**
+     * Promove um nó já presente na tabela de encaminhamento para a posição de
+     * "mais recentemente observado" (Most Recently Seen).
+     *
+     * Este procedimento deve ser executado sempre que uma mensagem válida
+     * proveniente desse nó for recebida, indicando que o mesmo permanece
+     * ativo e acessível na rede. A atualização da posição reflete a política
+     * de recência utilizada pela estrutura da tabela, tipicamente baseada
+     * em ordenação temporal (por exemplo, estratégia LRU – Least Recently Used),
+     * garantindo que nós recentemente ativos tenham prioridade na manutenção
+     * da tabela enquanto entradas antigas tornam-se candidatas à remoção.
+     */
+    public synchronized void touchNode(BigInteger nodeId) {
+        if (nodeId == null || nodeId.equals(localNode.getNodeId().value())) {
+            return;
+        }
+
+        BigInteger distance = localNode.getNodeId().distanceBetweenNode(nodeId);
+        if (distance.equals(BigInteger.ZERO)) return;
+
+        int bucketIndex = Math.min(distance.bitLength() - 1, ID_BITS - 1);
+
+        if (bucketIndex >= 0 && bucketIndex < buckets.size()) {
+            buckets.get(bucketIndex).touchNode(nodeId);
+        }
     }
 }

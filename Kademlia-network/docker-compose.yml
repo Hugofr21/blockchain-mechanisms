@@ -22,19 +22,22 @@ x-peer-common: &peer-common
   stdin_open: true
   tty: true
 
+
 services:
   bootstrap-node:
     <<: *peer-common
     container_name: bootstrap-node
     networks:
       monitoring:
-        ipv4_address: 172.23.0.2
+        ipv4_address: 172.23.0.100
     environment:
       - VAULT_SECRET_PASS=admin
     ports:
       - "5001:5001"
       - "9001:9001"
-    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.LauncherBootstrap", "0.0.0.0"]
+    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.LauncherBootstrap", "172.23.0.100"]
+
+
   peer-8001:
     <<: *peer-common
     container_name: peer-8001
@@ -45,8 +48,8 @@ services:
       - VAULT_SECRET_PASS=admin
     ports:
       - "8001:8001"
-      - "9002:9001"
-    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.11", "8001", "172.23.0.2"]
+      - "9002:9002"
+    command: ["sh", "-c", "sleep 1 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.11 8001 172.23.0.100 9002"]
 
   peer-8002:
     <<: *peer-common
@@ -54,12 +57,10 @@ services:
     networks:
       monitoring:
         ipv4_address: 172.23.0.12
-    environment:
-      - VAULT_SECRET_PASS=admin
     ports:
       - "8002:8002"
-      - "9003:9002"
-    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.12", "8002", "172.23.0.2"]
+      - "9003:9003"
+    command: ["sh", "-c", "sleep 2 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.12 8002 172.23.0.100 9003"]
 
   peer-8003:
     <<: *peer-common
@@ -71,8 +72,8 @@ services:
       - VAULT_SECRET_PASS=admin
     ports:
       - "8003:8003"
-      - "9004:9003"
-    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.13", "8003", "172.23.0.2"]
+      - "9004:9004"
+    command: ["sh", "-c", "sleep 3 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.13 8003 172.23.0.100 9004"]
 
   peer-8004:
     <<: *peer-common
@@ -84,8 +85,8 @@ services:
       - VAULT_SECRET_PASS=admin
     ports:
       - "8004:8004"
-      - "9005:9004"
-    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.14", "8004", "172.23.0.2"]
+      - "9005:9005"
+    command: ["sh", "-c", "sleep 4 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.14 8004 172.23.0.100 9005"]
 
   peer-8005:
     <<: *peer-common
@@ -97,8 +98,8 @@ services:
       - VAULT_SECRET_PASS=admin
     ports:
       - "8005:8005"
-      - "9006:9005"
-    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.15", "8005", "172.23.0.2"]
+      - "9006:9006"
+    command: ["sh", "-c", "sleep 5 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.15 8005 172.23.0.100 9006"]
 
   peer-8006:
     <<: *peer-common
@@ -110,8 +111,8 @@ services:
       - VAULT_SECRET_PASS=admin
     ports:
       - "8006:8006"
-      - "9007:9006"
-    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.16", "8006", "172.23.0.2"]
+      - "9007:9007"
+    command: ["sh", "-c", "sleep 6 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.16 8006 172.23.0.100 9007"]
 
   peer-8007:
     <<: *peer-common
@@ -123,8 +124,8 @@ services:
       - VAULT_SECRET_PASS=admin
     ports:
       - "8007:8007"
-      - "9008:9007"
-    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.17", "8007", "172.23.0.2"]
+      - "9008:9008"
+    command: ["sh", "-c", "sleep 7 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.17 8007 172.23.0.100 9008"]
 
   peer-8008:
     <<: *peer-common
@@ -136,8 +137,8 @@ services:
       - VAULT_SECRET_PASS=admin
     ports:
       - "8008:8008"
-      - "9009:9008"
-    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.18", "8008", "172.23.0.2"]
+      - "9009:9009"
+    command: ["sh", "-c", "sleep 8 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.18 8008 172.23.0.100 9009"]
 
   peer-8009:
     <<: *peer-common
@@ -149,8 +150,8 @@ services:
       - VAULT_SECRET_PASS=admin
     ports:
       - "8009:8009"
-      - "9010:9009"
-    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.19", "8009", "172.23.0.2"]
+      - "9010:9010"
+    command: ["sh", "-c", "sleep 9 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.19 8009 172.23.0.100 9010"]
 
   peer-8010:
     <<: *peer-common
@@ -162,5 +163,5 @@ services:
       - VAULT_SECRET_PASS=admin
     ports:
       - "8010:8010"
-      - "9011:9010"
-    command: ["java", "-cp", "/app/p2p-node.jar", "org.graph.server.Launcher", "172.23.0.20", "8010", "172.23.0.2"]
+      - "9011:9011"
+    command: ["sh", "-c", "sleep 10 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.20 8010 172.23.0.100 9011"]
