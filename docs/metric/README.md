@@ -54,11 +54,3 @@ A tabela abaixo resume cada métrica, seu objetivo e como interpretá‑la em um
 2. **Thresholds Dinâmicos** – Use *persistence* na fila do broker para decidir sobre back‑pressure automático. Se `broker_event_queue_size_messages` > 90% da capacidade, reduza a taxa de gravação de logs.
 3. **Segurança em Layer 1** – Unifique as métricas de *Malicious Activities* com logs de rede para correlacionar taxa de injeções falsas com variações de `skademlia_peer_trust_score`.
 4. **Visão Holística** – Combine métricas de “Chain Height” com `blockchain_mempool_size_transactions` para detectar “stale blocks”; se a altura escalar não acompanha o backlog de mempool, a rede está estagnada.
-
----
-
-### Conclusão
-
-A existência de uma matriz de observabilidade detalhada como a acima transformará cada spike num “ponto fisiológico” do seu sistema, permitindo respostas proativas em vez de reativas. O *MetricsLogger* deve ser configurado para expor essas métricas ao seu agente Prometheus (ou outro back‑end), e os dashboards (Grafana, Kibana, etc.) devem refletir a lógica de diagnóstico triplamente: **Estado**, **Segurança** e **Topologia**.
-
-Se precisar de ajuda para integrar o *MetricsLogger* ao seu stack CI/CD, ou se quiser automatizar vervificações sobre esses valores, basta perguntar!
