@@ -8,11 +8,9 @@ import org.graph.adapter.provider.IEventDispatcher;
 import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
-import org.graph.domain.entities.node.Node;
 import org.graph.gateway.block.BlockStateRemote;
 import org.graph.gateway.validator.SecurityValidator;
 import org.graph.server.Peer;
-
 import static org.graph.adapter.utils.Constants.MAX_TRANSACTIONS;
 import static org.graph.adapter.utils.Constants.NETWORK_DIFFICULTY;
 

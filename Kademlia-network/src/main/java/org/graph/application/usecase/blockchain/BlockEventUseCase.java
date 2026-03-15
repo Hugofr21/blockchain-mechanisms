@@ -59,17 +59,17 @@ public class BlockEventUseCase {
     public void handleInv(InventoryPayload payload, ConnectionHandler source) {
         String hash = payload.hash();
 
-        // 1. Roteamento de Anúncios de BLOCOS
+
         if (payload.type() == InventoryType.BLOCK) {
             if (!gateway.getBlockchainEngine().getBlockOrganizer().contains(hash)) {
-                System.out.println("[SYNC] Hash de Bloco desconhecido anunciado: " + hash.substring(0, 8) + "... Pedindo dados.");
+                System.out.println("[SYNC] Unknown Block Hash Announced: " + hash.substring(0, 8) + "... Requesting data.");
                 sendGetData(hash, source, InventoryType.BLOCK);
             }
         }
-        // 2. Roteamento de Anúncios de TRANSAÇÕES
+
         else if (payload.type() == InventoryType.TRANSACTION) {
             if (!gateway.getBlockchainEngine().getTransactionOrganizer().isTransactionKnown(hash)) {
-                System.out.println("[GOSSIP] Hash de Tx desconhecida anunciada: " + hash.substring(0, 8) + "... Pedindo dados.");
+                System.out.println("[GOSSIP] Unknown Tx hash announced: " + hash.substring(0, 8) + "... Requesting data.");
                 sendGetData(hash, source, InventoryType.TRANSACTION);
             }
         }
@@ -81,7 +81,7 @@ public class BlockEventUseCase {
         if (payload.type() == InventoryType.BLOCK) {
             Block block = gateway.getBlockchainEngine().getBlockOrganizer().getBlockByHash(hash);
             if (block != null) {
-                System.out.println("[UPLOAD] A enviar bloco " + hash.substring(0, 8) + " para " + requester.getRemoteNode().getPort());
+                System.out.println("[UPLOAD] Sending block " + hash.substring(0, 8) + " to " + requester.getRemoteNode().getPort());
                 Message response = new Message(MessageType.BLOCK, block, requester.getPeer().getHybridLogicalClock());
                 dispatcher.sendUnicast(response, requester);
             }
@@ -90,7 +90,7 @@ public class BlockEventUseCase {
         else if (payload.type() == InventoryType.TRANSACTION) {
             Transaction tx = gateway.getBlockchainEngine().getTransactionOrganizer().getTransactionById(hash);
             if (tx != null) {
-                System.out.println("[UPLOAD] A enviar transação " + hash.substring(0, 8) + " para " + requester.getRemoteNode().getPort());
+                System.out.println("[UPLOAD] Sending transaction " + hash.substring(0, 8) + " to " + requester.getRemoteNode().getPort());
                 Message response = new Message(MessageType.TRANSACTION, tx, requester.getPeer().getHybridLogicalClock());
                 dispatcher.sendUnicast(response, requester);
             }
@@ -102,7 +102,7 @@ public class BlockEventUseCase {
 
         switch (result) {
             case ADDED -> {
-                System.out.println("[SYNC] Bloco " + block.getNumberBlock() + " adicionado! A propagar inventário...");
+                System.out.println("[SYNC] Block " + block.getNumberBlock() + " added! Propagating inventory...");
                 propagateBlockInv(block, source);
                 if (source.getRemoteNode() != null) {
                     gateway.getMyself().getReputationsManager().reportEvent(
@@ -112,7 +112,7 @@ public class BlockEventUseCase {
                 }
             }
             case MISSING_PARENT -> {
-                System.out.println("[SYNC] Hiato detetado no bloco " + block.getNumberBlock() + ". A pedir pai...");
+                System.out.println("[SYNC] Gap detected in block " + block.getNumberBlock() + ". Requesting parent...");
                 String parentHash = block.getHeader().getPreviousBlockHash();
                 sendGetData(parentHash, source, InventoryType.BLOCK);
 
@@ -120,9 +120,12 @@ public class BlockEventUseCase {
                     source.getPeer().getmChainSyncController().recoverMissingBlock(parentHash);
                 }
             }
-            case INVALID -> System.err.println("[SYNC] Bloco inválido recebido.");
-            case EXISTS -> System.out.println("[DEBUG] Bloco já existe na cadeia: " + block.getCurrentBlockHash());
-            case ORPHAN -> System.err.println("[WARNING] Bloco armazenado como órfão: " + block.getCurrentBlockHash());
+            case INVALID -> {
+                System.err.println("[SYNC] Invalid block received.");
+                gateway.getMyself().getReputationsManager().reportEvent(source.getRemoteNode().getNodeId().value(), EventTypePolicy.INVALID_BLOCK);
+            }
+            case EXISTS -> System.out.println("[DEBUG] Block already exists in the chain: " + block.getCurrentBlockHash());
+            case ORPHAN -> System.err.println("[WARNING] Block stored as orphan: " + block.getCurrentBlockHash());
         }
     }
 

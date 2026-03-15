@@ -85,7 +85,7 @@ public record JoinNetwork(Peer myPeer) {
             myPeer.getRoutingTable().addNode(bootstrapNode, myPeer);
 
             new Thread(handler).start();
-            myPeer.getmChainSyncController().startInitialSync(handler);
+
 
             long duration = (System.nanoTime() - start) / 1_000_000;
             MetricsLogger.recordOperationStatus("JOIN", "SUCCESSFUL");
@@ -93,6 +93,8 @@ public record JoinNetwork(Peer myPeer) {
 
            triggerBootstrapLookup(handler);
 
+
+           myPeer.getmChainSyncController().startInitialSync(handler);
 
         } catch (IOException e) {
             System.err.println("[JOIN] Bootstrap offline or inaccessible: " + e.getMessage());
@@ -103,6 +105,8 @@ public record JoinNetwork(Peer myPeer) {
             MetricsLogger.recordRpcError("BOOTSTRAP_UNREACHABLE");
 
         } catch (Exception e) {
+            MetricsLogger.recordOperationStatus("JOIN", "CRASHED");
+            System.err.println("[JOIN] Unexpected fatal error: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }

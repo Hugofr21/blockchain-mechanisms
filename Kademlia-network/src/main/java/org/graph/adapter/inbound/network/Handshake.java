@@ -106,10 +106,7 @@ public final class Handshake {
         try {
             response = MessageUtils.readMessage(in);
         } catch (IOException e) {
-            // SRE: Logar como INFO ou WARNING, pois Peer Disconnect é normal em P2P
             logger.info("[HANDSHAKE] Remote peer closed connection before HELLO response. Host: " + handler.getSocket().getInetAddress());
-
-            // Essencial para o seu Dashboard de SRE:
             MetricsLogger.recordRpcError("HANDSHAKE_EOF_PREMATURE");
             MetricsLogger.recordOperationStatus("JOIN", "FAILED_NETWORK");
 

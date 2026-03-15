@@ -21,17 +21,23 @@ x-peer-common: &peer-common
     monitoring:
   stdin_open: true
   tty: true
-
+  depends_on:
+    - bootstrap-node
 
 services:
   bootstrap-node:
-    <<: *peer-common
+    build: .
     container_name: bootstrap-node
     networks:
       monitoring:
         ipv4_address: 172.23.0.100
+    stdin_open: true
+    tty: true
     environment:
       - VAULT_SECRET_PASS=admin
+    depends_on:
+      - Prometheus
+      - Grafana
     ports:
       - "5001:5001"
       - "9001:9001"
@@ -57,6 +63,8 @@ services:
     networks:
       monitoring:
         ipv4_address: 172.23.0.12
+    environment:
+      - VAULT_SECRET_PASS=admin
     ports:
       - "8002:8002"
       - "9003:9003"

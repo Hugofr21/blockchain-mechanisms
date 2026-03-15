@@ -99,7 +99,7 @@ public class MetricsLogger {
                     .ofLongs()
                     .buildWithCallback(m -> m.record(brokerQueueSize.get()));
 
-            bootstrapAttempts = meter.counterBuilder("kademlia.bootstrap.attempts.total")
+            bootstrapAttempts = meter.counterBuilder("kademlia.bootstrap.attempts")
                     .setDescription("Total de tentativas de entrada na rede (Join)")
                     .build();
 
@@ -159,7 +159,7 @@ public class MetricsLogger {
                     .setDescription("Número de objetos atualmente guardados na DHT local")
                     .ofLongs().buildWithCallback(m -> m.record(dhtStorageSize.get()));
 
-            skademliaOperations = meter.counterBuilder("skademlia.operations.total")
+            skademliaOperations = meter.counterBuilder("skademlia.operations")
                     .setDescription("Resultados das operações Kademlia (Successful, Unsuccessful, Unended)")
                     .build();
 
