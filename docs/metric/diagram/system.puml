@@ -1,0 +1,46 @@
+@startuml Metric_Kamdelia_Network
+
+
+left to right direction
+skinparam componentStyle rectangle
+skinparam defaultFontName      "Helvetica"
+skinparam defaultFontSize      14
+skinparam component {
+    BorderColor   #777777
+    BackgroundColor #F5F5F5
+    FontColor       Black
+}
+skinparam ArrowColor          #005B96
+skinparam ArrowFontSize       12
+skinparam shadowing           false
+
+
+package "Kamdelia Application" {
+    component "Kamdelia\n(application)" as kamdelia
+}
+
+package "Observability Stack" {
+    component "OpenTelemetry Collector" as otel
+    component "Prometheus Exporter"     as promExport
+    component "Prometheus Server"       as prometheus
+}
+
+package "Visualization" {
+    component "Grafana\n(dashboard)" as grafana
+}
+
+
+kamdelia      --> otel        : OTEL metrics/traces
+otel          --> promExport   : Export (OTLP → Prom format)
+promExport    --> prometheus   : Prometheus scrape
+grafana       --> prometheus   : HTTP query (PromQL)
+
+
+note right of grafana
+  Grafana está configurado como
+  *datasource* do Prometheus.
+  Ele envia consultas PromQL via HTTP
+  e recebe os valores de série temporal.
+end note
+
+@enduml
