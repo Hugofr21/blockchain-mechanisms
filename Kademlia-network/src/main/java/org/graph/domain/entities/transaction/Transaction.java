@@ -16,7 +16,7 @@ public class Transaction implements Serializable {
     private AuctionPayload data;
     private final long timestamp;
     private byte[] signature;
-    private long nonce;
+    private final long nonce;
 
     public Transaction(TransactionType type, PublicKey sender, AuctionPayload data, BigInteger ownerId, long nonce, long timestamp) {
         this.type = type;

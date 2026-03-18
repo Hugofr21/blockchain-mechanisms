@@ -13,6 +13,7 @@ import java.util.Random;
  * Se um bloco se perder durante a propagação Pub/Sub, este mecanismo
  * deteta a anomalia e engatilha a sincronização.
  */
+
 public class AntiEntropyTask implements Runnable {
     private final Peer myself;
     private final Random random;

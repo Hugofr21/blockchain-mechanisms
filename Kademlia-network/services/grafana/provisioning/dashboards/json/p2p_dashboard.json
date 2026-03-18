@@ -68,7 +68,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
-      "gridPos": { "h": 6, "w": 7, "x": 14, "y": 1 },
+      "gridPos": { "h": 6, "w": 6, "x": 14, "y": 1 },
       "id": 4,
       "title": "Mining Duration (Avg CPU Time)",
       "type": "timeseries",
@@ -84,7 +84,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
-      "gridPos": { "h": 6, "w": 3, "x": 21, "y": 1 },
+      "gridPos": { "h": 6, "w": 4, "x": 20, "y": 1 },
       "id": 13,
       "title": "Chain Reorgs",
       "type": "stat",
@@ -117,17 +117,31 @@
       "datasource": { "type": "prometheus", "uid": "prometheus_ds" },
       "gridPos": { "h": 7, "w": 12, "x": 12, "y": 8 },
       "id": 7,
-      "title": "Peer Trust Scores",
-      "type": "timeseries",
+      "title": "Peer Trust Scores (Reputation Leaderboard)",
+      "type": "bargauge",
       "targets": [
-        { "expr": "sum by (peer_id) (rate(skademlia_peer_trust_score_sum[5m])) / sum by (peer_id) (rate(skademlia_peer_trust_score_count[5m]))", "legendFormat": "Peer: {{peer_id}}", "refId": "A" }
+        {
+          "expr": "sum by (peer_id) (rate(skademlia_peer_trust_score_sum[5m])) / sum by (peer_id) (rate(skademlia_peer_trust_score_count[5m]))",
+          "legendFormat": "{{peer_id}}",
+          "refId": "A"
+        }
       ],
       "fieldConfig": {
         "defaults": {
-          "custom": { "drawStyle": "line", "lineInterpolation": "stepAfter", "lineWidth": 2, "fillOpacity": 5 },
-          "max": 1.0, "min": 0.0
+          "min": 0.0,
+          "max": 3.5,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 1.0 },
+              { "color": "green", "value": 2.0 }
+            ]
+          }
         }
-      }
+      },
+      "options": { "displayMode": "gradient", "orientation": "horizontal", "showUnfilled": true }
     },
     {
       "collapsed": false,
@@ -208,16 +222,8 @@
       "title": "Bootstrap Success vs. Attempts",
       "type": "timeseries",
       "targets": [
-        {
-          "expr": "sum(kademlia_bootstrap_attempts_total)",
-          "legendFormat": "Attempts",
-          "refId": "A"
-        },
-        {
-          "expr": "sum(skademlia_operations_total{operation=\"JOIN\", status=\"SUCCESSFUL\"})",
-          "legendFormat": "Successful Joins",
-          "refId": "B"
-        }
+        { "expr": "sum(kademlia_bootstrap_attempts_total)", "legendFormat": "Attempts", "refId": "A" },
+        { "expr": "sum(skademlia_operations_total{operation=\"JOIN\", status=\"SUCCESSFUL\"})", "legendFormat": "Successful Joins", "refId": "B" }
       ],
       "fieldConfig": {
         "defaults": {
@@ -234,11 +240,7 @@
       "title": "Bootstrap Latency (P95)",
       "type": "timeseries",
       "targets": [
-        {
-          "expr": "histogram_quantile(0.95, sum(kademlia_bootstrap_latency_milliseconds_bucket) by (le))",
-          "legendFormat": "P95 Latency (ms)",
-          "refId": "A"
-        }
+        { "expr": "histogram_quantile(0.95, sum(kademlia_bootstrap_latency_milliseconds_bucket) by (le))", "legendFormat": "P95 Latency (ms)", "refId": "A" }
       ],
       "fieldConfig": {
         "defaults": {
@@ -256,11 +258,7 @@
       "title": "K-Bucket Convergence Rate",
       "type": "gauge",
       "targets": [
-        {
-          "expr": "sum(skademlia_kbucket_filling_sum) / sum(skademlia_kbucket_filling_count)",
-          "legendFormat": "Avg Fill %",
-          "refId": "A"
-        }
+        { "expr": "sum(skademlia_kbucket_filling_sum) / sum(skademlia_kbucket_filling_count)", "legendFormat": "Avg Fill %", "refId": "A" }
       ],
       "fieldConfig": {
         "defaults": { "unit": "percent", "min": 0, "max": 100 }
