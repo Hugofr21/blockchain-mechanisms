@@ -133,6 +133,20 @@ public class Peer {
                 },
                 1, 1, TimeUnit.MINUTES
         );
+
+        this.backgroundWorkers.scheduleAtFixedRate(
+                () -> {
+                    routingTable.refreshBuckets();
+                },
+                5, 5, TimeUnit.SECONDS
+        );
+
+//        this.backgroundWorkers.scheduleAtFixedRate(
+//                () -> {
+//                    routingTable.getIdleBucketTargets();
+//                },
+//                1, 1, TimeUnit.MINUTES
+//        );
     }
 
     public Node getMyself() { return myself;}

@@ -111,4 +111,8 @@ public class Transaction implements Serializable {
                 payloadSummary
         );
     }
+
+    public String calculateTransactionId() {
+        return HashUtils.calculateSha256(getDataSign());
+    }
 }

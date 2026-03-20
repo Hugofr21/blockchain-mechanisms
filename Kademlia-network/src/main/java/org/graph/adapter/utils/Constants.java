@@ -10,7 +10,7 @@ public class Constants {
     public static final int MAX_PER_IP = 3;
     public static final int MAX_FAILURES = 3;
     public static final int MAX_MESSAGE_SIZE = 10 * 1024 * 1024;
-    public final static long TIME_LIMIT_FAIL_CONNECTIONS = 45000L; // 45s
-    public final static long TIME_TO_SEND_PING = 20000L;           // 20s
-    public final static long CHECK_INTERVAL = 5000L;               // 5s
+    public final static long TIME_LIMIT_FAIL_CONNECTIONS = 45000L;
+    public final static long TIME_TO_SEND_PING = 20000L;
+    public final static long CHECK_INTERVAL = 5000L;
 }

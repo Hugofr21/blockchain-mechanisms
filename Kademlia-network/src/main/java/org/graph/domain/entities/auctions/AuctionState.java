@@ -1,12 +1,12 @@
 package org.graph.domain.entities.auctions;
 
+import org.graph.domain.valueobject.utils.HashUtils;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 
@@ -78,5 +78,9 @@ public class AuctionState implements Serializable {
         }
         sb.append("========================================\n");
         return sb.toString();
+    }
+
+    public String calculateStateHash() {
+        return HashUtils.calculateSha256(ownerId + minPrice.toString() + endTimestamp);
     }
 }

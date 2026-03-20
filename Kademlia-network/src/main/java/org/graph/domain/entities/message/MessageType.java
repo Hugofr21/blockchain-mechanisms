@@ -25,7 +25,8 @@ public enum MessageType {
     BLOCK_BATCH((byte) 0x25),
     GET_SUBSCRIBERS((byte) 0x26),
     SUBSCRIBERS_RESPONSE((byte) 0x27),
-    SUBSCRIBE_TOPIC((byte) 0x28);
+    SUBSCRIBE_TOPIC((byte) 0x28),
+    RESPONSE_VALUE((byte) 0x29);
 
 
     private final byte code;

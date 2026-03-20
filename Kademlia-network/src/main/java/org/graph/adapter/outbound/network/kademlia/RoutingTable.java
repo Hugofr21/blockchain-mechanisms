@@ -10,12 +10,10 @@ import org.graph.server.utils.MetricsLogger;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
-import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.*;
 
-import static org.graph.adapter.utils.Constants.ID_BITS;
-import static org.graph.adapter.utils.Constants.MAX_GLOBAL_NODES_PER_IP;
+import static org.graph.adapter.utils.Constants.*;
 
 public class RoutingTable {
     private List<KBucket> buckets;
@@ -262,11 +260,11 @@ public class RoutingTable {
     /**
      * Gera um Node ID alvo cuja distância XOR em relação ao nó local
      * pertença à faixa correspondente ao índice do bucket especificado.
-     *
+     * <p>
      * Na métrica de distância do Kademlia, um nó pertence ao bucket 'i'
      * quando a distância XOR entre o seu identificador e o identificador
      * do nó local tem o bit mais significativo igual a 'i'.
-     *
+     * <p>
      * Assim, este method constrói um Node ID artificial que garante que
      * a distância calculada através da operação XOR caia exatamente
      * na faixa de distância representada pelo bucket 'i'.
@@ -321,6 +319,19 @@ public class RoutingTable {
 
         if (bucketIndex >= 0 && bucketIndex < buckets.size()) {
             buckets.get(bucketIndex).touchNode(nodeId);
+        }
+    }
+
+
+    public void refreshBuckets() {
+        for (int i = 0; i < ID_BITS; i++) {
+            KBucket bucket = this.buckets.get(i);
+            if (bucket != null) {
+
+                double fillPercentage = ((double) bucket.getActiveNodesCount() / (double) NODE_K) * 100.0;
+
+                MetricsLogger.recordKBucketFilling(String.valueOf(i), fillPercentage);
+            }
         }
     }
 }

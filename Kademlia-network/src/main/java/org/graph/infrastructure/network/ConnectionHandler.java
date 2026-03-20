@@ -1,6 +1,5 @@
 package org.graph.infrastructure.network;
 
-
 import org.graph.adapter.inbound.network.Handshake;
 import org.graph.adapter.outbound.network.message.auction.AuctionPayload;
 import org.graph.adapter.outbound.network.message.node.FindNodePayload;
@@ -22,14 +21,14 @@ import org.graph.infrastructure.utils.SerializationUtils;
 import org.graph.gateway.block.*;
 import org.graph.server.Peer;
 import org.graph.server.utils.MetricsLogger;
-
 import java.io.*;
 import java.math.BigInteger;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import static org.graph.adapter.utils.Constants.*;
@@ -50,6 +49,7 @@ public class ConnectionHandler implements Runnable {
     private Logger logger;
     private volatile boolean running;
     private Node remoteNode;
+    private final ConcurrentHashMap<String, CompletableFuture<Message>> pendingRequests;
 
     private SecureSession secureSession = null;
     private boolean isSecure = false;
@@ -59,35 +59,28 @@ public class ConnectionHandler implements Runnable {
         this.myPeer = myPeer;
         this.logger = mLogger;
         this.running = true;
+        this.pendingRequests = new ConcurrentHashMap<>();
     }
 
-    public Peer getPeer() { return myPeer;}
-    public Node getRemoteNode() {return remoteNode;}
-    public void setRemoteNode(Node bootstrapNode) {
-        remoteNode = bootstrapNode;
-    }
-    public Socket getSocket() {
-        return socket;
-    }
+    public Peer getPeer() { return myPeer; }
+    public Node getRemoteNode() { return remoteNode; }
+    public void setRemoteNode(Node bootstrapNode) { this.remoteNode = bootstrapNode; }
+    public Socket getSocket() { return socket; }
 
     public void enableSecureTransport(byte[] ecdhSharedSecret) throws Exception {
         this.secureSession = new SecureSession(ecdhSharedSecret);
         this.isSecure = true;
     }
 
-    public SecureSession getSecureSession() {
-        return secureSession;
-    }
+    public SecureSession getSecureSession() { return secureSession; }
 
-    public boolean isSecure() {
-        return isSecure;
-    }
+    public boolean isSecure() { return isSecure; }
 
     public DataOutputStream getOutputStream() {
         if (outputStream == null) {
             try {
                 initStreams();
-            }catch (Exception message){
+            } catch (Exception message) {
                 System.out.println(message.getMessage());
             }
         }
@@ -109,6 +102,23 @@ public class ConnectionHandler implements Runnable {
         return inputStream;
     }
 
+    /**
+     * Delega o envio da mensagem e regista o CompletableFuture para
+     * a thread principal do ConnectionHandler acordar a thread do Kademlia
+     * quando a resposta exata chegar.
+     */
+    public CompletableFuture<Message> sendRPCAndAwait(Message request) {
+        CompletableFuture<Message> future = new CompletableFuture<>();
+        pendingRequests.put(request.getId(), future);
+
+        try {
+            sendMessageToPeer(request);
+        } catch (Exception e) {
+            pendingRequests.remove(request.getId());
+            future.completeExceptionally(e);
+        }
+        return future;
+    }
 
     @Override
     public void run() {
@@ -139,10 +149,14 @@ public class ConnectionHandler implements Runnable {
                         myPeer.getHybridLogicalClock().update(message.getTimestamp());
                     }
 
-                    if (myPeer.getGlobalScheduler() != null) {
-                        myPeer.getGlobalScheduler().submit(message, this);
+                    if (message.isResponse() && pendingRequests.containsKey(message.getCorrelationId())) {
+                        pendingRequests.remove(message.getCorrelationId()).complete(message);
                     } else {
-                        dispatch(message);
+                        if (myPeer.getGlobalScheduler() != null) {
+                            myPeer.getGlobalScheduler().submit(message, this);
+                        } else {
+                            dispatch(message);
+                        }
                     }
 
                 } catch (EOFException e) {
@@ -162,19 +176,19 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
-
     public void initStreams() throws IOException {
         if (inputStream != null && outputStream != null) return;
         if (outputStream == null) outputStream = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
         if (inputStream == null) inputStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
     }
 
-   public void dispatch(Message message) {
+    public void dispatch(Message message) {
         switch (message.getType()) {
             case PING -> handlePing(message);
+            case FIND_NODE -> handleFindNode(message);
+            case FIND_VALUE -> handleFindValue(message);
+            case RESPONSE_VALUE -> handleResponseValue(message);
             case PONG -> handlePong(message.getPayload());
-            case FIND_NODE -> handleFindNode(message.getPayload());
-            case FIND_VALUE -> handleFindValue(message.getPayload());
             case STORAGE -> handleStorage(message.getPayload());
             case RESPONSE_NODES -> handleResponseNode(message.getPayload());
             case ACK -> handleAck(message.getPayload());
@@ -190,6 +204,23 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
+    /**
+     * REDE DE SEGURANÇA: Interceta respostas FIND_VALUE atrasadas (Timeouts)
+     * ou tentativas de injeção de pacotes maliciosos na DHT.
+     */
+    private void handleResponseValue(Message message) {
+        if (message.getCorrelationId() != null) {
+            logger.warning("[DHT] RESPONSE_VALUE órfã recebida. O pacote chegou atrasado e o pedido original já expirou (Timeout).");
+        } else {
+            logger.warning("[SECURITY] RESPONSE_VALUE não solicitada (Sem Correlation ID) recebida de " +
+                    (remoteNode != null ? remoteNode.getPort() : "Desconhecido") + ". Possível injeção descartada.");
+
+            if (remoteNode != null) {
+                myPeer.getReputationsManager().reportEvent(remoteNode.getNodeId().value(), EventTypePolicy.MALICIOUS_BEHAVIOR);
+            }
+        }
+    }
+
     private void handleTransaction(Object payload) {
         try {
             if (payload instanceof byte[]) {
@@ -197,39 +228,32 @@ public class ConnectionHandler implements Runnable {
             }
 
             if (payload instanceof Transaction tx) {
-
                 if (tx.getType() == TransactionType.BID) {
                     if (tx.getData() instanceof AuctionPayload p) {
                         Bid bid = p.getBidRemote();
                         System.out.println("\n======== Receive of the transaction: ========");
                         System.out.println(" [PUB/SUB] NEW LANCE ON THE P2P NETWORK! ");
                         System.out.println(" Auction: " + bid.auctionId().substring(0,8));
-                        System.out.println("Amount: " + bid.bidPrice() + " €");
+                        System.out.println(" Amount: " + bid.bidPrice() + " €");
                         System.out.println("=============================================\n");
                     }
                 }
-
                 myPeer.getNetworkGateway().getBlockchainEngine()
                         .getTransactionOrganizer().addTransaction(tx);
-
             } else {
                 logger.warning("[NETWORK] Expected Transaction, received: " +
                         (payload != null ? payload.getClass().getName() : "null"));
             }
-
         } catch (Exception e) {
             logger.severe("[NETWORK] Err critical an process transaction receive: " + e.getMessage());
         }
     }
 
-    private void handleAck(Object payload) {
-
-    }
+    private void handleAck(Object payload) {}
 
     private void handleStorage(Object payload) {
         System.out.println("Received storage packet: " + payload);
         try {
-
             if (payload instanceof byte[]) {
                 payload = SerializationUtils.deserialize((byte[]) payload);
             }
@@ -247,33 +271,91 @@ public class ConnectionHandler implements Runnable {
                     logger.warning("[DHT] Incomplete Storage Payload (null key or value).");
                 }
             } else {
-                logger.warning("[DHT] Invalid format in handleStorage. Expected: Map, received: [Insert value here].: " +
+                logger.warning("[DHT] Invalid format in handleStorage. Expected: Map, received: " +
                         (payload != null ? payload.getClass().getSimpleName() : "null"));
             }
-
         } catch (Exception e) {
             logger.severe("Critical error in handleStorage: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    private void handleFindValue(Object payload) {
+    /**
+     * Processa pedidos FIND_VALUE. Vasculha a Cache (DHT), os Blocos,
+     * as Transações Pendentes e o Estado dos Leilões.
+     * Se não encontrar, devolve os nós mais próximos.
+     */
+    private void handleFindValue(Message requestMessage) {
         try {
-
-            if (payload instanceof byte[]) {
-                payload = SerializationUtils.deserialize((byte[]) payload);
+            Object rawPayload = requestMessage.getPayload();
+            if (rawPayload instanceof byte[]) {
+                rawPayload = SerializationUtils.deserialize((byte[]) rawPayload);
             }
 
+            if (!(rawPayload instanceof BigInteger targetKey)) {
+                logger.warning("[FIND_VALUE] Invalid payload type. Expected BigInteger.");
+                return;
+            }
+
+            String hashHex = targetKey.toString(16);
+            Object foundValue = null;
+
+            foundValue = myPeer.getMkademliaNetwork().getStorage().get(targetKey, Object.class);
+
+            if (foundValue == null) {
+                foundValue = myPeer.getNetworkGateway().getBlockchainEngine().getBlockOrganizer().getBlockByHash(hashHex);
+            }
+            if (foundValue == null) {
+                foundValue = myPeer.getNetworkGateway().getBlockchainEngine().getTransactionOrganizer().getTransactionById(hashHex);
+            }
+            if (foundValue == null) {
+                foundValue = myPeer.getNetworkGateway().getAuctionEngine().getWorldState().get(hashHex);
+            }
+
+            Message response;
+            if (foundValue != null) {
+                response = new Message(
+                        MessageType.RESPONSE_VALUE,
+                        foundValue,
+                        myPeer.getHybridLogicalClock(),
+                        requestMessage.getId()
+                );
+            } else {
+
+                List<Node> closestNodes = myPeer.getRoutingTable().findClosestNodesProximity(targetKey, NODE_K);
+
+                List<NodeInfoPayload> rawList = closestNodes.stream().map(n -> {
+                    byte[] keyBytes = null;
+                    PublicKeyPeer pkPeer = myPeer.getIsKeysInfrastructure().getNeighborPublicKeyByPeerId(n.getNodeId().value());
+                    if (pkPeer != null && pkPeer.getKey() != null) keyBytes = pkPeer.getKey().getEncoded();
+                    if (keyBytes == null) return null;
+                    return new NodeInfoPayload(new FindNodePayload(Base64Utils.encode(n.getNodeId().value().toByteArray())), n.getHost(), n.getPort(), n.getNonce(), keyBytes, n.getNETWORK_DIFFICULTY());
+                }).filter(java.util.Objects::nonNull).toList();
+
+                NodeListPayload container = new NodeListPayload(rawList);
+                response = new Message(
+                        MessageType.RESPONSE_NODES,
+                        container,
+                        myPeer.getHybridLogicalClock(),
+                        requestMessage.getId()
+                );
+            }
+
+            sendMessageToPeer(response);
+            getOutputStream().flush();
 
         } catch (Exception e) {
-            logger.severe("Critical error in handleStorage: " + e.getMessage());
-            e.printStackTrace();
+            logger.severe("Critical error in handleFindValue: " + e.getMessage());
         }
     }
 
-    private void handleFindNode(Object rawPayload) {
+    /**
+     * Processa pedidos FIND_NODE devolvendo os N vizinhos mais próximos
+     * encriptados e formatados, anexando o Correlation ID na resposta.
+     */
+    private void handleFindNode(Message requestMessage) {
+        Object rawPayload = requestMessage.getPayload();
         try {
-
             BigInteger remoteId = EncapsulationUtils.decapsulationNodeId(rawPayload);
 
             if (remoteId == null) {
@@ -289,7 +371,6 @@ public class ConnectionHandler implements Runnable {
 
             List<NodeInfoPayload> rawList = closestNodes.stream()
                     .map(n -> {
-
                         byte[] keyBytes = null;
                         PublicKeyPeer pkPeer = myPeer.getIsKeysInfrastructure()
                                 .getNeighborPublicKeyByPeerId(n.getNodeId().value());
@@ -319,22 +400,24 @@ public class ConnectionHandler implements Runnable {
                     .toList();
 
             NodeListPayload container = new NodeListPayload(rawList);
-            Message response = new Message(MessageType.RESPONSE_NODES, container, myPeer.getHybridLogicalClock());
+
+            Message response = new Message(
+                    MessageType.RESPONSE_NODES,
+                    container,
+                    myPeer.getHybridLogicalClock(),
+                    requestMessage.getId()
+            );
+
             sendMessageToPeer(response);
             getOutputStream().flush();
 
-            logger.severe("[FIND_NODE] Respondi com " + rawList.size() + " vizinhos.");
+            logger.severe("[FIND_NODE] Response com " + rawList.size() + " neighbour.");
 
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("[ERROR] Receive find node " + e.getMessage());
         }
     }
 
-    /**
-     * Envia uma mensagem para o nó remoto.
-     * Decide automaticamente se usa o túnel encriptado (AES-GCM) ou o túnel aberto,
-     * dependendo do estado atual da sessão ECDH.
-     */
     public void sendMessageToPeer(Message message) {
         try {
             if (this.isSecure) {
@@ -343,7 +426,7 @@ public class ConnectionHandler implements Runnable {
                 MessageUtils.sendMessage(getOutputStream(), message);
             }
         } catch (Exception e) {
-            logger.severe("[SECURITY] Falha crítica ao enviar mensagem: " + e.getMessage());
+            logger.severe("[SECURITY] Failed critical an send message: " + e.getMessage());
             this.closeConnection();
         }
     }
@@ -391,28 +474,26 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
-
-
     private void handlePong(Object payload) {
         System.out.println("[PONG] Received a pong: " + payload);
-        myPeer.getNeighboursManager().updateTimestamp(remoteNode.getNodeId().value());
-        myPeer.getRoutingTable().touchNode(remoteNode.getNodeId().value());
+        if (remoteNode != null) {
+            myPeer.getNeighboursManager().updateTimestamp(remoteNode.getNodeId().value());
+            myPeer.getRoutingTable().touchNode(remoteNode.getNodeId().value());
+        }
     }
 
-    private void handlePing(Message pongMessage) {
-
-        myPeer.getNeighboursManager().updateTimestamp(remoteNode.getNodeId().value());
-        myPeer.getRoutingTable().touchNode(remoteNode.getNodeId().value());
-        Message pongMsg = new Message(MessageType.PONG, "PONG", myPeer.getHybridLogicalClock());
-
-        long endNano = System.nanoTime();
-        Object payload = pongMessage.getPayload();
-
-        if (payload instanceof Long startNano) {
-            long durationNano = endNano - startNano;
-            double rttMs = durationNano / 1_000_000.0;
-            MetricsLogger.recordLatency(remoteNode.getNodeId().value(), rttMs);
+    private void handlePing(Message requestMessage) {
+        if (remoteNode != null) {
+            myPeer.getNeighboursManager().updateTimestamp(remoteNode.getNodeId().value());
+            myPeer.getRoutingTable().touchNode(remoteNode.getNodeId().value());
         }
+
+        Message pongMsg = new Message(
+                MessageType.PONG,
+                "PONG",
+                myPeer.getHybridLogicalClock(),
+                requestMessage.getId()
+        );
 
         sendMessageToPeer(pongMsg);
     }
@@ -432,5 +513,4 @@ public class ConnectionHandler implements Runnable {
             myPeer.getRoutingTable().removeNode(remoteNode);
         }
     }
-
 }

@@ -157,4 +157,7 @@ public class KBucket { ;
 
     public void updateRefreshTime() {lastRefreshTime = System.currentTimeMillis();}
 
+    public Object getActiveNodesCount() {
+        return nodes.size();
+    }
 }

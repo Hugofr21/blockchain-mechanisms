@@ -24,12 +24,10 @@ public class MetricsLogger {
     private static LongCounter outboundThroughput;
     private static final AtomicLong currentChainHeight = new AtomicLong(0);
 
-
     private static DoubleHistogram kademliaLookupHops;
     private static LongCounter kademliaCacheHits;
     private static LongCounter kademliaNetworkHits;
     private static LongCounter kademliaRpcErrors;
-
 
     private static LongCounter skademliaOperations;
     private static LongCounter skademliaMaliciousActivities;
@@ -46,6 +44,11 @@ public class MetricsLogger {
     private static LongCounter blockchainReorgs;
 
     private static final AttributeKey<String> PEER_ID_KEY = AttributeKey.stringKey("peer_id");
+    private static final AttributeKey<String> OPERATION_KEY = AttributeKey.stringKey("operation");
+    private static final AttributeKey<String> STATUS_KEY = AttributeKey.stringKey("status");
+    private static final AttributeKey<String> BEHAVIOR_KEY = AttributeKey.stringKey("behavior");
+    private static final AttributeKey<String> TYPE_KEY = AttributeKey.stringKey("type");
+    private static final AttributeKey<String> BUCKET_INDEX_KEY = AttributeKey.stringKey("bucket_index");
 
     private static LongCounter bootstrapAttempts;
     private static DoubleHistogram bootstrapLatency;
@@ -99,27 +102,29 @@ public class MetricsLogger {
                     .ofLongs()
                     .buildWithCallback(m -> m.record(brokerQueueSize.get()));
 
+            meter.gaugeBuilder("blockchain.chain.height")
+                    .setDescription("Tamanho atual da cadeia principal consolidada")
+                    .setUnit("blocks")
+                    .ofLongs()
+                    .buildWithCallback(measurement -> measurement.record(currentChainHeight.get()));
+
+            meter.gaugeBuilder("kademlia.routing.table.size")
+                    .setDescription("Número de pares ativos na Routing Table")
+                    .ofLongs()
+                    .buildWithCallback(m -> m.record(routingTableSize.get()));
+
+            meter.gaugeBuilder("kademlia.dht.storage.size")
+                    .setDescription("Número de objetos atualmente guardados na DHT local")
+                    .ofLongs()
+                    .buildWithCallback(m -> m.record(dhtStorageSize.get()));
+
             bootstrapAttempts = meter.counterBuilder("kademlia.bootstrap.attempts")
                     .setDescription("Total de tentativas de entrada na rede (Join)")
                     .build();
 
-            bootstrapLatency = meter.histogramBuilder("kademlia.bootstrap.latency")
-                    .setDescription("Tempo total para completar o processo de Bootstrap e Handshake")
-                    .setUnit("ms")
-                    .build();
-
-            blockMineDuration = meter.histogramBuilder("blockchain.mine.duration")
-                    .setDescription("Tempo despendido pelo CPU a resolver o Proof-of-Work de um bloco")
-                    .setUnit("ms")
-                    .build();
-
-            blockchainReorgs = meter.counterBuilder("blockchain.reorganizations.total")
+            blockchainReorgs = meter.counterBuilder("blockchain.reorganizations")
                     .setDescription("Número de vezes que a cadeia principal sofreu um Rollback (Fork resolvido)")
                     .setUnit("reorgs")
-                    .build();
-            networkLatency = meter.histogramBuilder("kademlia.network.latency")
-                    .setDescription("Tempo de ida e volta (RTT) das mensagens RPC na DHT")
-                    .setUnit("ms")
                     .build();
 
             inboundThroughput = meter.counterBuilder("network.throughput.inbound")
@@ -132,16 +137,6 @@ public class MetricsLogger {
                     .setUnit("messages")
                     .build();
 
-            meter.gaugeBuilder("blockchain.chain.height")
-                    .setDescription("Tamanho atual da cadeia principal consolidada")
-                    .setUnit("blocks")
-                    .ofLongs()
-                    .buildWithCallback(measurement -> measurement.record(currentChainHeight.get()));
-
-            kademliaLookupHops = meter.histogramBuilder("kademlia.lookup.hops")
-                    .setDescription("Número de iterações/RPCs necessários num processo FIND_NODE ou FIND_VALUE")
-                    .setUnit("hops").build();
-
             kademliaCacheHits = meter.counterBuilder("kademlia.cache.hits")
                     .setDescription("Valores encontrados na cache local (evitou rede)").build();
 
@@ -151,14 +146,6 @@ public class MetricsLogger {
             kademliaRpcErrors = meter.counterBuilder("kademlia.rpc.errors")
                     .setDescription("Falhas de timeout ou rejeição de nós na rede").build();
 
-            meter.gaugeBuilder("kademlia.routing.table.size")
-                    .setDescription("Número de pares ativos na Routing Table")
-                    .ofLongs().buildWithCallback(m -> m.record(routingTableSize.get()));
-
-            meter.gaugeBuilder("kademlia.dht.storage.size")
-                    .setDescription("Número de objetos atualmente guardados na DHT local")
-                    .ofLongs().buildWithCallback(m -> m.record(dhtStorageSize.get()));
-
             skademliaOperations = meter.counterBuilder("skademlia.operations")
                     .setDescription("Resultados das operações Kademlia (Successful, Unsuccessful, Unended)")
                     .build();
@@ -167,13 +154,31 @@ public class MetricsLogger {
                     .setDescription("Comportamentos maliciosos detetados (Null list, Fake resource, Store refusal)")
                     .build();
 
+            bootstrapLatency = meter.histogramBuilder("kademlia.bootstrap.latency")
+                    .setDescription("Tempo total para completar o processo de Bootstrap e Handshake")
+                    .setUnit("ms")
+                    .build();
+
+            blockMineDuration = meter.histogramBuilder("blockchain.mine.duration")
+                    .setDescription("Tempo despendido pelo CPU a resolver o Proof-of-Work de um bloco")
+                    .setUnit("ms")
+                    .build();
+
+            networkLatency = meter.histogramBuilder("kademlia.network.latency")
+                    .setDescription("Tempo de ida e volta (RTT) das mensagens RPC na DHT")
+                    .setUnit("ms")
+                    .build();
+
+            kademliaLookupHops = meter.histogramBuilder("kademlia.lookup.hops")
+                    .setDescription("Número de iterações/RPCs necessários num processo FIND_NODE ou FIND_VALUE")
+                    .build();
+
             skademliaTrustScore = meter.histogramBuilder("skademlia.peer.trust_score")
                     .setDescription("Pontuação de confiança (t) calculada para os peers")
                     .build();
 
             skademliaKbucketFilling = meter.histogramBuilder("skademlia.kbucket.filling")
                     .setDescription("Percentagem média de preenchimento dos k-buckets")
-                    .setUnit("%")
                     .build();
 
             isInitialized = true;
@@ -186,88 +191,67 @@ public class MetricsLogger {
 
     public static void recordLatency(BigInteger peerId, double latencyMs) {
         if (!isInitialized) return;
-        String idHex = peerId.toString(16);
-        Attributes attrs = Attributes.of(PEER_ID_KEY, idHex);
+        Attributes attrs = Attributes.of(PEER_ID_KEY, peerId.toString(16));
         networkLatency.record(latencyMs, attrs);
     }
 
     public static void recordInboundMessage(BigInteger peerId) {
         if (!isInitialized) return;
-        String peerIdStr = peerId.toString(16);
-        Attributes attrs = Attributes.of(PEER_ID_KEY, peerIdStr);
+        Attributes attrs = Attributes.of(PEER_ID_KEY, peerId.toString(16));
         inboundThroughput.add(1, attrs);
     }
 
     public static void recordOutboundMessage(BigInteger peerId){
         if (!isInitialized) return;
-        String peerIdStr = peerId.toString(16);
-        Attributes attrs = Attributes.of(AttributeKey.stringKey("peer.id"), peerIdStr);
+        Attributes attrs = Attributes.of(PEER_ID_KEY, peerId.toString(16));
         outboundThroughput.add(1, attrs);
     }
 
     public static void updateChainHeight(long newHeight) {
-        if (!isInitialized) return;
-        currentChainHeight.set(newHeight);
+        if (isInitialized) currentChainHeight.set(newHeight);
     }
 
-    /**
-     * Regista o desfecho de uma operação (LOOKUP, GET, PUT)
-     * Status esperados: "SUCCESSFUL", "UNSUCCESSFUL", "UNENDED"
-     */
     public static void recordOperationStatus(String operationType, String status) {
         if (!isInitialized) return;
         Attributes attrs = Attributes.of(
-                AttributeKey.stringKey("operation"), operationType,
-                AttributeKey.stringKey("status"), status
+                OPERATION_KEY, operationType,
+                STATUS_KEY, status
         );
         skademliaOperations.add(1, attrs);
     }
 
-    /**
-     * Regista a deteção de um comportamento anómalo/Sibil
-     * Tipos esperados: "NULL_LIST", "FAKE_RESOURCE", "STORE_REFUSAL"
-     */
     public static void recordMaliciousBehavior(String peerId, String behaviorType) {
         if (!isInitialized) return;
         Attributes attrs = Attributes.of(
-                AttributeKey.stringKey("peer.id"), peerId,
-                AttributeKey.stringKey("behavior"), behaviorType
+                PEER_ID_KEY, peerId,
+                BEHAVIOR_KEY, behaviorType
         );
         skademliaMaliciousActivities.add(1, attrs);
     }
-    /**
-     * Incrementa o contador de tentativas de ligação ao nó de Bootstrap.
-     */
+
     public static void recordBootstrapAttempt() {
         if (isInitialized) bootstrapAttempts.add(1);
     }
 
-    /**
-     * Regista a latência total do processo de Join/Bootstrap.
-     */
     public static void recordBootstrapLatency(double durationMs) {
         if (isInitialized) bootstrapLatency.record(durationMs);
     }
-    /**
-     * Regista o Trust Score atualizado de um Peer específico
-     */
+
     public static void recordTrustScore(String peerId, double trustScore) {
         if (!isInitialized) return;
-        Attributes attrs = Attributes.of(AttributeKey.stringKey("peer.id"), peerId);
+        Attributes attrs = Attributes.of(PEER_ID_KEY, peerId);
         skademliaTrustScore.record(trustScore, attrs);
     }
 
-    /**
-     * Regista a percentagem de preenchimento de um K-Bucket
-     */
     public static void recordKBucketFilling(String bucketIndex, double fillPercentage) {
         if (!isInitialized) return;
-        Attributes attrs = Attributes.of(AttributeKey.stringKey("bucket.index"), bucketIndex);
+        Attributes attrs = Attributes.of(BUCKET_INDEX_KEY, bucketIndex);
         skademliaKbucketFilling.record(fillPercentage, attrs);
     }
+
     public static void recordLookupHops(String operationType, int hops) {
         if (!isInitialized) return;
-        Attributes attrs = Attributes.of(AttributeKey.stringKey("operation"), operationType);
+        Attributes attrs = Attributes.of(OPERATION_KEY, operationType);
         kademliaLookupHops.record(hops, attrs);
     }
 
@@ -276,7 +260,7 @@ public class MetricsLogger {
 
     public static void recordRpcError(String errorType) {
         if (!isInitialized) return;
-        Attributes attrs = Attributes.of(AttributeKey.stringKey("type"), errorType);
+        Attributes attrs = Attributes.of(TYPE_KEY, errorType);
         kademliaRpcErrors.add(1, attrs);
     }
 
@@ -300,5 +284,4 @@ public class MetricsLogger {
     public static void recordChainReorg() {
         if (isInitialized) blockchainReorgs.add(1);
     }
-
 }

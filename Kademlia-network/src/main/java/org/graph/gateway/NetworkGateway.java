@@ -28,6 +28,7 @@ public class NetworkGateway {
         this.auctionCaseUse = new AuctionCaseUse(this.blockchainUseCase);
         this.blockchainUseCase.addBlockListener(this.auctionCaseUse);
         this.blockchainUseCase.setNonceProvider(this.auctionCaseUse::getExpectedLedgerNonce);
+        this.auctionCaseUse.startAuctionExpirationWatcher(myself);
     }
 
     public BlockchainUseCase getBlockchainEngine() {

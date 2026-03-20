@@ -3,13 +3,13 @@ package org.graph.adapter.outbound.network.kademlia;
 import org.graph.adapter.outbound.network.message.node.NodeInfoPayload;
 import org.graph.adapter.outbound.network.message.node.NodeListPayload;
 import org.graph.adapter.utils.CryptoUtils;
+import org.graph.adapter.utils.KademliaUtils;
 import org.graph.domain.entities.auctions.AuctionState;
 import org.graph.domain.entities.node.NodeId;
 import org.graph.domain.entities.transaction.Transaction;
 import org.graph.domain.policy.EventTypePolicy;
 import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.infrastructure.storage.cache.LRUCache;
-import org.graph.adapter.utils.MessageUtils;
 import org.graph.infrastructure.utils.EncapsulationUtils;
 import org.graph.infrastructure.utils.SerializationUtils;
 import org.graph.domain.entities.block.Block;
@@ -20,12 +20,12 @@ import org.graph.server.Peer;
 import org.graph.adapter.provider.IKademliaIController;
 import org.graph.infrastructure.storage.StorageDHT;
 import org.graph.server.utils.MetricsLogger;
-
 import java.math.BigInteger;
 import java.security.PublicKey;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
-
 import static org.graph.adapter.utils.Constants.MAX_ALPHA;
 import static org.graph.adapter.utils.Constants.NODE_K;
 
@@ -382,7 +382,7 @@ public class KademliaNetwork implements IKademliaIController {
 
                     if (type.isInstance(response)) {
 
-                        if (!validateDataIntegrity(key, response, type, node)) {
+                        if (!KademliaUtils.validateDataIntegrity(key, response, type, node, myself)) {
                             continue;
                         }
 
@@ -418,57 +418,6 @@ public class KademliaNetwork implements IKademliaIController {
         }
         MetricsLogger.recordLookupHops("FIND_VALUE", hops);
         return null;
-    }
-
-    /**
-     * Validação baseada em Content-Addressable Storage (CAS).
-     *
-     * <p>Quando um objeto é recebido da rede, é calculado o hash criptográfico
-     * (ex.: SHA-256) do seu conteúdo. Esse hash deve corresponder exatamente
-     * à chave Kademlia ({@code expectedKey}) utilizada no pedido do objeto.</p>
-     *
-     * <p>Este mecanismo garante a integridade e autenticidade do conteúdo,
-     * assegurando que o objeto devolvido corresponde criptograficamente
-     * ao identificador solicitado.</p>
-     *
-     * <p>Se o hash calculado não corresponder à chave esperada, o objeto é
-     * considerado inválido ou forjado e deve ser rejeitado. O nó que forneceu
-     * o objeto poderá ser penalizado no sistema de confiança.</p>
-     *
-     * @param expectedKey Chave Kademlia esperada, previamente anunciada na rede
-     *                    através da arquitetura PUB/SUB, permitindo que os vizinhos
-     *                    DHT saibam qual objeto deve corresponder à chave.
-     * @param data Objeto recebido da rede pelos vizinhos mais próximos no k-bucket,
-     *             correspondente ao identificador do objeto.
-     * @param sender Identificação do nó que enviou o objeto, utilizada para
-     *               verificar a sua autenticidade e reputação.
-     */
-    private boolean validateDataIntegrity(BigInteger expectedKey, Object data, Class<?> type, Node sender) {
-        String expectedHashHex = expectedKey.toString(16);
-
-        if (type.equals(Block.class)) {
-            Block block = (Block) data;
-            if (block.getCurrentBlockHash() != null && !block.getCurrentBlockHash().equals(expectedHashHex)) {
-                System.err.println("[SECURITY] Poisoned Block received! Hash mismatch from " + sender.getPort());
-                myself.getReputationsManager().reportEvent(sender.getNodeId().value(), EventTypePolicy.VALID_BLOCK);
-                return false;
-            }
-        } else if (type.equals(Transaction.class)) {
-            Transaction tx = (Transaction) data;
-            if (tx.getTxId() != null && !tx.getTxId().equals(expectedHashHex)) {
-                System.err.println("[SECURITY] Poisoned Transaction received! ID mismatch from " + sender.getPort());
-                myself.getReputationsManager().reportEvent(sender.getNodeId().value(), EventTypePolicy.MALICIOUS_BEHAVIOR);
-                return false;
-            }
-        } else if (type.equals(AuctionState.class)) {
-            AuctionState state = (AuctionState) data;
-            if (state.getAuctionId() != null && !state.getAuctionId().equals(expectedHashHex)) {
-                System.err.println("[SECURITY] Poisoned AuctionState received! ID mismatch from " + sender.getPort());
-                myself.getReputationsManager().reportEvent(sender.getNodeId().value(), EventTypePolicy.MALICIOUS_BEHAVIOR);
-                return false;
-            }
-        }
-        return true;
     }
 
 
@@ -598,6 +547,7 @@ public class KademliaNetwork implements IKademliaIController {
      *         ou {@code null} em caso de falha ou timeout.
      */
     public Object sendRPCSync(Node target, Message request) {
+
         if (target.getNodeId().equals(myself.getMyself().getNodeId())) {
             return null;
         }
@@ -607,21 +557,10 @@ public class KademliaNetwork implements IKademliaIController {
 
         if (handler != null && !handler.getSocket().isClosed()) {
             try {
-
-                handler.sendMessageToPeer(request);
-                System.out.println("[DHT RPC] Request sent to: " + target.getPort());
-
+                System.out.println("[DHT RPC] Request (" + request.getType() + ") sent to: " + target.getPort());
                 long startTime = System.currentTimeMillis();
 
-                Message response;
-
-                synchronized (handler.getInputStream()) {
-                    if (handler.isSecure()) {
-                        response = MessageUtils.readSecureMessage(handler.getInputStream(), handler.getSecureSession());
-                    } else {
-                        response = MessageUtils.readMessage(handler.getInputStream());
-                    }
-                }
+                Message response = handler.sendRPCAndAwait(request).get(5, TimeUnit.SECONDS);
 
                 long rttDelay = System.currentTimeMillis() - startTime;
                 MetricsLogger.recordLatency(target.getNodeId().value(), (double) rttDelay);
@@ -630,14 +569,17 @@ public class KademliaNetwork implements IKademliaIController {
                     return response.getPayload();
                 }
 
-            } catch (java.net.SocketTimeoutException e) {
+            } catch (TimeoutException e) {
                 System.err.println("[DHT RPC] Timeout waiting for response from " + target.getPort());
                 myself.getReputationsManager().reportEvent(target.getNodeId().value(), EventTypePolicy.PING_FAIL);
                 MetricsLogger.recordRpcError("TIMEOUT");
+
             } catch (Exception e) {
                 System.err.println("[DHT RPC] Synchronous communication failed with " + target.getPort() + ": " + e.getMessage());
                 MetricsLogger.recordRpcError("CONNECTION_REFUSED");
             }
+        } else {
+            System.err.println("[DHT RPC] Cannot send request to " + target.getPort() + " - Tunnel is closed or missing.");
         }
         return null;
     }

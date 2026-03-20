@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 
 /**
  * Este componente é responsável pela gestão de leilões (Auctions) tanto em contexto local
@@ -335,11 +336,13 @@ public class AuctionCaseUse implements IBlockListener {
         AuctionState auctionState = ledger.get(auctionId);
 
         if (auctionState == null) {
-            throw new IllegalArgumentException("Error: Auction does not exist.");
+            System.err.println("Error: Auction does not exist.");
+            return;
         }
 
         if (!auctionState.isOpen()) {
-            throw new IllegalStateException("Error: Auction is already closed.");
+            System.err.println("Error: Auction is already closed.");
+            return;
         }
 
 //        if (System.currentTimeMillis() < auctionState.getEndTimestamp()) {
@@ -445,5 +448,46 @@ public class AuctionCaseUse implements IBlockListener {
                 myself.getMkademliaNetwork().sendRPCAsync(subscriberNode, gossipMsg);
             }
         }
+    }
+
+    /**
+     * Motor Autónomo de Liquidação de Leilões (Automated Settlement Engine).
+     *
+     * Percorre a representação local do estado atual (world state), derivada do
+     * ledger distribuído, com o objetivo de identificar leilões em estado OPEN
+     * cujo critério determinístico de expiração já foi satisfeito, mas que ainda
+     * não possuem uma transação de fecho validada.
+     *
+     * Quando um leilão satisfaz esta condição, o nó constrói e assina uma
+     * transação de encerramento (AUCTION_CLOSED), submetendo-a à rede para
+     * validação por consenso.
+     *
+     * Num sistema distribuído, múltiplos nós podem submeter transações concorrentes
+     * para o mesmo leilão. No entanto, devido ao modelo de execução determinística
+     * e às regras de validação de estado, apenas a primeira transação válida aplicada
+     * ao estado corrente será aceite. As restantes serão rejeitadas por violação das
+     * pré-condições, uma vez que o estado do leilão já terá sido atualizado.
+     *
+     * Este mecanismo assegura redundância, elimina a dependência de um único agente
+     * para o fecho dos leilões e aumenta a tolerância a falhas do sistema.
+     *
+     * @param myself O peer local responsável por assinar a transação de encerramento.
+     */
+    public void startAuctionExpirationWatcher(Peer myself) {
+        long WATCHER_INTERVAL_MS = 10000;
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
+            try {
+                long currentTime = System.currentTimeMillis();
+                for (Map.Entry<String, AuctionState> entry : ledger.entrySet()) {
+                    AuctionState state = entry.getValue();
+                    if (state.isOpen() && currentTime >= state.getEndTimestamp()) {
+                        System.out.println("[AUCTION WATCHER] Deadline expired detected for auction: " + state.getAuctionId());
+                        closeAuctionRequest(state.getAuctionId(), myself);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("[AUCTION WATCHER] Critical failure in the watch cycle: " + e.getMessage());
+            }
+        }, 5000, WATCHER_INTERVAL_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
     }
 }

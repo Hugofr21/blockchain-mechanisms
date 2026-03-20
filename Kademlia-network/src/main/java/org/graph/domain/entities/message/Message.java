@@ -16,11 +16,13 @@ public class Message implements Serializable, Comparable<Message> {
     private final HybridLogicalClock timestamp;
     private final Object payload;
     private final String requestId;
+    private final String correlationId;
 
     public Message(MessageType type, Object objectToSerialize, HybridLogicalClock timestamp) {
         this.type = type;
         this.timestamp = timestamp;
         this.requestId = UUID.randomUUID().toString();
+        this.correlationId = null;
         try {
             this.payload = SerializationUtils.serialize(objectToSerialize);
         } catch (IOException e) {
@@ -28,35 +30,39 @@ public class Message implements Serializable, Comparable<Message> {
         }
     }
 
-    public String getId() {
-        return requestId;
+    public Message(MessageType type, Object objectToSerialize, HybridLogicalClock timestamp, String correlationId) {
+        this.type = type;
+        this.timestamp = timestamp;
+        this.requestId = UUID.randomUUID().toString();
+        this.correlationId = correlationId;
+        try {
+            this.payload = SerializationUtils.serialize(objectToSerialize);
+        } catch (IOException e) {
+            throw new RuntimeException("[ERROR] Serialization error while creating the message.", e);
+        }
     }
 
-    public Object getPayload() {
-        return payload;
-    }
+    public String getId() { return requestId; }
 
-    public HybridLogicalClock getTimestamp() {
-        return timestamp;
-    }
+    public String getCorrelationId() { return correlationId; }
 
-    public MessageType getType() {
-        return type;
-    }
+    public boolean isResponse() { return correlationId != null; }
+
+    public Object getPayload() { return payload; }
+
+    public HybridLogicalClock getTimestamp() { return timestamp; }
+
+    public MessageType getType() { return type; }
 
     @Override
-    public int compareTo(Message o) {
-        return 0;
-    }
+    public int compareTo(Message o) { return 0; }
 
     @Override
     public String toString() {
         return "Message{" +
                 "type=" + type +
-                ", timestamp=" + timestamp +
-                ", payload=" + payload +
                 ", requestId='" + requestId + '\'' +
+                ", correlationId='" + correlationId + '\'' +
                 '}';
     }
-
 }
