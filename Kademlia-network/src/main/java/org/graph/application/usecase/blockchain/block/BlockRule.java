@@ -37,7 +37,6 @@ public class BlockRule {
             return false;
         }
 
-        // DELEGAÇÃO: Motor de consenso valida a prova criptográfica (PoW, PoS, etc.)
         if (parent != null && !mBlockchain.getConsensusEngine().validateProof(block, parent)) {
             System.err.println("[INFO] Local block invalid rejected by Consensus Engine!");
             return false;
