@@ -182,13 +182,13 @@ public class RoutingTable {
     private synchronized boolean isGlobalIpLimitExceeded(String host) {
         if (host == null || host.isEmpty()) return true;
 
-//        if (host.equals("127.0.0.1") || host.equalsIgnoreCase("localhost") || host.equals("::1")) {
-//            return false;
-//        }
-
-        if (host.startsWith("172.23.")) {
+        if (host.equals("127.0.0.1") || host.equalsIgnoreCase("localhost") || host.equals("::1")) {
             return false;
         }
+//
+//        if (host.startsWith("172.23.")) {
+//            return false;
+//        }
 
         long globalCount = 0;
         for (KBucket bucket : buckets) {

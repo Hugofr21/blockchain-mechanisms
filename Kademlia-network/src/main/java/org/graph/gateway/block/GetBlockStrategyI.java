@@ -4,13 +4,13 @@ import org.graph.adapter.outbound.network.message.block.BlockPayload;
 import org.graph.adapter.outbound.network.message.block.InventoryPayload;
 import org.graph.adapter.outbound.network.message.block.InventoryType;
 import org.graph.infrastructure.utils.SerializationUtils;
-import org.graph.gateway.provider.MessageStrategy;
+import org.graph.gateway.provider.IMessageStrategy;
 import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 
-public class GetBlockStrategy implements MessageStrategy {
+public class GetBlockStrategyI implements IMessageStrategy {
     @Override
     public void handle(Message message, ConnectionHandler context) {
         Object raw = message.getPayload();

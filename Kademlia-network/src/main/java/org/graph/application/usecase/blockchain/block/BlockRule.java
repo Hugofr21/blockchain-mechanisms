@@ -1,11 +1,9 @@
 package org.graph.application.usecase.blockchain.block;
 
-
 import org.graph.domain.entities.block.Block;
 import org.graph.application.usecase.blockchain.BlockchainUseCase;
 import org.graph.domain.entities.transaction.Transaction;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,8 +37,9 @@ public class BlockRule {
             return false;
         }
 
-        if (parent != null && !block.isValidBlock(parent)) {
-            System.err.println("[INFO] Local block invalid rejected!");
+        // DELEGAÇÃO: Motor de consenso valida a prova criptográfica (PoW, PoS, etc.)
+        if (parent != null && !mBlockchain.getConsensusEngine().validateProof(block, parent)) {
+            System.err.println("[INFO] Local block invalid rejected by Consensus Engine!");
             return false;
         }
 
@@ -74,8 +73,9 @@ public class BlockRule {
             return true;
         }
 
-        if (parent != null && !block.isValidBlock(parent)) {
-            System.out.println("[INFO] Remote block invalid rejected!");
+        // DELEGAÇÃO: Motor de consenso valida a prova criptográfica remota
+        if (parent != null && !mBlockchain.getConsensusEngine().validateProof(block, parent)) {
+            System.out.println("[INFO] Remote block invalid rejected by Consensus Engine!");
             return false;
         }
 
@@ -141,27 +141,14 @@ public class BlockRule {
             currentTip = block;
             System.out.println("[CHAIN] Extended main chain to height: " + block.getNumberBlock());
         }
-        else if (block.getNumberBlock() > currentTip.getNumberBlock()) {
-            System.out.println("[FORK DETECTED] Concurrent chain is longer (" + block.getNumberBlock() + " vs " + currentTip.getNumberBlock() + "). Resolving...");
+
+        else if (mBlockchain.getConsensusEngine().isWinningChain(block, currentTip)) {
+            System.out.println("[FORK DETECTED] Consensus Engine declared the new branch as the winner. Resolving...");
             executeChainReorganization(block);
         }
 
-        else if (block.getNumberBlock() == currentTip.getNumberBlock()) {
-            System.out.println("[FORK DETECTED] Collision at height " + block.getNumberBlock() + ". Applying deterministic tie-breaker...");
-
-            BigInteger newBlockHashValue = new BigInteger(block.getCurrentBlockHash(), 16);
-            BigInteger currentTipHashValue = new BigInteger(currentTip.getCurrentBlockHash(), 16);
-
-            if (newBlockHashValue.compareTo(currentTipHashValue) < 0) {
-                System.out.println("[TIE-BREAKER] New block won mathematically. Forcing 1-block reorganization.");
-
-                executeChainReorganization(block);
-            } else {
-                System.out.println("[TIE-BREAKER] Current tip won mathematically. The new block remains as a sterile branch in blockMap.");
-            }
-        }
         else {
-            System.out.println("[FORK DETECTED] Branch stored in blockMap, but our main chain is still longer.");
+            System.out.println("[FORK DETECTED] Branch stored in blockMap, but Consensus Engine rejected it as main chain.");
         }
     }
 
@@ -227,13 +214,15 @@ public class BlockRule {
         System.out.println("[REORG COMPLETED] Main Chain assumed winning branch.");
     }
 
+
     private void processOrphans(String parentHash) {
         List<Block> orphans = orphanBlocks.remove(parentHash);
         if (orphans != null) {
             System.out.println("[ORGANIZER] Found " + orphans.size() + " orphans waiting for parent " + parentHash);
             for (Block orphan : orphans) {
                 Block parent = blockMap.get(parentHash);
-                if (parent != null && orphan.isValidBlock(parent)) {
+
+                if (parent != null && mBlockchain.getConsensusEngine().validateProof(orphan, parent)) {
                     blockMap.put(orphan.getCurrentBlockHash(), orphan);
                     System.out.println("[ORGANIZER] Orphan " + orphan.getNumberBlock() + " connected to tree!");
                     updateMainChainIfNecessary(orphan);

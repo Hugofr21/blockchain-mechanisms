@@ -9,6 +9,7 @@ import org.graph.domain.entities.transaction.TransactionType;
 import org.graph.domain.valueobject.cryptography.Pair;
 import org.graph.application.usecase.blockchain.block.BlockRule;
 import org.graph.application.usecase.blockchain.block.TransactionRule;
+import org.graph.gateway.provider.IConsensusEngine;
 import org.graph.server.Peer;
 import org.graph.server.utils.MetricsLogger;
 
@@ -58,12 +59,10 @@ import java.util.function.Function;
 
 
 public class BlockchainUseCase implements ITransactionsPublished {
-    private final int numThreads;
-    private final int currentDifficulty;
     private final TransactionRule mTransactionRule;
     private final BlockRule mBlockRule;
     private final List<IBlockListener> listeners;
-
+    private final IConsensusEngine mConsensusEngine;
     private volatile long lastTxTime;
     private static final long MAX_WAIT_TIME_MS = 2000;
     private final Peer myself;
@@ -71,17 +70,17 @@ public class BlockchainUseCase implements ITransactionsPublished {
 
     private final Object chainStateLock = new Object();
 
-    public BlockchainUseCase(int difficulty, int maxTx, Peer myself) {
+    public BlockchainUseCase(int maxTx, IConsensusEngine mConsensusEngine, Peer myself) {
         this.mTransactionRule = new TransactionRule(maxTx);
+        this.mConsensusEngine = mConsensusEngine;
         this.mBlockRule = new BlockRule(this);
-        int availableCores = Runtime.getRuntime().availableProcessors();
-        this.numThreads = Math.max(1, availableCores - 2);
-        this.currentDifficulty = difficulty;
         this.listeners = new ArrayList<>();
         this.lastTxTime = System.currentTimeMillis();
         this.myself = myself;
         startMiningWatchdog();
     }
+
+    public IConsensusEngine getConsensusEngine() { return mConsensusEngine; }
 
     public void setNonceProvider(Function<BigInteger, Long> provider) {
         this.mTransactionRule.setNonceProvider(provider);
@@ -173,9 +172,9 @@ public class BlockchainUseCase implements ITransactionsPublished {
         genesisTx.add(tx);
 
         String genesisPrevHash = "0000000000000000000000000000000000000000000000000000000000000000";
-        Block genesis = new Block(1, 0, genesisPrevHash, genesisTx, currentDifficulty);
+        Block genesis = new Block(1, 0, genesisPrevHash, genesisTx, this.mConsensusEngine.difficulty());
 
-        genesis.mineBlock(currentDifficulty, numThreads);
+       this.mConsensusEngine.sealBlock(genesis);
 
         synchronized (chainStateLock) {
             if (genesis.getCurrentBlockHash() != null) {
@@ -244,8 +243,10 @@ public class BlockchainUseCase implements ITransactionsPublished {
             System.out.println("[MINER] Creating Block #" + infoBlock.key() + " pointing to " + infoBlock.value());
 
 
-            Block newBlock = new Block(1, infoBlock.key(), infoBlock.value(), transactions, currentDifficulty);
-            newBlock.mineBlock(currentDifficulty, numThreads);
+            Block newBlock = new Block(1, infoBlock.key(), infoBlock.value(), transactions, this.mConsensusEngine.difficulty());
+
+            this.mConsensusEngine.sealBlock(newBlock);
+
             long mineDuration = System.currentTimeMillis() - startMineTime;
             MetricsLogger.recordBlockMiningTime(mineDuration);
 

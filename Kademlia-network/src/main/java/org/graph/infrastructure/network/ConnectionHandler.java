@@ -192,11 +192,11 @@ public class ConnectionHandler implements Runnable {
             case STORAGE -> handleStorage(message.getPayload());
             case RESPONSE_NODES -> handleResponseNode(message.getPayload());
             case ACK -> handleAck(message.getPayload());
-            case GET_STATUS -> new GetStatusStrategy().handle(message, this);
-            case CHAIN_STATUS_RESPONSE -> new ChainStatusResponseStrategy().handle(message, this);
-            case GET_BLOCK -> new GetBlockStrategy().handle(message, this);
-            case BLOCK -> new BlockStrategy().handle(message, this);
-            case INV_DATA -> new InvStrategy().handle(message, this);
+            case GET_STATUS -> new GetStatusStrategyI().handle(message, this);
+            case CHAIN_STATUS_RESPONSE -> new ChainStatusResponseStrategyI().handle(message, this);
+            case GET_BLOCK -> new GetBlockStrategyI().handle(message, this);
+            case BLOCK -> new BlockStrategyI().handle(message, this);
+            case INV_DATA -> new InvStrategyI().handle(message, this);
             case TRANSACTION -> handleTransaction(message.getPayload());
             case GET_BLOCKS_BATCH -> new GetBlocksBatchStrategy().handle(message, this);
             case BLOCK_BATCH -> new BlockBatchStrategy().handle(message, this);

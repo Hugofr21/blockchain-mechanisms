@@ -9,6 +9,8 @@ import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.gateway.block.BlockStateRemote;
+import org.graph.gateway.consensus.ProofOfWorkEngine;
+import org.graph.gateway.provider.IConsensusEngine;
 import org.graph.gateway.validator.SecurityValidator;
 import org.graph.server.Peer;
 import static org.graph.adapter.utils.Constants.MAX_TRANSACTIONS;
@@ -20,10 +22,12 @@ public class NetworkGateway {
     private final SecurityValidator securityValidator;
     private IEventDispatcher dispatcher;
     private Peer myself;
+    private IConsensusEngine myConsensusEngine;
 
     public NetworkGateway(Peer myself) {
         this.myself = myself;
-        this.blockchainUseCase = new BlockchainUseCase(NETWORK_DIFFICULTY , MAX_TRANSACTIONS, myself);
+        this.myConsensusEngine = new ProofOfWorkEngine(NETWORK_DIFFICULTY);
+        this.blockchainUseCase = new BlockchainUseCase(MAX_TRANSACTIONS, this.myConsensusEngine, myself);
         this.securityValidator = new SecurityValidator();
         this.auctionCaseUse = new AuctionCaseUse(this.blockchainUseCase);
         this.blockchainUseCase.addBlockListener(this.auctionCaseUse);
