@@ -27,22 +27,32 @@ O diagrama de rede divide-se em duas mecânicas distintas que operam em paralelo
 Antes de solicitar blocos, o nó local avalia se o vizinho remoto possui uma cadeia melhor ou divergente, cruzando os dados do payload remoto com o estado local através de três cenários:
 
 1. **Atraso Detetado (`isBehind`)**
+
    * **Regra:** `remoteHeight > localHeight`
    * **Significado:** O nó local perdeu a sincronia e está blocos atrás da rede.
    * **Ação:** O nó solicita um lote de blocos começando no seu ponto atual de paragem (`requestFrom = localHeight`).
-
 2. **Bifurcação Concorrente (`isFork`)**
+
    * **Regra:** `remoteHeight == localHeight` **E** `remoteHash != localHash`
    * **Significado:** Ambos os nós têm a mesma altura, mas com hashes finais diferentes, indicando que o PoW foi resolvido em simultâneo por nós distintos.
    * **Ação:** O nó local recua um índice (`localHeight - 1`) e solicita o bloco divergente ao vizinho para o armazenar na memória intermédia e resolver a ramificação vencedora.
-
 3. **Sincronia Total (`Synchronized`)**
+
    * **Regra:** Alturas iguais e Hashes iguais.
    * **Ação:** Nenhuma mensagem adicional é enviada, minimizando o consumo de largura de banda.
 
 #### 7. Diagrama UML – Fluxo de Receção e Organização de Blocos
 
 ![Fluxo de Receção e Organização de Blocos](./diagram/Fork_Blockchain-Fluxo_de_Recebimento_e_Organização_de_Blocos__com_notas_de_objetivo.png)
+
+**Descrição:**
+
+1. O bloco chega e é filtrado por duplicação.
+2. Verifica‑se a existência do seu pai; blocos sem pai (não gênesis) são colocados em **órfãos**.
+3. Validação completa (PoW/PoS, MerkleRoot, assinatura).
+4. Caso válido, o bloco entra no **blockMap** e avalia‑se a presença de **forks**.
+5. A cadeia mais longa ou, em caso de empate, o hash menor, determina o ramo a manter.
+6. Blocos órfãos são re‑processados depois de eventuais reorganizações.
 
 ### Fase 1: Sincronização e Anti-Entropia (Mensagens de Batch)
 

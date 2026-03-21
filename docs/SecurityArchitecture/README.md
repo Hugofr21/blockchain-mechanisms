@@ -1,4 +1,3 @@
-
 # Arquitetura de Segurança de uma Rede P2P Distribuída para Leilões
 
 *(documentação em Português de Portugal – estilo técnico‑profissional)*
@@ -120,5 +119,14 @@ A rede assume que *qualquer* nó pode comportar‑se de forma maliciosa (Byzanti
 * **Roteamento adaptativo:** a rede prefere caminhos que passam por nós com alta confiança, isolando efetivamente os ofensores.
 
 > **Resultado:** mesmo que parte da rede se torne maliciosa, a maioria honestă mantém a propriedade de consenso e a integridade dos dados.
->
 
+## 9. Considerações Finais
+
+* **Imutabilidade** e **integridade** são asseguradas por hashes encadeados e por verificação de conteúdo (CAS).
+* **Concorrência** é gerida por mem‑pools, regras de fork (cadeia mais longa, hash‑mínimo) e por rollback que reinjecta transações órfãs.
+* **Replay attacks** são neutralizadas por TxIDs únicos e por **nonces sequenciais** por utilizador.
+* **Autenticação** e **não‑repúdio** são garantidos por assinaturas digitais verificáveis por qualquer nó.
+* **Liveness** (garantia de entrega) provém da propagação epidemicamente rápida (gossip) e da estratégia de “ressurreição” após reorganizações.
+* **Byzantine tolerance** combina assinatura, CAS e um mecanismo de reputação (S‑Kademlia) que limita o impacto de nós maliciosos.
+
+Com estas camadas de defesa interligadas, a rede P2P consegue oferecer um **ambiente seguro, consistente e resiliente** para a realização de leilões distribuídos, preservando a confiança dos participantes e a integridade dos registos ao longo do tempo.
