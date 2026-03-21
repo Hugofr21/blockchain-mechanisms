@@ -1,0 +1,88 @@
+@startuml Fork Blockchain
+title Fluxo de Recebimento e Organização de Blocos (com notas de objetivo)
+
+skinparam backgroundColor white
+skinparam activity {
+  BorderColor #2F3B52
+  ArrowColor #2F3B52
+  BackgroundColor #F8FAFC
+  FontColor #1F2937
+}
+
+
+start
+:Receber novo bloco;
+note right: Inserir bloco na fila de processamento.
+
+if (Bloco já existe?) then (sim)
+  :Ignorar bloco duplicado;
+  note right: Evita trabalho desnecessário e replay.
+  stop
+else (não)
+endif
+
+:Verificar hash do bloco pai;
+note right: Garante continuidade da cadeia.
+
+if (Pai existe no blockMap?) then (sim)
+else (não)
+  if (É bloco gênesis?) then (sim)
+    :Tratar como raiz da cadeia;
+    note right: Não tem pai, mas é válido.
+  else (não)
+    :Adicionar a lista de órfãos;
+    note right: Preserva blocos que ainda não podem ser ligados.
+    stop
+  endif
+endif
+
+:Validar bloco (isValidBlock);
+note right: Execução das regras de consenso (PoW/PoS, MerkleRoot, assinatura, limites).
+
+if (Bloco válido?) then (não)
+  :Rejeitar bloco;
+  note right: Segurança – descarta blocos mal‑formados.
+  stop
+else (sim)
+  :Armazenar bloco em blockMap;
+  note right: Persiste o bloco para uso futuro.
+endif
+
+:Analisar possível bifurcação;
+note right: Detecta se o bloco cria um fork.
+
+if (Parent == currentTip?) then (sim)
+  :Extensão linear da cadeia;
+  :Anexar bloco à organizedChain;
+  note right: Mantenha a cadeia principal sem forks.
+else (não)
+  :Bifurcação identificada;
+  note right: Ramo alternativo surge.
+
+  if (Nova altura > altura atual?) then (sim)
+    :Novo ramo mais longo;
+    :Executar reorganização da cadeia\n(rollback do ramo anterior);
+    note right: Regra da cadeia mais longa (finalidade).
+  else (não)
+    if (Nova altura == altura atual?) then (sim)
+      :Empate de altura;
+      if (Novo hash < hash atual?) then (sim)
+        :Desempate favorável ao novo bloco;
+        :Executar reorganização da cadeia\n(rollback de 1 bloco);
+        note right: Determinismo por hash mínimo.
+      else (não)
+        :Manter ramo alternativo latente;
+        note right: Ramo menor permanece inativo.
+      endif
+    else (não)
+      :Ramo inferior em comprimento;
+      :Manter ramo alternativo latente;
+      note right: Não altera a cadeia principal.
+    endif
+  endif
+endif
+
+:Processar blocos órfãos pendentes;
+note right: Tenta ligar blocos ainda órfãos após a possível reorganização.
+stop
+@enduml

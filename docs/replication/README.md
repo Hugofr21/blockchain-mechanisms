@@ -40,6 +40,10 @@ Antes de solicitar blocos, o nó local avalia se o vizinho remoto possui uma cad
    * **Regra:** Alturas iguais e Hashes iguais.
    * **Ação:** Nenhuma mensagem adicional é enviada, minimizando o consumo de largura de banda.
 
+#### 7. Diagrama UML – Fluxo de Receção e Organização de Blocos
+
+![Fluxo de Receção e Organização de Blocos](./diagram/Fork_Blockchain-Fluxo_de_Recebimento_e_Organização_de_Blocos__com_notas_de_objetivo.png)
+
 ### Fase 1: Sincronização e Anti-Entropia (Mensagens de Batch)
 
 Ocorre no arranque do nó ou periodicamente (ex: a cada 15 segundos) como processo em segundo plano (Daemon).

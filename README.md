@@ -44,6 +44,7 @@ Ao iniciar cada processo, ao executar o comando `docker attach peer-8010`, press
 2. [Replication](./docs/replication/README.md)
 3. [Handshake de Autenticação Mútua a 3 Vias (3-Way Mutual Authentication))](./docs/proofofPossession/README.MD)
 4. [Metric](./docs/metric/README.md)
+5. [Security Architecture of a Distributed P2P Network for Auctions](./docs/SecurityArchitecture/README.md)
 
 ## 1. Introdução
 
