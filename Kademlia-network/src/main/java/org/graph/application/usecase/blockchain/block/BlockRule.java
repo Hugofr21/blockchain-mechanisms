@@ -5,6 +5,7 @@ import org.graph.domain.entities.block.Block;
 import org.graph.application.usecase.blockchain.BlockchainUseCase;
 import org.graph.domain.entities.transaction.Transaction;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -88,7 +89,53 @@ public class BlockRule {
         return true;
     }
 
+    /**
+     * Implementa a lógica de selecção e reorganização da cadeia de blocos com base
+     * em critérios determinísticos e na prova de trabalho acumulada (Proof of Work).
+     *
+     * <p><b>1. Crescimento Linear Normal:</b><br>
+     * Em condições ideais, a cadeia evolui de forma linear, com cada novo bloco a
+     * referenciar directamente o bloco anterior, mantendo uma única cadeia activa
+     * (currentTip).</p>
+     *
+     * <p><b>2. Selecção da Ramificação com Maior Trabalho Acumulado:</b><br>
+     * Quando ocorre uma bifurcação (fork), a cadeia válida é aquela que apresenta
+     * maior trabalho acumulado. Este critério prevalece independentemente do número
+     * de blocos, sendo a métrica fundamental a dificuldade total resolvida.</p>
+     *
+     * <p><b>3. Desempate Determinístico (Tie-Breaker):</b><br>
+     * Em situações de empate, onde duas cadeias apresentam igual comprimento e
+     * trabalho acumulado, aplica-se uma regra determinística baseada no valor do hash:
+     * os identificadores SHA-256 dos blocos são interpretados como inteiros não
+     * assinados de 256 bits, sendo seleccionada a cadeia cujo bloco terminal possui
+     * o menor valor numérico.</p>
+     *
+     * <p>Se o novo bloco apresentar um valor inferior ao do bloco actual (comparação
+     * lexicográfica equivalente a inteiro), este substitui o currentTip, desencadeando
+     * um processo de reorganização da cadeia (chain reorganization).</p>
+     *
+     * <p>Durante a reorganização:
+     * <ul>
+     *   <li>O bloco anteriormente considerado como topo é removido da cadeia activa;</li>
+     *   <li>As suas transacções são devolvidas à mempool;</li>
+     *   <li>A nova ramificação passa a ser considerada a cadeia principal.</li>
+     * </ul>
+     * </p>
+     *
+     * <p><b>4. Ramificações Secundárias:</b><br>
+     * As cadeias alternativas que não satisfazem os critérios anteriores são mantidas
+     * em estado latente (orfãs ou side branches), podendo vir a tornar-se válidas caso
+     * acumulem maior trabalho no futuro.</p>
+     *
+     * @implNote  currentTip Bloco actualmente considerado como topo da cadeia principal.
+     * @param block Novo bloco recebido que poderá estender ou competir com a cadeia existente.
+     * @implNote mempool Estrutura de dados que armazena transacções pendentes, incluindo aquelas
+     *                reintroduzidas após reorganizações.
+     * @return O novo bloco que passa a ser o topo da cadeia após aplicação das regras de selecção.
+     */
+
     private void updateMainChainIfNecessary(Block block) {
+
         if (currentTip == null || block.getHeader().getPreviousBlockHash().equals(currentTip.getCurrentBlockHash())) {
             organizedChain.put(block.getNumberBlock(), block);
             currentTip = block;
@@ -97,7 +144,23 @@ public class BlockRule {
         else if (block.getNumberBlock() > currentTip.getNumberBlock()) {
             System.out.println("[FORK DETECTED] Concurrent chain is longer (" + block.getNumberBlock() + " vs " + currentTip.getNumberBlock() + "). Resolving...");
             executeChainReorganization(block);
-        } else {
+        }
+
+        else if (block.getNumberBlock() == currentTip.getNumberBlock()) {
+            System.out.println("[FORK DETECTED] Collision at height " + block.getNumberBlock() + ". Applying deterministic tie-breaker...");
+
+            BigInteger newBlockHashValue = new BigInteger(block.getCurrentBlockHash(), 16);
+            BigInteger currentTipHashValue = new BigInteger(currentTip.getCurrentBlockHash(), 16);
+
+            if (newBlockHashValue.compareTo(currentTipHashValue) < 0) {
+                System.out.println("[TIE-BREAKER] New block won mathematically. Forcing 1-block reorganization.");
+
+                executeChainReorganization(block);
+            } else {
+                System.out.println("[TIE-BREAKER] Current tip won mathematically. The new block remains as a sterile branch in blockMap.");
+            }
+        }
+        else {
             System.out.println("[FORK DETECTED] Branch stored in blockMap, but our main chain is still longer.");
         }
     }
