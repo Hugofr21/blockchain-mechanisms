@@ -1,7 +1,5 @@
 # Arquitetura de Segurança de uma Rede P2P Distribuída para Leilões
 
-*(documentação em Português de Portugal – estilo técnico‑profissional)*
-
 ---
 
 ## 1. Imutabilidade e Proteção contra Falsificação
@@ -120,7 +118,7 @@ A rede assume que *qualquer* nó pode comportar‑se de forma maliciosa (Byzanti
 
 > **Resultado:** mesmo que parte da rede se torne maliciosa, a maioria honestă mantém a propriedade de consenso e a integridade dos dados.
 
-## 9. Considerações Finais
+## 7. Considerações Finais
 
 * **Imutabilidade** e **integridade** são asseguradas por hashes encadeados e por verificação de conteúdo (CAS).
 * **Concorrência** é gerida por mem‑pools, regras de fork (cadeia mais longa, hash‑mínimo) e por rollback que reinjecta transações órfãs.
