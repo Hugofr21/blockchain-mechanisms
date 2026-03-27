@@ -1,0 +1,31 @@
+
+
+.block-list-container {
+  width: 100%;
+}
+
+.block-list {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.block-card {
+  background-color: #082b5e;
+  border: 1px solid #082b5e;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  min-width: 250px;
+}
+
+.block-card-header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.block-card-body p {
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+}
