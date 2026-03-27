@@ -1,7 +1,12 @@
 {
-  "name": "client",
+  "name": "client-blockchain",
   "private": true,
   "type": "module",
+  "author": {
+    "name": "Hugo Rodrigues"
+  },
+
+
   "scripts": {
     "build": "react-router build",
     "dev": "react-router dev",
