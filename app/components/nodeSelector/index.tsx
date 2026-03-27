@@ -1,26 +1,31 @@
 import React from "react";
-import type { TransactionsRow } from "./types";
+import type { NodeRow } from "./types";
 
 interface Props {
-  tx: TransactionsRow;
+  data: NodeRow;
 }
 
-export const TransactionCard: React.FC<Props> = ({ tx }) => {
-  const formattedTime = new Date(tx.timestamp).toLocaleString();
-
+export const NodeCard: React.FC<Props> = ({ data }) => {
   return (
-    <div className="transaction-card">
-      <h4>TxID: {tx.txId}</h4>
-      <p><strong>Type:</strong> {tx.type}</p>
-      <p><strong>Sender:</strong> {tx.sender}</p>
-      <p><strong>Owner ID:</strong> {tx.ownerId}</p>
-      <p><strong>Nonce:</strong> {tx.nonce}</p>
-      <p><strong>Timestamp:</strong> {formattedTime}</p>
-      <div>
-        <strong>Data:</strong>
-        <pre>{JSON.stringify(tx.data, null, 2)}</pre>
-      </div>
-      {tx.signature && <p><strong>Signature:</strong> {tx.signature}</p>}
+    <div className="node-card border rounded p-4 space-y-2">
+      <h3 className="text-xl font-semibold">Node: {data.id}</h3>
+
+      <p><strong>Host:</strong> {data.host}</p>
+      <p><strong>Port:</strong> {data.port}</p>
+      <p><strong>Nonce:</strong> {data.nonce}</p>
+      <p><strong>Network Difficulty:</strong> {data.networkDifficulty}</p>
+
+      <p>
+        <strong>URL:</strong>{" "}
+        <a
+          className="text-blue-600 underline"
+          href={`http://${data.host}:${data.port}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          http://{data.host}:{data.port}
+        </a>
+      </p>
     </div>
   );
 };

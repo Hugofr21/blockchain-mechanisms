@@ -1,3 +1,5 @@
+import type { TransactionsRow } from "../transactionRow/types";
+
 export interface BlockHeader {
   previousHash: string;
   merkleRoot: string;
@@ -10,4 +12,5 @@ export interface Block {
   blockNumber: number;
   cachedHash: string;
   header: BlockHeader;
+  transactions: TransactionsRow[];
 }

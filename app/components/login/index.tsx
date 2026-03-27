@@ -1,26 +1,51 @@
 import React from "react";
-import type { TransactionsRow } from "./types";
+import { useKeycloak } from "@react-keycloak/web";
 
-interface Props {
-  tx: TransactionsRow;
-}
+export function LoginPage() {
+  const { keycloak, initialized } = useKeycloak();
 
-export const TransactionCard: React.FC<Props> = ({ tx }) => {
-  const formattedTime = new Date(tx.timestamp).toLocaleString();
+  if (!initialized) {
+    return (
+      <main className="p-6">
+        <h1>Loading authentication...</h1>
+      </main>
+    );
+  }
+
+  if (keycloak.authenticated) {
+    return (
+      <main className="p-6 space-y-4">
+        <h1 className="text-2xl font-bold">Authenticated</h1>
+
+        <p>
+          <strong>User:</strong> {keycloak.tokenParsed?.preferred_username}
+        </p>
+
+        <p className="break-all text-sm">
+          <strong>Token:</strong> {keycloak.token}
+        </p>
+
+        <button
+          className="px-4 py-2 bg-red-600 text-white rounded"
+          onClick={() => keycloak.logout()}
+        >
+          Logout
+        </button>
+      </main>
+    );
+  }
 
   return (
-    <div className="transaction-card">
-      <h4>TxID: {tx.txId}</h4>
-      <p><strong>Type:</strong> {tx.type}</p>
-      <p><strong>Sender:</strong> {tx.sender}</p>
-      <p><strong>Owner ID:</strong> {tx.ownerId}</p>
-      <p><strong>Nonce:</strong> {tx.nonce}</p>
-      <p><strong>Timestamp:</strong> {formattedTime}</p>
-      <div>
-        <strong>Data:</strong>
-        <pre>{JSON.stringify(tx.data, null, 2)}</pre>
-      </div>
-      {tx.signature && <p><strong>Signature:</strong> {tx.signature}</p>}
-    </div>
+    <main className="p-6 space-y-4">
+      <h1 className="text-3xl font-bold">DHT Ledger Login</h1>
+      <p>Please authenticate using Keycloak.</p>
+
+      <button
+        className="px-4 py-2 bg-blue-600 text-white rounded"
+        onClick={() => keycloak.login()}
+      >
+        Login
+      </button>
+    </main>
   );
-};
+}

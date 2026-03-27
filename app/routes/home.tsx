@@ -1,13 +1,16 @@
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import { Dashboard } from "~/pages/dashboard/dashboardPage";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "DHT Ledger - Nodes Dashboard" },
+    {
+      name: "description",
+      content: "Monitorização e visualização da rede DHT Ledger e nós replicados.",
+    },
   ];
 }
 
 export default function Home() {
-  return <Welcome />;
+  return <Dashboard />;
 }
