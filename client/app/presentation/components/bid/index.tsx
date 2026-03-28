@@ -1,5 +1,5 @@
 import React from "react";
-import type { BidRow } from "./types";
+import type { BidRow } from "../../../application/model/bid";
 
 interface Props {
   data: BidRow;

@@ -1,5 +1,5 @@
 import React from "react";
-import type { Block } from "../types";
+import type { Block } from "../../../../application/model/block";
 import { TransactionCard } from "../../transactionRow";
 
 interface Props {

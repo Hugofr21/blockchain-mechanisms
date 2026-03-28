@@ -1,6 +1,6 @@
 import React from "react";
-import type { AuctionRow } from "../types";
-import type { BidRow } from "../../bid/types";
+import type { AuctionRow } from "../../../../application/model/auction";
+import type { BidRow } from "../../../../application/model/bid";
 
 interface Props {
   auction: AuctionRow;

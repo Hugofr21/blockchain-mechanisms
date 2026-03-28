@@ -1,5 +1,5 @@
 import React from "react";
-import type { TransactionsRow } from "../transactionRow/types";
+import type { TransactionsRow } from "../../../application/model/transaction";
 import { TransactionCard } from "../transactionRow";
 
 interface Props {

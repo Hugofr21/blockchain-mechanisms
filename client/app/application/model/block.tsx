@@ -1,4 +1,4 @@
-import type { TransactionsRow } from "../transactionRow/types";
+import type { TransactionsRow } from "./transaction";
 
 export interface BlockHeader {
   previousHash: string;

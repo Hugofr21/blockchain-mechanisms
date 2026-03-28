@@ -1,4 +1,4 @@
-import type { BidRow } from "../bid/types";
+import type { BidRow } from "./bid";
 
 export interface AuctionRow {
   auctionId: string;

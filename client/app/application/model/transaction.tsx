@@ -1,5 +1,5 @@
 
-export type TransactionType = "TRANSFER" | "AUCTION" | "STAKE"; // Exemplo de tipos
+export type TransactionType = "TRANSFER" | "AUCTION" | "BID";
 
 export interface TransactionsRow {
   txId: string;

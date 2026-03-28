@@ -1,5 +1,5 @@
 import React from "react";
-import type { NodeRow } from "./types";
+import type { NodeRow } from "../../../application/model/node";
 
 interface Props {
   data: NodeRow;
