@@ -1,7 +1,6 @@
 import React from "react";
 import type { Block } from "../../components/block/types";
 import { BlockCard } from "../../components/block";
-
 interface Props {
   data: Block[];
 }

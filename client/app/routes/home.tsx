@@ -1,5 +1,5 @@
 import type { Route } from "./+types/home";
-import { Dashboard } from "~/pages/dashboard/dashboardPage";
+import { Dashboard } from "~/presentation/pages/dashboard/dashboardPage";
 
 export function meta({}: Route.MetaArgs) {
   return [

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router";
 import type { NodeRow } from "../../components/nodeSelector/types";
 import type { NodeAction } from "./types";
-import { testActions } from "../../data/nodeActions";
+import { testActions } from "../../../data/nodeActions";
 
 interface Props {
   nodes: NodeRow[];

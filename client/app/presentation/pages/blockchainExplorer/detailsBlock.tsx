@@ -1,7 +1,7 @@
 import React from "react";
 import { useParams, Link } from "react-router";
 import { blocks } from "~/data/block";
-import { BlockDetailsView } from "~/components/block/viewDetails/blockDetailsView";
+import { BlockDetailsView } from "~/presentation/components/block/viewDetails/blockDetailsView";
 
 export default function BlockDetailsPage() {
   const { height } = useParams<{ height: string }>();

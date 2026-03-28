@@ -1,12 +1,10 @@
 import React, { useState } from "react";
 import { useParams, Link } from "react-router";
-
 import { auctions as initialAuctions } from "~/data/auction";
-import { AuctionDetailsView } from "~/components/auction/viewDetails/auctionDetailsView";
-import { PlaceBidForm } from "~/components/bid/form";
-
-import type { AuctionRow } from "~/components/auction/types";
-import type { BidRow } from "~/components/bid/types";
+import { AuctionDetailsView } from "~/presentation/components/auction/viewDetails/auctionDetailsView";
+import { PlaceBidForm } from "~/presentation/components/bid/form";
+import type { AuctionRow } from "~/presentation/components/auction/types";
+import type { BidRow } from "~/presentation/components/bid/types";
 
 export default function AuctionBidsPage() {
   const { id } = useParams();

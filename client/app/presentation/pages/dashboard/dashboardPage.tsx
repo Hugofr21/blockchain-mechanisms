@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { NodeActionsDashboard } from "../../components/nodeAction";
-import { nodes } from "../../data/node";
+import { nodes } from "../../../data/node";
 import type { NodeRow } from "../../components/nodeSelector/types";
 import type { NodeAction } from "../../components/nodeAction/types";
 

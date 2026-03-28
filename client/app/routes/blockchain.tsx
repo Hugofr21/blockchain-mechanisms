@@ -1,4 +1,4 @@
-import { BlockchainView } from "~/pages/blockchainExplorer/blockchain";
+import { BlockchainView } from "~/presentation/pages/blockchainExplorer/blockchain";
 import { blocks } from "~/data/block";
 
 export default function BlockchainRouter() {

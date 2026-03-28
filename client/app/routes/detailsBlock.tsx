@@ -1,4 +1,4 @@
-import BlockDetailsPage from "~/pages/blockchainExplorer/detailsBlock";
+import BlockDetailsPage from "~/presentation/pages/blockchainExplorer/detailsBlock";
 
 export default function BlockDetailsRouter() {
    return <BlockDetailsPage/>;
