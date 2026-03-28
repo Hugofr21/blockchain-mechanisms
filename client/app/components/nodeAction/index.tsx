@@ -30,6 +30,9 @@ export function NodeActionsDashboard({ nodes, onActionClick }: Props) {
         case "action-1":
           navigate("/blockchain");
           break;
+        case "action-2":
+          navigate("/auction");
+          break;
         default:
           break;
   

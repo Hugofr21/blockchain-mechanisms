@@ -1,43 +1,45 @@
+// components/block/BlockCard.tsx
 import React from "react";
+import { useNavigate } from "react-router";
 import type { Block } from "./types";
-import { TransactionCard } from "../transactionRow";
-import "./style.css";
 
 interface Props {
   data: Block;
 }
 
 export function BlockCard({ data }: Props) {
-  const { blockNumber, cachedHash, header, transactions } = data;
+  const navigate = useNavigate(); 
 
+  const { blockNumber, cachedHash, header, transactions } = data;
   const formattedTimestamp = new Date(header.timestamp).toLocaleString();
 
+  const handleClick = () => {
+    navigate(`/blockchain/${blockNumber}`);
+  };
+
   return (
-    <div className="block-card border rounded-lg shadow p-4 bg-white dark:bg-gray-800">
-      <header className="block-card-header mb-4">
-        <h2 className="text-xl font-bold">Block #{blockNumber}</h2>
-        <p className="text-sm">Hash: {cachedHash}</p>
-      </header>
-
-      <div className="block-card-body mb-4">
-        <h3 className="font-semibold mb-2">Header</h3>
-        <p><strong>Previous Hash:</strong> {header.previousHash}</p>
-        <p><strong>Merkle Root:</strong> {header.merkleRoot}</p>
-        <p><strong>Timestamp:</strong> {formattedTimestamp}</p>
-        <p><strong>Nonce:</strong> {header.nonce}</p>
-        <p><strong>Difficulty:</strong> {header.difficulty}</p>
-      </div>
-
-      {transactions && transactions.length > 0 && (
-        <div className="block-transactions">
-          <h3 className="font-semibold mb-2">Transactions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {transactions.map((tx) => (
-              <TransactionCard key={tx.txId} tx={tx} />
-            ))}
-          </div>
-        </div>
-      )}
+    <div
+      onClick={handleClick}
+      className="border rounded-xl shadow-sm p-4 bg-white dark:bg-gray-900 cursor-pointer hover:shadow-md hover:border-indigo-400 transition space-y-2"
+    >
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+        Block #{blockNumber}
+      </h2>
+      <p className="text-xs text-gray-600 dark:text-gray-400 break-all">
+        Hash: <span className="font-mono">{cachedHash}</span>
+      </p>
+      <p className="text-xs text-gray-600 dark:text-gray-400 break-all">
+        Prev: <span className="font-mono">{header.previousHash}</span>
+      </p>
+      <p className="text-sm text-gray-700 dark:text-gray-300">
+        <strong>Timestamp:</strong> {formattedTimestamp}
+      </p>
+      <p className="text-sm text-gray-700 dark:text-gray-300">
+        <strong>Tx Count:</strong> {transactions.length}
+      </p>
+      <p className="text-xs text-indigo-600 dark:text-indigo-300 font-semibold pt-1">
+        Click to view details +
+      </p>
     </div>
   );
 }
