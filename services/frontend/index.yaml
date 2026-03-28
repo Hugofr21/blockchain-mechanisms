@@ -1,0 +1,12 @@
+services:
+ react-dashboard:
+  context: ../../client
+  dockerfile: Dockerfile
+  container_name: react-dashboard
+  networks:
+      - monitoring
+  ports:
+     - "3001:3001"
+  depends_on:
+      - api-gateway
+  

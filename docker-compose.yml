@@ -15,6 +15,7 @@ include:
   - services/prometheus/index.yaml
   - services/grafana/index.yaml
   - services/ngnix/index.yaml
+  - services/frontend/index.yaml
 
 x-peer-common: &peer-common
   build: .
