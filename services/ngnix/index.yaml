@@ -1,0 +1,12 @@
+services:
+  api-gateway:
+    build:
+      context: ./services/nginx
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    networks:
+      - monitoring
+    ports:
+      - "8080:80" 
+    depends_on:
+      - bootstrap-node
