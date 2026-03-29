@@ -1,4 +1,4 @@
-import type { NodeRow } from "../components/nodeSelector/types";
+import type { NodeRow } from "../application/model/node";
 
 export const nodes: NodeRow[] = [
   { id: "node-1", host: "172.23.0.11", port: 8001, nonce: 100, networkDifficulty: 4 },

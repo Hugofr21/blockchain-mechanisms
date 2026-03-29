@@ -1,4 +1,4 @@
-import type { AuctionRow } from "../components/auction/types";
+import type { AuctionRow } from "../application/model/auction";
 
 export const auctions: AuctionRow[] = [
   {

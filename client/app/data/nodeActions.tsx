@@ -1,4 +1,4 @@
-import type { NodeAction } from "../components/nodeAction/types";
+import type { NodeAction } from "../presentation/components/nodeAction/types"
 
 export const testActions: NodeAction[] = [
   { id: "action-1", label: "View Blockchain" },

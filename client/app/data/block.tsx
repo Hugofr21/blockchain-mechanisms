@@ -1,4 +1,4 @@
-import type { Block } from "../components/block/types";
+import type { Block } from "../application/model/block";
 
 export const blocks: Block[] = [
   {
@@ -45,7 +45,7 @@ export const blocks: Block[] = [
     transactions: [
       {
         txId: "tx-003",
-        type: "STAKE",
+        type: "BID",
         sender: "user-102",
         ownerId: "stake-001",
         data: { amount: 100 },
