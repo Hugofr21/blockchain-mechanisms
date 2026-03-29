@@ -11,8 +11,8 @@
 Para simular uma rede privada utilizando os algoritmos Kademlia, vamos iniciar o projeto com Docker.
 
 ```shell
-cd./blockchain-mechanisms/Kademlia-network
 docker compose build--no-cache
+
 docker compose up-d
 ```
 
