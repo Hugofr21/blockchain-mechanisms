@@ -1,8 +1,8 @@
 services:
   api-gateway:
     build:
-      context: ./services/nginx
-      dockerfile: Dockerfile
+      context: . 
+      dockerfile: Dockerfile.nginx
     container_name: api-gateway
     networks:
       - monitoring

@@ -14,11 +14,13 @@ volumes:
 include:
   - services/prometheus/index.yaml
   - services/grafana/index.yaml
-  - services/ngnix/index.yaml
+  - services/nginx/index.yaml
   - services/frontend/index.yaml
 
 x-peer-common: &peer-common
-  build: .
+  build:
+   context: ./Kademlia-network
+   dockerfile: Dockerfile
   networks:
     monitoring:
   stdin_open: true
@@ -28,7 +30,9 @@ x-peer-common: &peer-common
 
 services:
   bootstrap-node:
-    build: .
+    build:
+     context: ./Kademlia-network
+     dockerfile: Dockerfile
     container_name: bootstrap-node
     networks:
       monitoring:
