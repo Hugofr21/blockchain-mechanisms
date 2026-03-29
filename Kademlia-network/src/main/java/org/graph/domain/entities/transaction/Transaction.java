@@ -1,5 +1,7 @@
 package org.graph.domain.entities.transaction;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.graph.domain.valueobject.utils.HashUtils;
 import org.graph.adapter.outbound.network.message.auction.AuctionPayload;
 
@@ -11,10 +13,12 @@ import java.util.Base64;
 public class Transaction implements Serializable {
     private final String txId;
     private final TransactionType type;
+    @JsonIgnore
     private PublicKey sender;
     private BigInteger ownerId;
     private AuctionPayload data;
     private final long timestamp;
+    @JsonIgnore
     private byte[] signature;
     private final long nonce;
 
@@ -44,9 +48,19 @@ public class Transaction implements Serializable {
     public TransactionType getType() {
         return type;
     }
-
+    @JsonIgnore
     public PublicKey getSender() {
         return sender;
+    }
+    @JsonIgnore
+    public byte[] getSignature() {
+        return signature;
+    }
+
+    @JsonProperty("signatureBase64")
+    public String getSignatureBase64() {
+        if (signature == null) return null;
+        return Base64.getEncoder().encodeToString(signature);
     }
 
     public AuctionPayload getData() {
@@ -82,10 +96,6 @@ public class Transaction implements Serializable {
 
     public long getNonce() {
         return nonce;
-    }
-
-    public byte[] getSignature() {
-        return signature;
     }
 
     @Override

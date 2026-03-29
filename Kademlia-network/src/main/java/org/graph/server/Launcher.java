@@ -39,7 +39,7 @@ public class Launcher {
 
                 joiner.attemptJoin(bootstrapHost, BOOTSTRAP_PORT);
             } catch (InterruptedException e) {
-                System.err.println("[ERRO] Falha na thread de sincronização: " + e.getMessage());
+                System.err.println("[ERRO] Synchronization thread failed:: " + e.getMessage());
                 Thread.currentThread().interrupt();
             }
         }).start();

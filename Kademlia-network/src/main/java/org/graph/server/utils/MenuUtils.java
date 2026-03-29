@@ -483,13 +483,12 @@ public class MenuUtils {
                 if (closest.isEmpty()) {
                     System.out.println(" >> No nodes found.");
                 } else {
-                    // Cabeçalho da tabela
+
                     System.out.printf("%-15s | %-6s | %-15s | %s%n", "Host", "Port", "ID (Short)", "XOR Distance");
                     System.out.println("---------------------------------------------------------------");
 
                     for (Node n : closest) {
 
-                        // Calcula a distância para mostrar quão perto o nó está do alvo
                         BigInteger dist = n.getNodeId().distanceBetweenNode(nodeId);
 
                         String shortId = n.getNodeId().value().toString();
