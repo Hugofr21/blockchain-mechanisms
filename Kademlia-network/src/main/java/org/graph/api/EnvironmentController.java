@@ -42,43 +42,52 @@ public class EnvironmentController {
         int acceptedCount = 0;
         int rejectedCount = 0;
 
-        for (int i = 0; i < 50; i++) {
-            try {
-                KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-                generator.initialize(2048);
-                KeyPair pair = generator.generateKeyPair();
+        try {
+            for (int i = 0; i < 50; i++) {
+                try {
+                    KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+                    generator.initialize(2048);
+                    KeyPair pair = generator.generateKeyPair();
 
-                BigInteger fakeId = new BigInteger(256, new Random());
-                Node attackNode = new Node("192.168.1." + i, 9000 + i, fakeId, 0, peerContext.getMyself().getNETWORK_DIFFICULTY());
+                    BigInteger fakeId = new BigInteger(256, new Random());
 
-                peerContext.getIsKeysInfrastructure().addNeighborPublicKey(fakeId, pair.getPublic());
-                boolean added = peerContext.getRoutingTable().addNode(attackNode, peerContext);
+                    Node attackNode = new Node("192.168.1." + i, 9000 + i, fakeId, 0, peerContext.getMyself().getNETWORK_DIFFICULTY());
 
-                if (added) acceptedCount++;
-                else rejectedCount++;
-            } catch (Exception e) {
-                ctx.status(500).json(Map.of("error", "Attack generation failed: " + e.getMessage()));
-                return;
+                    peerContext.getIsKeysInfrastructure().addNeighborPublicKey(fakeId, pair.getPublic());
+                    boolean added = peerContext.getRoutingTable().addNode(attackNode, peerContext);
+
+                    if (added) acceptedCount++;
+                    else rejectedCount++;
+
+                } catch (SecurityException se) {
+                    rejectedCount++;
+                }
             }
-        }
 
-        boolean success = acceptedCount == 0;
-        ctx.json(Map.of(
-                "attack", "SYBIL",
-                "acceptedNodes", acceptedCount,
-                "rejectedNodes", rejectedCount,
-                "status", success ? "DEFENSE_OPERATIONAL" : "ROUTING_TABLE_COMPROMISED"
-        ));
+            boolean success = acceptedCount == 0;
+            ctx.status(200).json(Map.of(
+                    "attack", "SYBIL",
+                    "acceptedNodes", acceptedCount,
+                    "rejectedNodes", rejectedCount,
+                    "status", success ? "DEFENSE_OPERATIONAL" : "ROUTING_TABLE_COMPROMISED",
+                    "message", "Ataque Sybil finalizado. A camada de Proof of Work barrou instâncias sem esforço computacional."
+            ));
+        } catch (Exception e) {
+            peerContext.getLogger().severe("Sybil generation failure: " + e.getMessage());
+            e.printStackTrace();
+            ctx.status(500).json(Map.of("error", "Catastrophic failure in Sybil attack vector: " + e.getMessage()));
+        }
     }
 
     private void simulateEclipseAttack(Context ctx) {
         String attackIp = "10.0.0.125";
         int acceptedCount = 0;
         int rejectedCount = 0;
-        int difficulty = peerContext.getMyself().getNETWORK_DIFFICULTY();
 
-        for (int i = 0; i < 10; i++) {
-            try {
+        try {
+            int difficulty = peerContext.getMyself().getNETWORK_DIFFICULTY();
+
+            for (int i = 0; i < 10; i++) {
                 KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
                 generator.initialize(2048);
                 KeyPair pair = generator.generateKeyPair();
@@ -100,19 +109,21 @@ public class EnvironmentController {
 
                 if (added) acceptedCount++;
                 else rejectedCount++;
-            } catch (Exception e) {
-                ctx.status(500).json(Map.of("error", "Eclipse attack failed:" + e.getMessage()));
-                return;
             }
-        }
 
-        boolean success = acceptedCount <= 2;
-        ctx.json(Map.of(
-                "attack", "ECLIPSE",
-                "acceptedNodes", acceptedCount,
-                "rejectedNodes", rejectedCount,
-                "status", success ? "SPATIAL_RESTRICTION_OPERATIONAL" : "NODE_ISOLATED"
-        ));
+            boolean success = acceptedCount <= 2;
+            ctx.status(200).json(Map.of(
+                    "attack", "ECLIPSE",
+                    "acceptedNodes", acceptedCount,
+                    "rejectedNodes", rejectedCount,
+                    "status", success ? "SPATIAL_RESTRICTION_OPERATIONAL" : "NODE_ISOLATED",
+                    "message", "Eclipse attack completed. 10 identities mined via PoW."
+            ));
+        } catch (Exception e) {
+            peerContext.getLogger().severe("Eclipse generation failure: " + e.getMessage());
+            e.printStackTrace();
+            ctx.status(500).json(Map.of("error", "Catastrophic failure in Eclipse attack vector: " + e.getMessage()));
+        }
     }
 
     private void simulateDuplicateBids(Context ctx) {
@@ -214,27 +225,34 @@ public class EnvironmentController {
     }
 
     private void simulateBlockFakeIdentityInjection(Context ctx) {
-        new Thread(() -> {
-            try {
-                List<Node> neighbors = peerContext.getNeighboursManager().getActiveNeighbours();
-                if (neighbors.isEmpty()) return;
+        try {
+            new Thread(() -> {
+                try {
+                    List<Node> neighbors = peerContext.getNeighboursManager().getActiveNeighbours();
+                    if (neighbors.isEmpty()) {
+                        peerContext.getLogger().warning("No active neighbors to poison.");
+                        return;
+                    }
 
-                Node targetNeighbor = neighbors.get(0);
-                Block poisonedBlock = new Block(
-                        1, peerContext.getNetworkGateway().getBlockchainEngine().getBlockOrganizer().getChainHeight() + 1,
-                        "00631425ea719c4f88f090c3f1f079c98ae9ceb6215813e779ef3cbe071b981621",
-                        new ArrayList<>(), peerContext.getMyself().getNETWORK_DIFFICULTY()
-                );
-                poisonedBlock.setCurrentHash("00f72c1bc26f96f44374911f6e8d6ab4a8b5e43c321136dbd83edb6e71acdf51c7");
+                    Node targetNeighbor = neighbors.get(0);
+                    Block poisonedBlock = new Block(
+                            1, peerContext.getNetworkGateway().getBlockchainEngine().getBlockOrganizer().getChainHeight() + 1,
+                            "00631425ea719c4f88f090c3f1f079c98ae9ceb6215813e779ef3cbe071b981621",
+                            new ArrayList<>(), peerContext.getMyself().getNETWORK_DIFFICULTY()
+                    );
+                    poisonedBlock.setCurrentHash("00f72c1bc26f96f44374911f6e8d6ab4a8b5e43c321136dbd83edb6e71acdf51c7");
 
-                Message attackMsg = new Message(MessageType.BLOCK, poisonedBlock, peerContext.getHybridLogicalClock());
-                peerContext.getMkademliaNetwork().sendRPCAsync(targetNeighbor, attackMsg);
-            } catch (Exception e) {
-                peerContext.getLogger().severe("Poisoned Block attack fails: " + e.getMessage());
-            }
-        }).start();
+                    Message attackMsg = new Message(MessageType.BLOCK, poisonedBlock, peerContext.getHybridLogicalClock());
+                    peerContext.getMkademliaNetwork().sendRPCAsync(targetNeighbor, attackMsg);
+                } catch (Exception e) {
+                    peerContext.getLogger().severe("Poisoned Block attack fails: " + e.getMessage());
+                }
+            }).start();
 
-        ctx.status(202).json(Map.of("status", "INJECTED", "message", "Poisoned block fired at the first active neighbor."));
+            ctx.status(202).json(Map.of("status", "INJECTED", "message", "Poisoned block fired at the first active neighbor."));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("error", "Failed to initiate Poisoned Block thread: " + e.getMessage()));
+        }
     }
 
     private ChaosTargetRequest validateAndExtractTarget(Context ctx) {

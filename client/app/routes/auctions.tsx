@@ -1,12 +1,14 @@
-import { AuctionsPage } from "~/presentation/pages/auction/auctions";
-import { auctions } from "~/data/auction";
-import {useCreateAuction, useGetAllAuction } from "../infrastructure/hooks/auctionHook"
 import { useParams } from "react-router";
+import { AuctionsPage } from "~/presentation/pages/auction/auctions";
+import { useCreateAuction, useGetAllAuction, useTestAuctionThisNode } from "../infrastructure/hooks/auctionHook";
+import { TopNavigation } from "~/presentation/components/login/TopNavigation";
 
 export default function AuctionRouter() {
   const { targetNodePort } = useParams<{ targetNodePort: string }>();
+  
   const { auctions, isLoading, error } = useGetAllAuction(targetNodePort || null);
   const createAuctionHook = useCreateAuction(); 
+  const testAuctionHook = useTestAuctionThisNode(); 
 
   if (!targetNodePort) {
     return (
@@ -25,12 +27,21 @@ export default function AuctionRouter() {
     await createAuctionHook.execute(targetNodePort, payload.description, payload.startingPrice);
   };
 
+  const handleTest = async () => {
+    await testAuctionHook.execute(targetNodePort);
+  };
+
   return (
-    <AuctionsPage 
-      targetNodePort={targetNodePort}
-      initialAuctions={auctions || []}
-      onCreatedAuction={handleCreation} 
-      isCreating={createAuctionHook.isLoading}
-    />
+    <>
+      <TopNavigation />
+      <AuctionsPage 
+        targetNodePort={targetNodePort}
+        initialAuctions={auctions || []}
+        onCreatedAuction={handleCreation} 
+        isCreating={createAuctionHook.isLoading}
+        onTestAuction={handleTest}
+        isTesting={testAuctionHook.isLoading}
+      />
+    </>
   );
 }

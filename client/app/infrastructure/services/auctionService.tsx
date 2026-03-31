@@ -57,3 +57,18 @@ export const fetchPlaceBid = async (
     });
     return response.data;
 };
+
+export const fetchTestAuctionThisNode = async (
+    nodeId: string,
+    signal?: AbortSignal
+): Promise<TransactionResponse> => {
+    const response = await apiClient.post<TransactionResponse>(
+        `/api/auctions/test`, 
+        null, 
+        {
+            headers: { 'X-Target-Node': nodeId },
+            signal
+        }
+    );
+    return response.data;
+};

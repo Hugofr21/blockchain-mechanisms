@@ -1,0 +1,39 @@
+{
+  "realm": "automacao",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "react-app",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "rootUrl": "http://localhost:3001",
+      "baseUrl": "http://localhost:3001",
+      "redirectUris": [
+        "http://localhost:3001/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3001"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "alunos.teste",
+      "email": "alunos.teste@kademlia.local",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Alunos",
+      "lastName": "Segurança de sistemas e dados",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

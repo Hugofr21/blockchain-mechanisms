@@ -23,6 +23,54 @@ public class KBucket { ;
 
     }
 
+    /**
+     * Política aplicada quando um K-Bucket atinge a sua capacidade máxima,
+     * incorporando mecanismos adicionais de mitigação contra ataques Sybil.
+     *
+     * <p>
+     * No algoritmo Kademlia original, quando um bucket está cheio, o nó menos
+     * recentemente observado (head da estrutura ordenada por LRU) é submetido
+     * a um teste de liveness através de uma mensagem de ping. Caso esse nó
+     * responda, assume-se que continua operacional e o novo nó candidato é
+     * simplesmente descartado. Este comportamento favorece a estabilidade
+     * estrutural da tabela de encaminhamento, privilegiando nós com histórico
+     * prolongado de disponibilidade. Contudo, o modelo clássico não incorpora
+     * qualquer noção de reputação ou confiabilidade.
+     * </p>
+     *
+     * <p>
+     * A variante S-Kademlia introduz um critério adicional baseado em confiança
+     * (Trust). Caso o nó mais antigo apresente um nível de confiança inferior a
+     * um limiar definido e o novo nó apresente um valor de Trust significativamente
+     * superior, o sistema pode considerar a substituição do nó antigo. Esta
+     * decisão não é tomada de forma automática, sendo condicionada por dois
+     * fatores principais:
+     * </p>
+     *
+     * <ul>
+     *   <li>Avaliação comparativa de Trust entre o nó existente e o nó candidato,
+     *   permitindo evicção seletiva de nós potencialmente maliciosos ou pouco
+     *   confiáveis.</li>
+     *   <li>Validação do mecanismo de Proof-of-Work (PoW) apresentado pelo nó
+     *   candidato, utilizado como barreira computacional para limitar a criação
+     *   massiva de identidades Sybil.</li>
+     * </ul>
+     *
+     * <p>
+     * Na ausência destas condições, mantém-se o comportamento conservador do
+     * Kademlia original, preservando nós estáveis na tabela e reduzindo a
+     * probabilidade de ataques de flooding baseados na inserção massiva de
+     * identidades controladas por um adversário.
+     * </p>
+     *
+     * <p>
+     * Este método retorna {@code false} para sinalizar que a decisão final ainda
+     * depende da verificação de disponibilidade do nó menos recentemente visto
+     * ({@code leastRecentlySeen}). O código chamador deverá executar o teste de
+     * conectividade antes de descartar qualquer entrada existente no bucket.
+     * </p>
+     */
+    
     public synchronized boolean addNode(Node newNode) {
         this.lastRefreshTime = System.currentTimeMillis();
 
@@ -39,53 +87,6 @@ public class KBucket { ;
             return true;
         }
 
-        /**
-         * Política aplicada quando um K-Bucket atinge a sua capacidade máxima,
-         * incorporando mecanismos adicionais de mitigação contra ataques Sybil.
-         *
-         * <p>
-         * No algoritmo Kademlia original, quando um bucket está cheio, o nó menos
-         * recentemente observado (head da estrutura ordenada por LRU) é submetido
-         * a um teste de liveness através de uma mensagem de ping. Caso esse nó
-         * responda, assume-se que continua operacional e o novo nó candidato é
-         * simplesmente descartado. Este comportamento favorece a estabilidade
-         * estrutural da tabela de encaminhamento, privilegiando nós com histórico
-         * prolongado de disponibilidade. Contudo, o modelo clássico não incorpora
-         * qualquer noção de reputação ou confiabilidade.
-         * </p>
-         *
-         * <p>
-         * A variante S-Kademlia introduz um critério adicional baseado em confiança
-         * (Trust). Caso o nó mais antigo apresente um nível de confiança inferior a
-         * um limiar definido e o novo nó apresente um valor de Trust significativamente
-         * superior, o sistema pode considerar a substituição do nó antigo. Esta
-         * decisão não é tomada de forma automática, sendo condicionada por dois
-         * fatores principais:
-         * </p>
-         *
-         * <ul>
-         *   <li>Avaliação comparativa de Trust entre o nó existente e o nó candidato,
-         *   permitindo evicção seletiva de nós potencialmente maliciosos ou pouco
-         *   confiáveis.</li>
-         *   <li>Validação do mecanismo de Proof-of-Work (PoW) apresentado pelo nó
-         *   candidato, utilizado como barreira computacional para limitar a criação
-         *   massiva de identidades Sybil.</li>
-         * </ul>
-         *
-         * <p>
-         * Na ausência destas condições, mantém-se o comportamento conservador do
-         * Kademlia original, preservando nós estáveis na tabela e reduzindo a
-         * probabilidade de ataques de flooding baseados na inserção massiva de
-         * identidades controladas por um adversário.
-         * </p>
-         *
-         * <p>
-         * Este método retorna {@code false} para sinalizar que a decisão final ainda
-         * depende da verificação de disponibilidade do nó menos recentemente visto
-         * ({@code leastRecentlySeen}). O código chamador deverá executar o teste de
-         * conectividade antes de descartar qualquer entrada existente no bucket.
-         * </p>
-         */
 
         Node leastRecentlySeen = getLeastRecentlySeen();
         if (leastRecentlySeen != null) {

@@ -1,7 +1,9 @@
 import type { Route } from "./+types/home";
 import { Dashboard } from "~/presentation/pages/dashboard/dashboardPage";
 import { useGlobalNetworkData } from "~/infrastructure/hooks/network/globalNetwork";
-
+import { useAuth } from "~/infrastructure/hooks/useAuth";
+import { Navigate } from "react-router";
+import { TopNavigation } from "~/presentation/components/login/TopNavigation";
 import {
   useSimulateSybilAttack,
   useSimulateEclipseAttack,
@@ -19,11 +21,26 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
+  const { isAuthenticated, isInitializing, token } = useAuth();
   const { nodes, loading, error } = useGlobalNetworkData();
   
   const sybil = useSimulateSybilAttack();
   const eclipse = useSimulateEclipseAttack();
   const poison = useSimulatePoisonedBlock();
+
+  if (isInitializing) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950">
+        <p className="text-indigo-600 animate-pulse font-mono font-semibold tracking-wide">
+          A validar a integridade da sessão criptográfica...
+        </p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
   
   if (loading) {
     return (
@@ -47,11 +64,15 @@ export default function Home() {
   }
 
   return (
+    <>
+     <TopNavigation />
       <Dashboard 
           nodes={nodes} 
           onSimulateSybil={(nodeId) => sybil.execute(nodeId)}
           onSimulateEclipse={(nodeId) => eclipse.execute(nodeId)}
           onSimulatePoison={(nodeId) => poison.execute(nodeId)}
       />
+    </>
+
   );
 }

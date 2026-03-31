@@ -16,6 +16,7 @@ include:
   - services/grafana/index.yaml
   - services/nginx/index.yaml
   - services/frontend/index.yaml
+  - services/keycloak/index.yaml
 
 x-peer-common: &peer-common
   build:

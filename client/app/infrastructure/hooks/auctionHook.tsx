@@ -6,6 +6,7 @@ import {
     fetchGetAuctionById, 
     fetchCreateAuction, 
     fetchPlaceBid,
+    fetchTestAuctionThisNode
 } from '../services/auctionService' 
 
 export interface TransactionResponse {
@@ -152,3 +153,29 @@ export const usePlaceBid = () => {
 
     return { execute, response, isLoading, error };
 };
+
+export function useTestAuctionThisNode() {
+    const [result, setResult] = useState<TransactionResponse | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const execute = async (nodeId: string) => {
+        setIsLoading(true);
+        setError(null);
+        setResult(null);
+
+        try {
+            const data = await fetchTestAuctionThisNode(nodeId);
+            setResult(data);
+            return data;
+        } catch (err: any) {
+            const errorMessage = err.response?.data?.error || err.message || "Falha catastrófica ao invocar o teste de carga de leilões no contentor.";
+            setError(errorMessage);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return { execute, result, isLoading, error };
+}

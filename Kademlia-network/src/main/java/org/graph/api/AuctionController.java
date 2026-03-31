@@ -4,8 +4,6 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.graph.domain.entities.auctions.AuctionState;
 import org.graph.server.Peer;
-import org.jetbrains.annotations.NotNull;
-
 import java.math.BigDecimal;
 import java.util.Map;
 
@@ -26,8 +24,61 @@ public class AuctionController {
         app.post("/api/auctions/test", this::testCreated);
     }
 
-    private void testCreated(Context context) {
+    private void testCreated(Context ctx) {
+        new Thread(() -> {
+            try {
+                var auctionEngine = peerContext.getNetworkGateway().getAuctionEngine();
+                System.out.println("\n[SIMULATION] === INITIALED STRESS TEST ===");
 
+                BigDecimal priceA = new BigDecimal("1000");
+                String auctionIdA = auctionEngine.createdLocalAuctions(priceA, peerContext);
+                waitForAuctionInLedger(auctionIdA);
+
+                BigDecimal priceB = new BigDecimal("500");
+                String auctionIdB = auctionEngine.createdLocalAuctions(priceB, peerContext);
+                waitForAuctionInLedger(auctionIdB);
+
+                System.out.println("[SIMULATION] Dispatch 40 bids concurrently...");
+                for (int i = 1; i <= 20; i++) {
+                    BigDecimal bidA = priceA.add(BigDecimal.valueOf(i * 50));
+                    auctionEngine.placeBidRequest(auctionIdA, bidA, peerContext);
+
+                    BigDecimal bidB = priceB.add(BigDecimal.valueOf(i * 25));
+                    auctionEngine.placeBidRequest(auctionIdB, bidB, peerContext);
+
+                    Thread.sleep(100);
+                }
+                System.out.println("[SIMULATION] === STRESS TEST CONCLUSION ===");
+
+            } catch (Exception e) {
+                System.err.println("[SIMULATION] Fail catastrophic no teste de stress: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }).start();
+
+        ctx.status(202).json(Map.of(
+                "status", "EXECUTING",
+                "message", "The global load test has been initiated in the background. Two auction instances will be forged, followed by 40 massive bids on the network."
+        ));
+    }
+
+    private void waitForAuctionInLedger(String targetId) throws InterruptedException {
+        var engine = peerContext.getNetworkGateway().getAuctionEngine();
+        int attempts = 0;
+
+        System.out.print("[SIMULATION] Saving miner the block to the auction [" + targetId.substring(0, 8) + "]...");
+
+        while (attempts < 30) {
+            if (engine.getWorldState().containsKey(targetId)) {
+                System.out.println(" Successful!");
+                return;
+            }
+            Thread.sleep(1000);
+            System.out.print(".");
+            attempts++;
+        }
+
+        System.out.println(" Timeout out, created auctions!");
     }
 
     private void createAuction(Context ctx) {
