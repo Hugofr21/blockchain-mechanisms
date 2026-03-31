@@ -2,11 +2,11 @@ import type { BidRow } from "./bid";
 
 export interface AuctionRow {
   auctionId: string;
-  ownerId: string;          
-  minPrice: string;           
+  ownerId: string | number; 
+  minPrice: string | number; 
   endTimestamp: number;       
   bidHistory: BidRow[];       
-  currentHighestBid: string;  
-  currentWinnerId: string;    
-  isOpen: boolean;
+  currentHighestBid: string | number;  
+  currentWinnerId: string | number | null;    
+  open: boolean; 
 }

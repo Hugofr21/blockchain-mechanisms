@@ -11,7 +11,7 @@ export const auctions: AuctionRow[] = [
     ],
     currentHighestBid: "55.00",
     currentWinnerId: "2001",
-    isOpen: true,
+    open: true,
   },
   {
     auctionId: "auction-002",
@@ -24,7 +24,7 @@ export const auctions: AuctionRow[] = [
     ],
     currentHighestBid: "120.00",
     currentWinnerId: "2003",
-    isOpen: true,
+    open: true,
   },
   {
     auctionId: "auction-003",
@@ -36,7 +36,7 @@ export const auctions: AuctionRow[] = [
     ],
     currentHighestBid: "30.00",
     currentWinnerId: "2004",
-    isOpen: false, 
+    open: false, 
   },
   {
     auctionId: "auction-004",
@@ -46,6 +46,6 @@ export const auctions: AuctionRow[] = [
     bidHistory: [],
     currentHighestBid: "0.00",
     currentWinnerId: "0",
-    isOpen: true, 
+    open: true, 
   },
 ];

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Gavel, DollarSign, AlertTriangle, Send, Hash } from "lucide-react";
 
 interface Props {
   auctionId: string;
@@ -30,46 +31,62 @@ export function PlaceBidForm({ auctionId, onSubmit }: Props) {
       return;
     }
 
-    if (onSubmit) {
-      onSubmit(auctionId, bidValue);
-    }
+    onSubmit?.(auctionId, bidValue);
 
     setBidValue("");
   };
 
   return (
-    <div className="border rounded-2xl shadow-sm bg-white dark:bg-gray-900 p-6 space-y-4">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-        Place Bid
-      </h2>
+    <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="p-5 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center gap-2">
+          <Gavel size={18} className="text-indigo-500" />
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Place Bid
+          </h2>
+        </div>
 
-      <p className="text-sm text-gray-600 dark:text-gray-300">
-        Auction ID: <span className="font-mono">{auctionId}</span>
-      </p>
+        <div className="mt-2 flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 break-all">
+          <Hash size={14} className="opacity-70" />
+          <span>
+            Auction ID: <span className="font-mono font-semibold">{auctionId}</span>
+          </span>
+        </div>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      {/* Body */}
+      <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <div className="space-y-2">
+          <label className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
             Bid Value
           </label>
-          <input
-            type="number"
-            step="0.01"
-            value={bidValue}
-            onChange={(e) => setBidValue(e.target.value)}
-            placeholder="Ex: 55.00"
-            className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-white focus:outline-none focus:ring focus:ring-indigo-300"
-          />
+
+          <div className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 px-3 py-2">
+            <DollarSign size={16} className="opacity-70" />
+            <input
+              type="number"
+              step="0.01"
+              value={bidValue}
+              onChange={(e) => setBidValue(e.target.value)}
+              placeholder="Ex: 55.00"
+              className="w-full bg-transparent outline-none text-sm text-gray-900 dark:text-white"
+            />
+          </div>
         </div>
 
         {error && (
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400">
+            <AlertTriangle size={16} className="mt-0.5" />
+            <p>{error}</p>
+          </div>
         )}
 
         <button
           type="submit"
-          className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 transition"
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 transition"
         >
+          <Send size={18} />
           Submit Bid
         </button>
       </form>

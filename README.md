@@ -4,8 +4,6 @@
 
 ---
 
-
-
 # Iniciar o projeto
 
 Para simular uma rede privada utilizando os algoritmos Kademlia, vamos iniciar o projeto com Docker.

@@ -1,16 +1,18 @@
 import type { TransactionsRow } from "./transaction";
 
 export interface BlockHeader {
-  previousHash: string;
+  version: number;
+  previousBlockHash: string; 
   merkleRoot: string;
   timestamp: number;
-  nonce: number;
   difficulty: number;
+  nonce: number;
+  payloadForMining: string; 
 }
 
 export interface Block {
-  blockNumber: number;
-  cachedHash: string;
+  numberBlock: number; 
+  currentBlockHash: string; 
   header: BlockHeader;
   transactions: TransactionsRow[];
 }

@@ -1,21 +1,73 @@
 import React, { useState } from "react";
 import { NodeActionsDashboard } from "../../components/nodeAction";
-import { nodes } from "../../../data/node";
-import type { NodeRow } from "../../components/nodeSelector/types";
+import type { NodeRow } from "../../../application/model/node";
 import type { NodeAction } from "../../components/nodeAction/types";
 
-export function Dashboard() {
+interface Props {
+  nodes: NodeRow[];
+  onSimulateSybil: (nodeId: string) => Promise<any>;
+  onSimulateEclipse: (nodeId: string) => Promise<any>;
+  onSimulatePoison: (nodeId: string) => Promise<any>;
+}
+
+export function Dashboard({ nodes, onSimulateSybil, onSimulateEclipse, onSimulatePoison }: Props) {
   const [globalLogs, setGlobalLogs] = useState<string[]>([]);
 
-  const handleGlobalAction = (node: NodeRow, action: NodeAction) => {
-    const logEntry = `[${new Date().toLocaleTimeString()}] ${node.id} -> ${action.label}`;
-    setGlobalLogs((prev) => [logEntry, ...prev]);
+  const buildSimulationReport = (data: any): string => {
+    if (!data) return "\n  └── Nenhuma resposta recebida do contentor.";
+    
+    let report = "";
+    
+    if (data.attack) report += `\n   -> Vetor de Ataque: ${data.attack}`;
+    if (data.status) report += `\n   -> Estado da Operação: ${data.status}`;
+    if (data.acceptedNodes !== undefined) report += `\n  -> Nós Infetados/Comprometidos: ${data.acceptedNodes}`;
+    if (data.rejectedNodes !== undefined) report += `\n  -> Nós Defendidos/Rejeitados: ${data.rejectedNodes}`;
+    if (data.message) report += `\n  -> Mensagem do Servidor: ${data.message}`;
+    
+    return report !== "" ? report : `\n  -> Payload Bruto:\n${JSON.stringify(data, null, 4)}`;
+  };
+
+  const handleGlobalAction = async (node: NodeRow, action: NodeAction) => {
+    const time = new Date().toLocaleTimeString();
+    
+    setGlobalLogs((prev) => [`[${time}] ${node.id} -> Iniciando propagação: ${action.label}...`, ...prev]);
+
+    try {
+        let result;
+        
+        switch (action.id) {
+            case "CHAOS_SYBIL":
+                result = await onSimulateSybil(node.id);
+                break;
+            case "CHAOS_ECLIPSE":
+                result = await onSimulateEclipse(node.id);
+                break;
+            case "CHAOS_POISONED_BLOCK":
+                result = await onSimulatePoison(node.id);
+                break;
+            default:
+                return;
+        }
+        
+        const formattedReport = buildSimulationReport(result);
+        const successLog = `[${new Date().toLocaleTimeString()}] SUCESSO (${node.id}):${formattedReport}`;
+        
+        setGlobalLogs((prev) => [successLog, ...prev]);
+        
+    } catch (err: any) {
+       
+        const errorData = err.response?.data;
+        const errorMsg = errorData?.error || err.message || "Falha catastrófica de infraestrutura.";
+        
+        const failureLog = `[${new Date().toLocaleTimeString()}] FALHA CRÍTICA (${node.id}):\n  └── Diagnóstico: ${errorMsg}`;
+        
+        setGlobalLogs((prev) => [failureLog, ...prev]);
+    }
   };
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="max-w-7xl mx-auto p-6 space-y-10">
-
         <header className="flex flex-col gap-2">
           <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
             DHT Ledger Dashboard
@@ -43,7 +95,6 @@ export function Dashboard() {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               Global Logs
             </h2>
-
             <button
               onClick={() => setGlobalLogs([])}
               className="text-xs px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition"
@@ -57,16 +108,15 @@ export function Dashboard() {
               No events recorded yet.
             </p>
           ) : (
-            <div className="rounded-xl bg-gray-950 text-green-300 font-mono text-xs p-4 max-h-64 overflow-y-auto shadow-inner border border-gray-800">
+            <div className="rounded-xl bg-gray-950 text-green-300 font-mono text-xs p-4 max-h-96 overflow-y-auto shadow-inner border border-gray-800">
               {globalLogs.map((log, idx) => (
-                <div key={idx} className="whitespace-pre-wrap leading-relaxed">
+                <div key={idx} className="whitespace-pre-wrap leading-relaxed pb-3 mb-3 border-b border-gray-800 last:border-0 last:mb-0 last:pb-0">
                   {log}
                 </div>
               ))}
             </div>
           )}
         </section>
-
       </div>
     </main>
   );

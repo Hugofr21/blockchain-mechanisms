@@ -3,42 +3,21 @@ package org.graph.server;
 import org.graph.server.http.HttpServer;
 import org.graph.server.utils.MenuUtils;
 import org.graph.server.utils.MetricsLogger;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
-
 import static org.graph.server.utils.Constants.BOOTSTRAP_PORT;
 
-/**
- * Super peer that acts as a network access point.
-
- * This component is responsible for initializing the genesis block at system startup and for
- * managing the peer authentication process. After successful peer authentication,
- * the super peer sends you the corresponding block information, allowing for consistent integration
- * into the network.
-
- * In the context of the case study, it is possible to predefine a set of peers statically, using the file system. For this purpose, this class should be invoked:
- * @implNote Map<String, String> ngs = FileSystemUtils.neighbours();
- * The size of the configured peer set can be checked using:*
- * @implNote  System.out.println("ngs: " + ngs.size());
- * For testing purposes in a local environment (localhost), the execution arguments must
- * exactly match the values defined in the resource file containing the list
- * of peers, ensuring consistency between the configuration and system startup.
- */
-
 public class LauncherBootstrap {
-    public static void main(String[] args) throws IOException, URISyntaxException {
-        if (args.length < 2) {
-            System.err.println("[ERRO FATAL] Inefficient arguments. Expected: <host_local> <port_http>");
+    public static void main(String[] args)  {
+        if (args.length < 4) {
+            System.err.println("[ERRO FATAL] Inefficient arguments. Expected: <host_local> <port_p2p> <port_prometheus> <port_http>");
             System.exit(1);
         }
 
         System.out.println("\n================== BOOTSTRAPPING ================");
 
         String host = args[0];
+        int prometheusPort = Integer.parseInt(args[2]);
+        int portHttpServer = Integer.parseInt(args[3]);
         char[] nodeSecret = SecurityBootstrapper.obtainNodePassword();
-        int prometheusPort = 9001;
-        int portHttpServer = Integer.parseInt(args[1]);
 
         MetricsLogger.init(prometheusPort);
 

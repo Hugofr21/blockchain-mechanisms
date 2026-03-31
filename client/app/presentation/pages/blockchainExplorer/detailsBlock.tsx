@@ -1,28 +1,19 @@
 import React from "react";
-import { useParams, Link } from "react-router";
-import { blocks } from "~/data/block";
+import { Link } from "react-router"; // Removido useParams daqui, já está no Router
 import { BlockDetailsView } from "~/presentation/components/block/viewDetails/blockDetailsView";
+import type { Block } from "../../../application/model/block";
 
-export default function BlockDetailsPage() {
-  const { height } = useParams<{ height: string }>();
-  const blockNumber = Number(height);
-  const block = blocks.find((b) => b.blockNumber === blockNumber);
+interface Props {
+  block: Block;
+  targetNodePort: string;
+}
 
-  if (!block) {
-    return (
-      <main className="max-w-7xl mx-auto p-6">
-        <h1 className="text-2xl font-bold">Block not found</h1>
-        <Link to="/blockchain" className="text-indigo-600 hover:underline">
-          Back to Blockchain
-        </Link>
-      </main>
-    );
-  }
-
+export default function BlockDetailsPage({ block, targetNodePort }: Props) {
   return (
     <main className="max-w-7xl mx-auto p-6">
-      <Link to="/blockchain" className="text-sm text-indigo-600 hover:underline">
-        ← Back
+      {/* Botão retrocede mantendo o contexto do contentor */}
+      <Link to={`/node/${targetNodePort}/blockchain`} className="text-sm text-indigo-600 hover:underline mb-4 inline-block font-mono">
+        ← Retroceder para o Livro-Razão do {targetNodePort}
       </Link>
       <BlockDetailsView block={block} />
     </main>

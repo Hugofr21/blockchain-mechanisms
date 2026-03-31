@@ -1,26 +1,38 @@
-import { apiClient } from "../lib/api";
 import type { NodeRow } from "../../application/model/node";
+import { apiClient } from "../lib/api"; 
 
-
-export const fetchGetAllNodes = async (
-  signal?: AbortSignal
+export const fetchAllNeighbors = async (
+    nodeId: string, 
+    signal?: AbortSignal
 ): Promise<NodeRow[]> => {
-  const response = await apiClient.get<NodeRow[]>("/nodes", { signal });
-  return response.data;
+    const response = await apiClient.get<any[]>("/api/network/neighbors", { 
+        headers: { 'X-Target-Node': nodeId },
+        signal 
+    });
+    
+    return response.data.map((node) => ({
+        id: node.peerId,
+        host: node.host,
+        port: node.port,
+        difficulty: node.difficulty,
+        httpPort: String(node.port) 
+    }));
 };
 
-
-export const fetchGetNodeById = async (
-  nodeId: string,
-  signal?: AbortSignal
+export const fetchMyselfIdentity = async (
+    nodeId: string,
+    signal?: AbortSignal
 ): Promise<NodeRow> => {
-  const response = await apiClient.get<NodeRow>(`/nodes/${nodeId}`, { signal });
-  return response.data;
-};
-
-export const fetchGetMyself = async (
-  signal?: AbortSignal
-): Promise<NodeRow> => {
-  const response = await apiClient.get<NodeRow>("/nodes/me", { signal });
-  return response.data;
+    const response = await apiClient.get<any>("/api/network/identity", { 
+        headers: { 'X-Target-Node': nodeId },
+        signal 
+    });
+  
+    return {
+        id: response.data.peerId,
+        host: response.data.host,
+        port: response.data.port,
+        difficulty: response.data.difficulty,
+        httpPort: String(response.data.port)
+    };
 };

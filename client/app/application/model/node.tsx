@@ -1,7 +1,7 @@
 export interface NodeRow {
-  id: string;        
+  id: string;     
   host: string;
-  port: number;
-  nonce: number;          
-  networkDifficulty: number;
+  port: number;     
+  difficulty: number;  
+  httpPort: string;
 }

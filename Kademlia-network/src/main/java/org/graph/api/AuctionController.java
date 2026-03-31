@@ -4,6 +4,7 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.graph.domain.entities.auctions.AuctionState;
 import org.graph.server.Peer;
+import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 import java.util.Map;
@@ -22,6 +23,11 @@ public class AuctionController {
         app.get("/api/auctions/{auctionId}", this::getByIdAuction);
         app.post("/api/auctions", this::createAuction);
         app.post("/api/auctions/{auctionId}/bids", this::placeBid);
+        app.post("/api/auctions/test", this::testCreated);
+    }
+
+    private void testCreated(Context context) {
+
     }
 
     private void createAuction(Context ctx) {

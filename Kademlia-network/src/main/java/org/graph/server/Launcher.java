@@ -1,7 +1,7 @@
 package org.graph.server;
 
-
 import org.graph.adapter.inbound.network.JoinNetwork;
+import org.graph.server.http.HttpServer;
 import org.graph.server.utils.MenuUtils;
 import org.graph.server.utils.MetricsLogger;
 
@@ -11,16 +11,16 @@ public class Launcher {
     public static void main(String[] args) {
         MenuUtils.printMenu(args);
 
-        if (args.length < 3) {
-            System.err.println("[ERRO FATAL] Inefficient arguments. Expected <host_local> <porta_local> <host_bootstrap>");
+        if (args.length < 5) {
+            System.err.println("[ERRO FATAL] Inefficient arguments. Expected: <host> <p2p_port> <bootstrap_host> <prometheus_port> <http_port>");
             System.exit(1);
         }
-
 
         String host = args[0];
         int port = Integer.parseInt(args[1]);
         String bootstrapHost = args[2];
         int prometheusPort = Integer.parseInt(args[3]);
+        int portHttpServer = Integer.parseInt(args[4]);
         char[] nodeSecret = SecurityBootstrapper.obtainNodePassword();
 
         MetricsLogger.init(prometheusPort);
@@ -31,12 +31,10 @@ public class Launcher {
 
         java.util.Arrays.fill(nodeSecret, '\0');
 
-
         new Thread(() -> {
             try {
                 Thread.sleep(1000);
                 JoinNetwork joiner = new JoinNetwork(peer);
-
                 joiner.attemptJoin(bootstrapHost, BOOTSTRAP_PORT);
             } catch (InterruptedException e) {
                 System.err.println("[ERRO] Synchronization thread failed:: " + e.getMessage());
@@ -44,8 +42,11 @@ public class Launcher {
             }
         }).start();
 
-        MenuUtils.showMainMenu(peer);
-
         peer.startBackgroundTasks();
+
+        HttpServer httpServer = new HttpServer(peer, portHttpServer);
+        httpServer.start();
+
+        MenuUtils.showMainMenu(peer);
     }
 }

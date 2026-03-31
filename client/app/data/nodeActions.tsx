@@ -1,11 +1,11 @@
 import type { NodeAction } from "../presentation/components/nodeAction/types"
 
-export const testActions: NodeAction[] = [
-  { id: "action-1", label: "View Blockchain" },
-  { id: "action-2", label: "View Auction" },
-  { id: "action-3", label: "Attack Sybil" },
-  { id: "action-4", label: "Attack Eclipse" },
-  { id: "action-5", label: "Attack Replace Bid Duplicate" },
-  { id: "action-6", label: "Attack Send Block Validate PoW" },
-  { id: "action-7", label: "Shutdown This Node" },
+export const observabilityActions: NodeAction[] = [
+  { id: "VIEW_ROUTING_TABLE", label: "Inspecionar KBuckets (Tabela de Roteamento)" },
+  { id: "VIEW_BLOCKCHAIN", label: "Extrair Blockchain" },
+  { id: "AUCTION_BID", label: "View/Criar Novo Leilão" },
+  { id: "CHAOS_SYBIL", label: "Simular Ataque Sybil (Injeção de Identidades)" },
+  { id: "CHAOS_ECLIPSE", label: "Simular Ataque Eclipse (Saturação Espacial)" },
+  { id: "CHAOS_POISONED_BLOCK", label: "Injetar Bloco Envenenado (Falha PoW)" },
+  { id: "SHUTDOWN_NODE", label: "Forçar Encerramento do Nó (Shutdown)" }
 ];

@@ -11,18 +11,30 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
     (config) => {
-    
-        const activeNodeId = localStorage.getItem('ACTIVE_NODE_ID') || 'bootstrap';
+        let targetNode = 'bootstrap';
         
+        if (config.headers) {
+            const rawHeader = (typeof config.headers.get === 'function' ? config.headers.get('X-Target-Node') : null)
+                           || (config.headers as Record<string, any>)['x-target-node']
+                           || (config.headers as Record<string, any>)['X-Target-Node'];
+            
+            if (rawHeader) {
+                targetNode = rawHeader.toString();
+            }
 
-        const routePrefix = activeNodeId === 'bootstrap' 
+            if (typeof config.headers.delete === 'function') {
+                config.headers.delete('X-Target-Node');
+            } else {
+                delete (config.headers as Record<string, any>)['x-target-node'];
+                delete (config.headers as Record<string, any>)['X-Target-Node'];
+            }
+        }
+
+        const routePrefix = targetNode === 'bootstrap' 
             ? '/api/bootstrap' 
-            : `/api/peer-${activeNodeId}`;
+            : `/api/peer-${targetNode}`;
             
         config.url = `${routePrefix}${config.url}`;
-
-    
-        // config.headers['Authorization'] = `Bearer ${token}`;
 
         return config;
     },
@@ -32,7 +44,7 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        console.error('Communication failure with the infrastructure:', error.response?.data || error.message);
+        console.error('[AXIOS] Falha de comunicação com a infraestrutura:', error.response?.data || error.message);
         return Promise.reject(error);
     }
 );

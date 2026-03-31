@@ -98,6 +98,10 @@ public class Transaction implements Serializable {
         return nonce;
     }
 
+    public String calculateTransactionId() {
+        return HashUtils.calculateSha256(getDataSign());
+    }
+
     @Override
     public String toString() {
         String timeStr = new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date(timestamp));
@@ -120,9 +124,5 @@ public class Transaction implements Serializable {
                 sigStatus,
                 payloadSummary
         );
-    }
-
-    public String calculateTransactionId() {
-        return HashUtils.calculateSha256(getDataSign());
     }
 }

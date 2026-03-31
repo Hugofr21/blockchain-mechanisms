@@ -1,13 +1,12 @@
-
-export type TransactionType = "TRANSFER" | "AUCTION" | "BID";
+export type TransactionType = "REGULAR_TRANSFER" | "AUCTION" | "BID";
 
 export interface TransactionsRow {
   txId: string;
-  type: TransactionType;
-  sender: string; 
-  ownerId: string;
+  type: string; 
+  senderId: string | number; 
   data: any; 
   timestamp: number; 
-  signature?: string; 
+  signatureBase64?: string; 
+  dataSign?: string; 
   nonce: number;
 }
