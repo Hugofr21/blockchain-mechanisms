@@ -34,6 +34,16 @@ Ao iniciar cada processo, ao executar o comando `docker attach peer-8010`, press
 
 ---
 
+## Criar .env no client
+```text
+VITE_PORT=3001
+VITE_NODE_ENV=development
+VITE_API_GATEWAY_URL=http://localhost:8080
+
+VITE_KEYCLOAK_URL=http://localhost:8020
+VITE_KEYCLOAK_REALM=automacao
+VITE_KEYCLOAK_CLIENT=react-app
+```
 
 
 # Table of contents
