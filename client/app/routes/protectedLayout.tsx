@@ -9,7 +9,7 @@ export default function ProtectedLayout() {
   if (isInitializing) {
     return (
       <div className="flex items-center justify-center min-h-screen font-mono text-indigo-600 animate-pulse bg-gray-50 dark:bg-gray-950">
-        A validar a integridade da sessão criptográfica...
+        Validating the integrity of the cryptographic session...
       </div>
     );
   }
@@ -21,7 +21,6 @@ export default function ProtectedLayout() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
       <TopHeader />
-    
       <div className="flex-1">
         <Outlet />
       </div>
