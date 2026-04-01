@@ -1,7 +1,7 @@
 import { type RouteConfig, index, route, layout } from "@react-router/dev/routes";
 export default [
     index("routes/login.tsx"),
-    layout("routes/protected-layout.tsx", [
+    layout("routes/protectedLayout.tsx", [
         route("/index", "routes/home.tsx"),
         route("node/:targetNodePort/blockchain", "routes/blockchain.tsx"),
         route("node/:targetNodePort/blockchain/:hash", "routes/detailsBlock.tsx"),

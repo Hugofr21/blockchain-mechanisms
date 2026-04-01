@@ -3,7 +3,6 @@ import { Dashboard } from "~/presentation/pages/dashboard/dashboardPage";
 import { useGlobalNetworkData } from "~/infrastructure/hooks/network/globalNetwork";
 import { useAuth } from "~/infrastructure/hooks/useAuth";
 import { Navigate } from "react-router";
-import { TopNavigation } from "~/presentation/components/login/TopNavigation";
 import {
   useSimulateSybilAttack,
   useSimulateEclipseAttack,
@@ -65,7 +64,7 @@ export default function Home() {
 
   return (
     <>
-     <TopNavigation />
+    
       <Dashboard 
           nodes={nodes} 
           onSimulateSybil={(nodeId) => sybil.execute(nodeId)}

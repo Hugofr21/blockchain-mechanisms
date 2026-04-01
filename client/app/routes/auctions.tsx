@@ -1,7 +1,6 @@
 import { useParams } from "react-router";
 import { AuctionsPage } from "~/presentation/pages/auction/auctions";
 import { useCreateAuction, useGetAllAuction, useTestAuctionThisNode } from "../infrastructure/hooks/auctionHook";
-import { TopNavigation } from "~/presentation/components/login/TopNavigation";
 
 export default function AuctionRouter() {
   const { targetNodePort } = useParams<{ targetNodePort: string }>();
@@ -33,7 +32,6 @@ export default function AuctionRouter() {
 
   return (
     <>
-      <TopNavigation />
       <AuctionsPage 
         targetNodePort={targetNodePort}
         initialAuctions={auctions || []}
