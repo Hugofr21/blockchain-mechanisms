@@ -1,5 +1,5 @@
 {
-  "realm": "automacao",
+  "realm": "dht-ledger",
   "enabled": true,
   "clients": [
     {

@@ -8,6 +8,8 @@ import {
     fetchSimulatePoisonedBlock,
 } from "../../services/enviroment";
 
+import { fetchShutdowThisNode } from "~/infrastructure/services/network";
+
 export interface ChaosSimulationResponse {
     attack: string;
     acceptedNodes: number;
@@ -175,3 +177,36 @@ export function useSimulatePoisonedBlock() {
 
     return { execute, result, isLoading, error };
 }
+
+
+
+interface ResponseShutdown{
+    status: string,
+    message: string
+}
+
+export function useSimulateShutDownThisNode() {
+    const [result, setResult] = useState<ResponseShutdown | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const execute = async (nodeId: string) => {
+        setIsLoading(true);
+        setError(null);
+        setResult(null);
+
+        try {
+            const data = await fetchShutdowThisNode(nodeId);
+            setResult(data);
+            return data;
+        } catch (err: any) {
+            const errorMessage = err.response?.data?.error || err.message || "Falha catastrófica ao executar shutdown";
+            setError(errorMessage);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return { execute, result, isLoading, error };
+}

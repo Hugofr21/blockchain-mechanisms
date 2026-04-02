@@ -8,11 +8,12 @@ interface Props {
   onSimulateSybil: (nodeId: string) => Promise<any>;
   onSimulateEclipse: (nodeId: string) => Promise<any>;
   onSimulatePoison: (nodeId: string) => Promise<any>;
+  onShutdownThisNode: (nodeId: string) => Promise<any>;
 }
 
 const LOG_STORAGE_KEY = "@dht-ledger/global-logs";
 
-export function Dashboard({ nodes, onSimulateSybil, onSimulateEclipse, onSimulatePoison }: Props) {
+export function Dashboard({ nodes, onSimulateSybil, onSimulateEclipse, onSimulatePoison, onShutdownThisNode }: Props) {
   const [globalLogs, setGlobalLogs] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
       const savedLogs = localStorage.getItem(LOG_STORAGE_KEY);
@@ -38,14 +39,14 @@ export function Dashboard({ nodes, onSimulateSybil, onSimulateEclipse, onSimulat
   };
 
   const buildSimulationReport = (data: any): string => {
-    if (!data) return "\n  └── Nenhuma resposta recebida do contentor.";
+    if (!data) return "\n  ----> Nenhuma resposta recebida do contentor.";
 
     let report = "";
 
-    if (data.attack) report += `\n   -> Vetor de Ataque: ${data.attack}`;
-    if (data.status) report += `\n   -> Estado da Operação: ${data.status}`;
-    if (data.acceptedNodes !== undefined) report += `\n  -> Nós Infetados/Comprometidos: ${data.acceptedNodes}`;
-    if (data.rejectedNodes !== undefined) report += `\n  -> Nós Defendidos/Rejeitados: ${data.rejectedNodes}`;
+    if (data.attack) report += `\n   ----> Vetor de Ataque: ${data.attack}`;
+    if (data.status) report += `\n   ---> Estado da Operação: ${data.status}`;
+    if (data.acceptedNodes !== undefined) report += `\n  ----> Nós Infetados/Comprometidos: ${data.acceptedNodes}`;
+    if (data.rejectedNodes !== undefined) report += `\n  ----> Nós Defendidos/Rejeitados: ${data.rejectedNodes}`;
     if (data.message) report += `\n  -> Mensagem do Servidor: ${data.message}`;
 
     return report !== "" ? report : `\n  -> Payload Bruto:\n${JSON.stringify(data, null, 4)}`;
@@ -68,6 +69,9 @@ export function Dashboard({ nodes, onSimulateSybil, onSimulateEclipse, onSimulat
           break;
         case "CHAOS_POISONED_BLOCK":
           result = await onSimulatePoison(node.httpPort);
+          break;
+       case "SHUTDOWN_NODE":
+          result = await onShutdownThisNode(node.httpPort);
           break;
         default:
           return;
@@ -100,7 +104,7 @@ export function Dashboard({ nodes, onSimulateSybil, onSimulateEclipse, onSimulat
             DHT Ledger Dashboard
           </h1>
           <p className="text-gray-600 dark:text-gray-400 text-sm max-w-2xl">
-            Monitorização e simulação de eventos distribuídos em nós replicados.
+           Monitoring and simulation of distributed events across replicated nodes.
           </p>
         </header>
 

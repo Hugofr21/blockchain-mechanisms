@@ -9,6 +9,7 @@ import org.graph.domain.entities.block.Block;
 import org.graph.domain.entities.message.Message;
 import org.graph.domain.entities.message.MessageType;
 import org.graph.domain.entities.node.Node;
+import org.graph.domain.entities.node.NodeId;
 import org.graph.domain.entities.transaction.Transaction;
 import org.graph.domain.entities.transaction.TransactionType;
 import org.graph.domain.valueobject.utils.HashUtils;
@@ -49,15 +50,22 @@ public class EnvironmentController {
                     generator.initialize(2048);
                     KeyPair pair = generator.generateKeyPair();
 
-                    BigInteger fakeId = new BigInteger(256, new Random());
+                    BigInteger fakeId;
+                    Node attackNode;
 
-                    Node attackNode = new Node("192.168.1." + i, 9000 + i, fakeId, 0, peerContext.getMyself().getNETWORK_DIFFICULTY());
+                    do {
+                        fakeId = new BigInteger(256, new Random());
+                        attackNode = new Node("192.168.1.100", 9000 + i, fakeId, 0, peerContext.getMyself().getNETWORK_DIFFICULTY());
+                    } while (NodeId.isValidNode(attackNode, pair.getPublic()));
 
                     peerContext.getIsKeysInfrastructure().addNeighborPublicKey(fakeId, pair.getPublic());
                     boolean added = peerContext.getRoutingTable().addNode(attackNode, peerContext);
 
-                    if (added) acceptedCount++;
-                    else rejectedCount++;
+                    if (added) {
+                        acceptedCount++;
+                    } else {
+                        rejectedCount++;
+                    }
 
                 } catch (SecurityException se) {
                     rejectedCount++;
@@ -70,7 +78,7 @@ public class EnvironmentController {
                     "acceptedNodes", acceptedCount,
                     "rejectedNodes", rejectedCount,
                     "status", success ? "DEFENSE_OPERATIONAL" : "ROUTING_TABLE_COMPROMISED",
-                    "message", "Ataque Sybil finalizado. A camada de Proof of Work barrou instâncias sem esforço computacional."
+                    "message", "Ataque Sybil finalizado. A camada de Proof of Work e o limite de IP barraram instâncias fraudulentas."
             ));
         } catch (Exception e) {
             peerContext.getLogger().severe("Sybil generation failure: " + e.getMessage());
@@ -93,7 +101,7 @@ public class EnvironmentController {
                 KeyPair pair = generator.generateKeyPair();
                 PublicKey publicKey = pair.getPublic();
 
-                long nonce = 0;
+                long nonce = 8907653;
                 BigInteger target = BigInteger.ONE.shiftLeft(256 - difficulty);
                 BigInteger nodeId;
 

@@ -12,7 +12,7 @@ export function BlockchainView({ data }: Props) {
 
       <div className="space-y-4">
         {data.map((block) => (
-          <BlockCard key={block.blockNumber} data={block} />
+          <BlockCard key={block.numberBlock} data={block} />
         ))}
       </div>
     </div>

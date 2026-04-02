@@ -6,7 +6,9 @@ import { Navigate } from "react-router";
 import {
   useSimulateSybilAttack,
   useSimulateEclipseAttack,
-  useSimulatePoisonedBlock
+  useSimulatePoisonedBlock,
+  useSimulateShutDownThisNode
+
 } from "../infrastructure/hooks/network/enviromentTest";
 
 export function meta({}: Route.MetaArgs) {
@@ -26,12 +28,13 @@ export default function Home() {
   const sybil = useSimulateSybilAttack();
   const eclipse = useSimulateEclipseAttack();
   const poison = useSimulatePoisonedBlock();
+  const shutdown = useSimulateShutDownThisNode();
 
   if (isInitializing) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950">
         <p className="text-indigo-600 animate-pulse font-mono font-semibold tracking-wide">
-          A validar a integridade da sessão criptográfica...
+          Validating the integrity of the cryptographic session...
         </p>
       </div>
     );
@@ -45,7 +48,7 @@ export default function Home() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950">
         <p className="text-indigo-600 animate-pulse font-mono font-semibold tracking-wide">
-          A varrer infraestrutura e a estabelecer túneis de telemetria...
+            Sweeping up infrastructure and laying telemetry tunnels...
         </p>
       </div>
     );
@@ -55,7 +58,7 @@ export default function Home() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950">
         <div className="p-6 bg-red-100 border-l-4 border-red-600 text-red-800 rounded-lg shadow-md max-w-2xl">
-          <h2 className="font-bold text-xl mb-3">Colapso de Observabilidade</h2>
+          <h2 className="font-bold text-xl mb-3">Observability Collapse</h2>
           <p className="font-mono text-sm break-words">{error}</p>
         </div>
       </div>
@@ -70,6 +73,7 @@ export default function Home() {
           onSimulateSybil={(nodeId) => sybil.execute(nodeId)}
           onSimulateEclipse={(nodeId) => eclipse.execute(nodeId)}
           onSimulatePoison={(nodeId) => poison.execute(nodeId)}
+          onShutdownThisNode={(nodeId) => shutdown.execute(nodeId)}
       />
     </>
 

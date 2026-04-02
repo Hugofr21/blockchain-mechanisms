@@ -100,7 +100,7 @@ export function NodeActionsDashboard({ nodes, onActionClick }: Props) {
             Nodes Dashboard
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Monitorização e ações operacionais por nó.
+           Monitoring and operational actions per node.
           </p>
         </div>
 
@@ -183,7 +183,7 @@ export function NodeActionsDashboard({ nodes, onActionClick }: Props) {
 
                 <div>
                   <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-2">
-                    Chaos / Dangerous
+                    Attack / Dangerous
                   </p>
 
                   <div className="space-y-2">

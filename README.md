@@ -13,7 +13,7 @@ VITE_NODE_ENV=development
 VITE_API_GATEWAY_URL=http://localhost:8080
 
 VITE_KEYCLOAK_URL=http://localhost:8020
-VITE_KEYCLOAK_REALM=automacao
+VITE_KEYCLOAK_REALM=dht-ledger
 VITE_KEYCLOAK_CLIENT=react-app
 ```
 
