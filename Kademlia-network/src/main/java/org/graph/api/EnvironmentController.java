@@ -234,32 +234,39 @@ public class EnvironmentController {
 
     private void simulateBlockFakeIdentityInjection(Context ctx) {
         try {
-            new Thread(() -> {
-                try {
-                    List<Node> neighbors = peerContext.getNeighboursManager().getActiveNeighbours();
-                    if (neighbors.isEmpty()) {
-                        peerContext.getLogger().warning("No active neighbors to poison.");
-                        return;
-                    }
+            List<Node> neighbors = peerContext.getNeighboursManager().getActiveNeighbours();
+            if (neighbors.isEmpty()) {
+                ctx.status(400).json(Map.of("error", "Ausência de topologia: Não existem nós vizinhos ativos para testar."));
+                return;
+            }
 
-                    Node targetNeighbor = neighbors.get(0);
-                    Block poisonedBlock = new Block(
-                            1, peerContext.getNetworkGateway().getBlockchainEngine().getBlockOrganizer().getChainHeight() + 1,
-                            "00631425ea719c4f88f090c3f1f079c98ae9ceb6215813e779ef3cbe071b981621",
-                            new ArrayList<>(), peerContext.getMyself().getNETWORK_DIFFICULTY()
-                    );
-                    poisonedBlock.setCurrentHash("00f72c1bc26f96f44374911f6e8d6ab4a8b5e43c321136dbd83edb6e71acdf51c7");
+            Node targetNeighbor = neighbors.get(0);
+            Block poisonedBlock = new Block(
+                    1, peerContext.getNetworkGateway().getBlockchainEngine().getBlockOrganizer().getChainHeight() + 1,
+                    "00631425ea719c4f88f090c3f1f079c98ae9ceb6215813e779ef3cbe071b981621",
+                    new ArrayList<>(), peerContext.getMyself().getNETWORK_DIFFICULTY()
+            );
 
-                    Message attackMsg = new Message(MessageType.BLOCK, poisonedBlock, peerContext.getHybridLogicalClock());
-                    peerContext.getMkademliaNetwork().sendRPCAsync(targetNeighbor, attackMsg);
-                } catch (Exception e) {
-                    peerContext.getLogger().severe("Poisoned Block attack fails: " + e.getMessage());
-                }
-            }).start();
+            poisonedBlock.setCurrentHash("00f72c1bc26f96f44374911f6e8d6ab4a8b5e43c321136dbd83edb6e71acdf51c7");
 
-            ctx.status(202).json(Map.of("status", "INJECTED", "message", "Poisoned block fired at the first active neighbor."));
+            Message attackMsg = new Message(MessageType.BLOCK, poisonedBlock, peerContext.getHybridLogicalClock());
+
+
+            Message responseMsg = (Message) peerContext.getMkademliaNetwork().sendRPCSync(targetNeighbor, attackMsg);
+
+            String remoteStatus = responseMsg != null && responseMsg.getPayload() != null
+                    ? responseMsg.getPayload().toString()
+                    : "TIMEOUT_OR_DROPPED";
+
+            ctx.status(200).json(Map.of(
+                    "attack", "POISONED_BLOCK",
+                    "status", "INJECTION_EVALUATED",
+                    "message", "A fraudulent block has been submitted. The cryptographic response from the target will determine the integrity of the network.",
+                    "targetResponse", remoteStatus
+            ));
         } catch (Exception e) {
-            ctx.status(500).json(Map.of("error", "Failed to initiate Poisoned Block thread: " + e.getMessage()));
+            peerContext.getLogger().severe("Critical flaw in the Poisoned Block attack vector: " + e.getMessage());
+            ctx.status(500).json(Map.of("error", "Collapse in the poisoned block simulation: " + e.getMessage()));
         }
     }
 

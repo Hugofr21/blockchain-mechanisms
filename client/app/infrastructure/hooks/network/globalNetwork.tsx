@@ -42,7 +42,7 @@ export function useGlobalNetworkData() {
             const rawData = result.value as any;
             
             activeNodes.push({
-              id: rawData.peerId || `identidade-desconhecida-${index}`,
+              id: rawData.peerId || `Peer-${index}`,
               host: rawData.host,
               port: rawData.port,
               difficulty: rawData.difficulty || 0, 
