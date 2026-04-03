@@ -11,7 +11,7 @@ export function NodeCard({ data }: Props) {
 
   return (
     <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition overflow-hidden">
-      {/* Header */}
+
       <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -28,7 +28,6 @@ export function NodeCard({ data }: Props) {
         </div>
       </div>
 
-      {/* Body */}
       <div className="p-4 space-y-3">
         <div className="grid grid-cols-2 gap-3 text-xs text-gray-600 dark:text-gray-400">
           <div className="flex items-center gap-2 min-w-0">
@@ -59,7 +58,7 @@ export function NodeCard({ data }: Props) {
             <Hash size={14} className="opacity-70" />
             <span>
               <span className="font-medium">Difficulty:</span>{" "}
-              <span className="font-mono">{difficulty}</span>
+              <span className="font-mono">{difficulty ?? 2}</span>
             </span>
           </div>
         </div>

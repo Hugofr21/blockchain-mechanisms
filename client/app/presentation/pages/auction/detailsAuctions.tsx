@@ -38,7 +38,6 @@ export default function AuctionBidsPage({
     setAuction(initialAuction);
   }, [initialAuction]);
 
-  // CORREÇÃO: Transformação numa função assíncrona real acoplada ao roteador
   const handlePlaceBid = async (id: string, bidValue: string) => {
     if (!auction) return;
 
@@ -93,7 +92,7 @@ export default function AuctionBidsPage({
           <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
             Auction Explorer
           </h1>
-          <p className="text-sm font-mono text-gray-500 mt-1">Nó Alvo Operacional: {targetNodePort}</p>
+          <p className="text-sm font-mono text-gray-500 mt-1">Operational Target Node: {targetNodePort}</p>
         </div>
         <Link
           to={`/node/${targetNodePort}/auction`}
@@ -105,7 +104,7 @@ export default function AuctionBidsPage({
 
       <section className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 shadow-sm">
         <h2 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4">
-          Painel de Simulação de Caos
+          Simulation Panel
         </h2>
         <div className="flex flex-wrap gap-3 mb-4">
           <button
@@ -113,21 +112,21 @@ export default function AuctionBidsPage({
             disabled={isSimulating}
             className="px-4 py-2 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100 text-sm font-semibold rounded hover:bg-amber-200 disabled:opacity-50 transition"
           >
-            Injetar Licitações Duplicadas
+            Inject Duplicate Bids
           </button>
           <button
             onClick={() => executeSimulation('Teste de Carga', onSimulateStress)}
             disabled={isSimulating}
             className="px-4 py-2 bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-100 text-sm font-semibold rounded hover:bg-rose-200 disabled:opacity-50 transition"
           >
-            Sobrecarga de Rede
+           Network Overload
           </button>
           <button
             onClick={() => executeSimulation('Reversão de Estado', onSimulateRollback)}
             disabled={isSimulating}
             className="px-4 py-2 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100 text-sm font-semibold rounded hover:bg-purple-200 disabled:opacity-50 transition"
           >
-            Forçar Reversão (Rollback)
+            Force Rollback
           </button>
         </div>
 
@@ -152,7 +151,7 @@ export default function AuctionBidsPage({
               : 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300'
           }`}>
               <strong>{bidNotification.type === 'success' ? 'STATUS [202 ACCEPTED]:' : 'ERRO:'}</strong> {bidNotification.message}
-              {bidNotification.type === 'success' && <span className="block mt-2 opacity-75 animate-pulse">A forçar sincronização topológica em 3 segundos...</span>}
+              {bidNotification.type === 'success' && <span className="block mt-2 opacity-75 animate-pulse">Forcing topological synchronization in 3 seconds...</span>}
           </div>
       )}
 
@@ -160,14 +159,14 @@ export default function AuctionBidsPage({
         <div className="relative">
             {isBidding && (
                 <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
-                    <p className="font-mono text-indigo-600 animate-pulse font-bold">A forjar licitação na rede...</p>
+                    <p className="font-mono text-indigo-600 animate-pulse font-bold">Forging bids online...</p>
                 </div>
             )}
             <PlaceBidForm auctionId={auction.auctionId} onSubmit={handlePlaceBid} />
         </div>
       ) : (
         <div className="border rounded-xl p-4 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300">
-          Este leilão encontra-se ENCERRADO. Submissão de licitações bloqueada.
+            This auction is CLOSED. Bidding is blocked.
         </div>
       )}
     </main>
