@@ -9,13 +9,13 @@
       "protocol": "openid-connect",
       "directAccessGrantsEnabled": true,
       "standardFlowEnabled": true,
-      "rootUrl": "http://localhost:3001",
-      "baseUrl": "http://localhost:3001",
+      "rootUrl": "${APP_URL}",
+      "baseUrl": "${APP_URL}",
       "redirectUris": [
-        "http://localhost:3001/*"
+        "${APP_URL}/*"
       ],
       "webOrigins": [
-        "http://localhost:3001"
+        "${APP_URL}"
       ]
     }
   ],
@@ -30,7 +30,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "password",
+          "value": "${DEFAULT_USER_PASSWORD}",
           "temporary": false
         }
       ]

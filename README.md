@@ -3,9 +3,35 @@
 **Implementação de uma blockchain distribuída para suportar leilões (auctions) e licitações**, com mecanismo de mineração e estratégias de mitigação de vetores de ataque.
 
 ---
+---
 
-# Iniciar o projeto
-Criar um file .env no diretorio client
+# Iniciar o Projeto
+
+Para iniciar o projeto corretamente, é necessário configurar os ficheiros `.env` e executar os serviços via Docker Compose.
+
+## Configuração do `.env` (diretório principal)
+
+Crie um ficheiro chamado `.env` no diretório principal do projeto:
+
+```text
+POSTGRES_DB=keycloak
+POSTGRES_USER=keycloak
+POSTGRES_PASSWORD=keycloak_password
+
+KEYCLOAK_ADMIN=admin
+KEYCLOAK_ADMIN_PASSWORD=admin_password
+
+KC_HOSTNAME=localhost
+KC_HOSTNAME_PORT=8020
+
+APP_URL=http://localhost:3001
+DEFAULT_USER_PASSWORD=password
+```
+
+
+Configuração do .env (diretório client)
+
+Crie um ficheiro `.env` dentro do diretório client:
 
 ```text
 VITE_PORT=3001
