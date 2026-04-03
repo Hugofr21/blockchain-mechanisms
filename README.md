@@ -3,7 +3,6 @@
 **Implementação de uma blockchain distribuída para suportar leilões (auctions) e licitações**, com mecanismo de mineração e estratégias de mitigação de vetores de ataque.
 
 ---
----
 
 # Iniciar o Projeto
 
@@ -17,15 +16,15 @@ Crie um ficheiro chamado `.env` no diretório principal do projeto:
 POSTGRES_DB=keycloak
 POSTGRES_USER=keycloak
 POSTGRES_PASSWORD=keycloak_password
-
 KEYCLOAK_ADMIN=admin
 KEYCLOAK_ADMIN_PASSWORD=admin_password
-
 KC_HOSTNAME=localhost
 KC_HOSTNAME_PORT=8020
 
-APP_URL=http://localhost:3001
+FRONTEND_URL=http://localhost:3001
 DEFAULT_USER_PASSWORD=password
+
+VAULT_SECRET_PASS=admin
 ```
 
 

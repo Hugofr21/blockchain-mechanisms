@@ -18,6 +18,8 @@ services:
       context: .
       dockerfile: Dockerfile.keycloak
     container_name: keycloak_auth
+    env_file:
+      - ../../.env
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
@@ -30,6 +32,8 @@ services:
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HTTP_ENABLED: "true"
+      REACT_CLIENT_URL: ${FRONTEND_URL}
+      REALM_PASSWORD_USER: ${DEFAULT_USER_PASSWORD}
     ports:
       - "8020:8080"
     depends_on:

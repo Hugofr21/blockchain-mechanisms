@@ -41,7 +41,7 @@ services:
     stdin_open: true
     tty: true
     environment:
-      - VAULT_SECRET_PASS=admin
+       - VAULT_SECRET_PASS=${VAULT_SECRET_PASS}
     depends_on:
       - Prometheus
       - Grafana
@@ -54,7 +54,7 @@ services:
       monitoring:
         ipv4_address: 172.23.0.11
     environment:
-      - VAULT_SECRET_PASS=admin
+       - VAULT_SECRET_PASS=${VAULT_SECRET_PASS}
     command: ["sh", "-c", "sleep 1 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.11 9002 172.23.0.100 10001 8001"]
 
   peer-8002:
@@ -64,7 +64,7 @@ services:
       monitoring:
         ipv4_address: 172.23.0.12
     environment:
-      - VAULT_SECRET_PASS=admin
+       - VAULT_SECRET_PASS=${VAULT_SECRET_PASS}
     command: ["sh", "-c", "sleep 2 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.12 9003 172.23.0.100 10002 8002"]
 
   peer-8003:
@@ -74,7 +74,7 @@ services:
       monitoring:
         ipv4_address: 172.23.0.13
     environment:
-      - VAULT_SECRET_PASS=admin
+       - VAULT_SECRET_PASS=${VAULT_SECRET_PASS}
     command: ["sh", "-c", "sleep 3 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.13 9004 172.23.0.100 10003 8003"]
 
   peer-8004:
@@ -84,7 +84,7 @@ services:
       monitoring:
         ipv4_address: 172.23.0.14
     environment:
-      - VAULT_SECRET_PASS=admin
+       - VAULT_SECRET_PASS=${VAULT_SECRET_PASS}
     command: ["sh", "-c", "sleep 4 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.14 9005 172.23.0.100 10004 8004"]
 
   peer-8005:
@@ -94,7 +94,7 @@ services:
       monitoring:
         ipv4_address: 172.23.0.15
     environment:
-      - VAULT_SECRET_PASS=admin
+       - VAULT_SECRET_PASS=${VAULT_SECRET_PASS}
     command: ["sh", "-c", "sleep 5 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.15 9006 172.23.0.100 10005 8005"]
 
   peer-8006:
@@ -104,7 +104,7 @@ services:
       monitoring:
         ipv4_address: 172.23.0.16
     environment:
-      - VAULT_SECRET_PASS=admin
+       - VAULT_SECRET_PASS=${VAULT_SECRET_PASS}
     command: ["sh", "-c", "sleep 6 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.16 9007 172.23.0.100 10006 8006"]
 
   peer-8007:
@@ -114,7 +114,7 @@ services:
       monitoring:
         ipv4_address: 172.23.0.17
     environment:
-      - VAULT_SECRET_PASS=admin
+       - VAULT_SECRET_PASS=${VAULT_SECRET_PASS}
     command: ["sh", "-c", "sleep 7 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.17 9008 172.23.0.100 10007 8007"]
 
   peer-8008:
@@ -124,7 +124,7 @@ services:
       monitoring:
         ipv4_address: 172.23.0.18
     environment:
-      - VAULT_SECRET_PASS=admin
+       - VAULT_SECRET_PASS=${VAULT_SECRET_PASS}
     command: ["sh", "-c", "sleep 8 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.18 9009 172.23.0.100 10008 8008"]
 
   peer-8009:
@@ -134,7 +134,7 @@ services:
       monitoring:
         ipv4_address: 172.23.0.19
     environment:
-      - VAULT_SECRET_PASS=admin
+       - VAULT_SECRET_PASS=${VAULT_SECRET_PASS}
     command: ["sh", "-c", "sleep 9 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.19 9010 172.23.0.100 10009 8009"]
 
   peer-8010:
@@ -144,5 +144,5 @@ services:
       monitoring:
         ipv4_address: 172.23.0.20
     environment:
-      - VAULT_SECRET_PASS=admin
+       - VAULT_SECRET_PASS=${VAULT_SECRET_PASS}
     command: ["sh", "-c", "sleep 10 && java -cp /app/p2p-node.jar org.graph.server.Launcher 172.23.0.20 9011 172.23.0.100 10010 8010"]

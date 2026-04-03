@@ -9,14 +9,10 @@
       "protocol": "openid-connect",
       "directAccessGrantsEnabled": true,
       "standardFlowEnabled": true,
-      "rootUrl": "${APP_URL}",
-      "baseUrl": "${APP_URL}",
-      "redirectUris": [
-        "${APP_URL}/*"
-      ],
-      "webOrigins": [
-        "${APP_URL}"
-      ]
+      "rootUrl": "${REACT_CLIENT_URL}",
+      "baseUrl": "${REACT_CLIENT_URL}",
+      "redirectUris": ["${REACT_CLIENT_URL}/*"],
+      "webOrigins": ["${REACT_CLIENT_URL}"]
     }
   ],
   "users": [
