@@ -1,8 +1,7 @@
 import React from "react";
 import type { NodeRow } from "../../../application/model/node";
 import { NodeCard } from "../node";
-import { Loader2, ServerOff, Network, ShieldCheck } from "lucide-react";
-import { n } from "node_modules/react-router/dist/development/index-react-server-client-BcrVT7Dd.mjs";
+import { Loader2, ServerOff, Network } from "lucide-react";
 
 interface Props {
   nodes: NodeRow[];
@@ -36,17 +35,16 @@ export function NodeList({ nodes, loading = false, title = "Nodes" }: Props) {
             Nenhum node disponível
           </p>
         </div>
-
         <p className="text-xs text-gray-500 dark:text-gray-400">
           A rede não retornou peers ativos ou a tabela ainda não foi propagada.
         </p>
-
         <p className="text-xs font-mono text-gray-400 dark:text-gray-500">
           STATUS: ROUTING TABLE EMPTY
         </p>
       </div>
     );
   }
+
   return (
     <section className="space-y-5">
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -57,12 +55,10 @@ export function NodeList({ nodes, loading = false, title = "Nodes" }: Props) {
               {title}
             </h2>
           </div>
-
           <p className="text-sm text-gray-600 dark:text-gray-400">
             List of peers known by the distributed routing table.
           </p>
         </div>
-
         <div className="flex items-center gap-2">
           <span className="text-xs px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900">
             Nodes: <span className="font-semibold">{nodes.length}</span>
@@ -72,18 +68,19 @@ export function NodeList({ nodes, loading = false, title = "Nodes" }: Props) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
         {nodes.map((node) => {
-          const endpoint = `http://${node.host}:${node.httpPort}`;
+          const port = Number(node.httpPort);
+          const targetRoute = port === 5001 ? "bootstrap" : `peer-${port - 100}`;
+          const apiGatewayEndpoint = `http://localhost:8080/api/${targetRoute}/api/blocks`;
 
           return (
             <div key={node.id} className="space-y-2">
               <NodeCard data={node} />
-
               <div className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Endpoint HTTP
+                  Gateway Endpoint
                 </p>
                 <p className="text-xs font-mono text-indigo-600 dark:text-indigo-400 break-all">
-                  {endpoint}
+                  {apiGatewayEndpoint}
                 </p>
               </div>
             </div>

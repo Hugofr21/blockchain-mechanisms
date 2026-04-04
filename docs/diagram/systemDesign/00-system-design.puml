@@ -1,0 +1,69 @@
+@startuml sytem-design
+title Private DHT Ledger Network with API Gateway and Bootstrap Node
+
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+
+node "Client Network\n(External)" as clientNet {
+  actor "User / Client" as client
+}
+
+node "DMZ / Public Zone" as dmz {
+  node "API Gateway\n(Reverse Proxy / Auth Filter)" as apigw {
+    component "REST API\n/ RPC Endpoint" as api
+    component "Auth Module\n(Keycloak / JWT)" as auth
+    component "Rate Limiter\n& Logging" as ratelimit
+  }
+}
+
+node "Private Network\n(Isolated Subnet)" as privNet {
+
+  node "Bootstrap Node\n(Seed Peer)" as bootstrap {
+    component "DHT Service\n(Kademlia Routing)" as bootDHT
+    component "Ledger Core\n(Block Validation)" as bootLedger
+    database "Local Chain Storage" as bootStorage
+  }
+
+  node "Peer Node A\n(Validator)" as peerA {
+    component "DHT Service\n(Kademlia Routing)" as dhtA
+    component "Ledger Core\n(Mining / Consensus)" as ledgerA
+    database "Local Chain Storage" as storeA
+  }
+
+  node "Peer Node B\n(Validator)" as peerB {
+    component "DHT Service\n(Kademlia Routing)" as dhtB
+    component "Ledger Core\n(Mining / Consensus)" as ledgerB
+    database "Local Chain Storage" as storeB
+  }
+
+  node "Peer Node C\n(Validator)" as peerC {
+    component "DHT Service\n(Kademlia Routing)" as dhtC
+    component "Ledger Core\n(Mining / Consensus)" as ledgerC
+    database "Local Chain Storage" as storeC
+  }
+}
+
+client --> apigw : HTTPS Requests
+apigw --> api : Forward API Calls
+apigw --> auth : Validate Token
+apigw --> ratelimit : Monitor & Filter
+
+api --> bootstrap : Private RPC\n(Transaction Submit)
+api --> peerA : Private RPC\n(Read Blockchain)
+api --> peerB : Private RPC\n(Read Blockchain)
+
+bootDHT <--> dhtA : Kademlia RPC
+bootDHT <--> dhtB : Kademlia RPC
+bootDHT <--> dhtC : Kademlia RPC
+
+dhtA <--> dhtB : Peer Discovery\nRouting Table Sync
+dhtB <--> dhtC : Peer Discovery\nRouting Table Sync
+dhtA <--> dhtC : Peer Discovery\nRouting Table Sync
+
+bootLedger --> bootStorage : Persist Blocks
+ledgerA --> storeA : Persist Blocks
+ledgerB --> storeB : Persist Blocks
+ledgerC --> storeC : Persist Blocks
+
+@enduml

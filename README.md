@@ -92,22 +92,30 @@ A solução foi desenvolvida em **Java 21** (compatível com versões anteriores
 
 ---
 
-## 2. Visão geral da arquitectura
+## 2. Vião geral do system design
+
+O projecto apresenta uma topologia que reflecte a segregação de redes exigida em ambientes isolados, garantindo o isolamento da infraestrutura primária relativamente à rede externa através de uma Zona Desmilitarizada (DMZ). A introdução de um API Gateway, operando como reverse proxy, permite centralizar mecanismos críticos de controlo, nomeadamente autenticação, limitação de requisições e auditoria de tráfego, em conformidade com práticas consolidadas de segurança aplicadas a infraestruturas distribuídas. Este componente assegura igualmente a aplicação de políticas de hardening, incluindo validação de headers, controlo de ligações persistentes (TCP keep-alive) e mitigação de abusos por sobrecarga de sessões.
+
+O fluxo de dados proveniente do cliente externo é obrigatoriamente encaminhado através do gateway antes de alcançar os nós validadores da rede privada. Esta abordagem garante que a malha descentralizada (mesh) do ledger distribuído não fica exposta a acessos directos não autorizados, reduzindo significativamente a superfície de ataque e prevenindo vectores comuns de exploração. Consequentemente, o gateway actua como ponto único de entrada controlada, reforçando a protecção contra ataques de negação de serviço (DoS) e tentativas de intrusão direccionadas aos serviços internos de validação e propagação da DHT
+
+![System Design](./docs/diagram/systemDesign/system-design.png)
+
+## 2. Visão geral da arquitectura software
 
 Este projecto é estruturado segundo os princípios da **Clean Architecture**, tendo como núcleo central o domínio, onde são representadas as entidades fundamentais do sistema. Neste domínio residem os objectos que modelam os conceitos essenciais, nomeadamente blocos, transacções e nós, sendo estas entidades independentes de qualquer preocupação relacionada com infraestrutura, transporte ou persistência.
 
-## Camada de Serviços de Aplicação
+### Camada de Serviços de Aplicação
 
 Sobre o domínio assenta a camada de serviços de aplicação, responsável pela implementação da lógica de negócio. Esta camada orquestra o envio e a obtenção de dados de acordo com as regras definidas, garantindo que todas as operações respeitam as invariantes do domínio. Importa sublinhar que esta lógica não conhece detalhes de serialização, protocolos de comunicação ou mecanismos de armazenamento, mantendo-se isolada dessas responsabilidades.
 
-## Camada de Infraestrutura
+### Camada de Infraestrutura
 
 A camada de infraestrutura trata das preocupações técnicas externas ao domínio, incluindo a persistência de dados e a sua serialização. É nesta camada que os dados do sistema são armazenados e recuperados, bem como convertidos para formatos adequados ao meio de armazenamento ou transmissão, sem interferir com a lógica de negócio.
 
-## Camada de Gateway
+### Camada de Gateway
 
 A camada de gateway desempenha um papel crítico na fronteira do sistema, sendo responsável pela transformação dos dados recebidos em formato bruto para objectos compreensíveis pelas camadas internas. Esta camada converte dados recebidos sob a forma de bytes na construção de objectos de domínio ou de transferência, que são posteriormente encaminhados para os adaptadores apropriados. No contexto deste projecto, os dados são transmitidos em formato JSON, com o conteúdo codificado em Base64, exigindo uma desserialização rigorosa antes de qualquer processamento lógico.
-
+W
 ---
 
 ## 3. Modelo de ameaças (Threat Model)
