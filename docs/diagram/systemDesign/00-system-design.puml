@@ -1,4 +1,4 @@
-@startuml sytem-design
+@startuml
 title Private DHT Ledger Network with API Gateway and Bootstrap Node
 
 skinparam shadowing false
@@ -10,10 +10,10 @@ node "Client Network\n(External)" as clientNet {
 }
 
 node "DMZ / Public Zone" as dmz {
-  node "API Gateway\n(Reverse Proxy / Auth Filter)" as apigw {
-    component "REST API\n/ RPC Endpoint" as api
-    component "Auth Module\n(Keycloak / JWT)" as auth
-    component "Rate Limiter\n& Logging" as ratelimit
+  node "API Gateway\n(Reverse Proxy)" as apigw {
+    component "1. Rate Limiter\n& Logging" as ratelimit
+    component "2. Auth Module\n(Keycloak / JWT)" as auth
+    component "3. API Router\n(REST / RPC)" as api
   }
 }
 
@@ -44,22 +44,21 @@ node "Private Network\n(Isolated Subnet)" as privNet {
   }
 }
 
-client --> apigw : HTTPS Requests
-apigw --> api : Forward API Calls
-apigw --> auth : Validate Token
-apigw --> ratelimit : Monitor & Filter
+client --> ratelimit : HTTPS Requests
+ratelimit --> auth : Tráfego Permitido
+auth --> api : Token Validado
 
-api --> bootstrap : Private RPC\n(Transaction Submit)
-api --> peerA : Private RPC\n(Read Blockchain)
-api --> peerB : Private RPC\n(Read Blockchain)
+api --> peerA : Private RPC\n(Submit Tx / Read)
+api --> peerB : Private RPC\n(Submit Tx / Read)
+api --> peerC : Private RPC\n(Submit Tx / Read)
 
-bootDHT <--> dhtA : Kademlia RPC
-bootDHT <--> dhtB : Kademlia RPC
-bootDHT <--> dhtC : Kademlia RPC
+bootDHT <--> dhtA : Kademlia RPC (Discovery)
+bootDHT <--> dhtB : Kademlia RPC (Discovery)
+bootDHT <--> dhtC : Kademlia RPC (Discovery)
 
-dhtA <--> dhtB : Peer Discovery\nRouting Table Sync
-dhtB <--> dhtC : Peer Discovery\nRouting Table Sync
-dhtA <--> dhtC : Peer Discovery\nRouting Table Sync
+dhtA <--> dhtB : Routing Table Sync
+dhtB <--> dhtC : Routing Table Sync
+dhtA <--> dhtC : Routing Table Sync
 
 bootLedger --> bootStorage : Persist Blocks
 ledgerA --> storeA : Persist Blocks
