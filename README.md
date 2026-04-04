@@ -115,7 +115,7 @@ A camada de infraestrutura trata das preocupações técnicas externas ao domín
 ### Camada de Gateway
 
 A camada de gateway desempenha um papel crítico na fronteira do sistema, sendo responsável pela transformação dos dados recebidos em formato bruto para objectos compreensíveis pelas camadas internas. Esta camada converte dados recebidos sob a forma de bytes na construção de objectos de domínio ou de transferência, que são posteriormente encaminhados para os adaptadores apropriados. No contexto deste projecto, os dados são transmitidos em formato JSON, com o conteúdo codificado em Base64, exigindo uma desserialização rigorosa antes de qualquer processamento lógico.
-W
+
 ---
 
 ## 3. Modelo de ameaças (Threat Model)

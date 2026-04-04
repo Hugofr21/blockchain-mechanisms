@@ -1,4 +1,4 @@
-@startuml
+@startuml architecture
 title Private DHT Ledger Network with API Gateway and Bootstrap Node
 
 skinparam shadowing false
