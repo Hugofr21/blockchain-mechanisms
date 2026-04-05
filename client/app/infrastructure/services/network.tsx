@@ -61,3 +61,22 @@ export const fetchShutdowThisNode = async(
         message: response.data.message
     };
 }
+
+
+export interface ResponseLogs {
+  fileName: string;
+  linesReturned: number;
+  data: string[];
+}
+
+export const fetchListOfLogs = async (
+  nodeId: string, 
+  signal?: AbortSignal
+): Promise<ResponseLogs> => {
+  const response = await apiClient.get<ResponseLogs>("/api/network/logs", { 
+    headers: { 'X-Target-Node': nodeId },
+    signal 
+  });
+  
+  return response.data;
+};

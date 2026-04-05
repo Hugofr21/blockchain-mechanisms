@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { NodeRow } from "../../../application/model/node";
-import { fetchMyselfIdentity, fetchAllNeighbors } from "../../services/network";
+import { fetchMyselfIdentity, fetchAllNeighbors, fetchListOfLogs } from "../../services/network";
 
 type NetworkState = {
   myself: NodeRow | null;
@@ -70,3 +70,46 @@ export function useNetworkData(nodeId: string | null) {
 
   return state;
 }
+
+
+export interface ResponseLogs {
+  fileName: string;
+  linesReturned: number;
+  data: string[];
+}
+
+
+export const useLogs = (nodeId: string) => {
+  const [logs, setLogs] = useState<ResponseLogs | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    const loadLogs = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchListOfLogs(nodeId, abortController.signal);
+        setLogs(data);
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          setError(err.message || "Ocorreu uma falha sistémica durante a extração do fluxo de logs.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (nodeId) {
+      loadLogs();
+    }
+
+    return () => {
+      abortController.abort();
+    };
+  }, [nodeId]);
+
+  return { logs, loading, error };
+};

@@ -13,6 +13,9 @@ import org.graph.gateway.consensus.ProofOfWorkEngine;
 import org.graph.gateway.provider.IConsensusEngine;
 import org.graph.gateway.validator.SecurityValidator;
 import org.graph.server.Peer;
+
+import java.util.logging.Logger;
+
 import static org.graph.adapter.utils.Constants.MAX_TRANSACTIONS;
 import static org.graph.adapter.utils.Constants.NETWORK_DIFFICULTY;
 
@@ -77,8 +80,8 @@ public class NetworkGateway {
 
     public BlockStateRemote processIncomingBlock(Block block) {
 
-        if (!securityValidator.validateBlockchain(block, NETWORK_DIFFICULTY)){
-            System.out.println("[GATEWAY] Invalid block (PoW/Incorrect signature).");
+        if (!securityValidator.validateBlockchain(block, NETWORK_DIFFICULTY, myself.getLogger())){
+            myself.getLogger().severe("[GATEWAY] Invalid block (PoW/Incorrect signature).");
             return BlockStateRemote.INVALID;
         }
 
@@ -93,7 +96,7 @@ public class NetworkGateway {
                 return BlockStateRemote.INVALID;
             }
         } catch (Exception e) {
-            System.err.println("[GATEWAY] Error processing block: " + e.getMessage());
+            myself.getLogger().severe("[GATEWAY] Error processing block: " + e.getMessage());
             return BlockStateRemote.INVALID;
         }
 

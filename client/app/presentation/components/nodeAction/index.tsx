@@ -13,6 +13,7 @@ import {
   Bug,
   Power,
   ChevronRight,
+  Logs
 } from "lucide-react";
 
 interface Props {
@@ -36,6 +37,8 @@ function getActionIcon(actionId: string) {
       return <Bug size={16} className="opacity-80" />;
     case "SHUTDOWN_NODE":
       return <Power size={16} className="opacity-80" />;
+    case "LOGS_FILE":
+       return <Logs size={16} className="opacity-80" />;
     default:
       return <ChevronRight size={16} className="opacity-80" />;
   }
@@ -86,6 +89,9 @@ export function NodeActionsDashboard({ nodes, onActionClick }: Props) {
         break;
       case "VIEW_ROUTING_TABLE":
         navigate(`/node/${node.httpPort}/network`);
+        break;
+      case "LOGS_FILE":
+        navigate(`/node/${node.httpPort}/logs`);
         break;
       default:
         break;

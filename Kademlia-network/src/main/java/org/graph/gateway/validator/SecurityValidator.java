@@ -6,6 +6,7 @@ import org.graph.domain.entities.transaction.Transaction;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Logger;
 
 
 /**
@@ -45,7 +46,7 @@ import java.util.Set;
 
 public class SecurityValidator {
 
-    public boolean validateBlockchain(Block block, int currentDifficulty) {
+    public boolean validateBlockchain(Block block, int currentDifficulty, Logger logger) {
         if (block == null) {
             return false;
         }
@@ -53,11 +54,11 @@ public class SecurityValidator {
         if (block.getNumberBlock() == 0) {
             String recalculatedHash = block.recalculateHash();
             if (!recalculatedHash.equals(block.getCurrentBlockHash())) {
-                System.err.println("[SECURITY] Genesis hash integrity failed!");
+                logger.severe("[SECURITY] Genesis hash integrity failed!");
                 return false;
             }
             if (isPoWValid(block.getCurrentBlockHash(), currentDifficulty)) {
-                System.err.println("[SECURITY] Genesis PoW invalid!");
+                logger.severe("[SECURITY] Genesis PoW invalid!");
                 return false;
             }
             return true;
@@ -66,15 +67,15 @@ public class SecurityValidator {
 
         String recalculatedHash = block.recalculateHash();
         if (!recalculatedHash.equals(block.getCurrentBlockHash())) {
-            System.err.println("[SECURITY] Hash integrity failed! Fake hash detected.");
-            System.err.println("[SECURITY] Declared: " + block.getCurrentBlockHash());
-            System.err.println("[SECURITY] Real Hash: " + recalculatedHash);
+            logger.severe("[SECURITY] Hash integrity failed! Fake hash detected.");
+            logger.severe("[SECURITY] Declared: " + block.getCurrentBlockHash());
+            logger.severe("[SECURITY] Real Hash: " + recalculatedHash);
             return false;
         }
 
         if (isPoWValid(block.getCurrentBlockHash(), currentDifficulty)) {
-            System.err.println("[SECURITY] PoW invalid: " + block.getCurrentBlockHash());
-            System.err.println("[SECURITY] Expected to start with: " + getTarget(currentDifficulty));
+            logger.severe("[SECURITY] PoW invalid: " + block.getCurrentBlockHash());
+            logger.severe("[SECURITY] Expected to start with: " + getTarget(currentDifficulty));
             return false;
         }
 
@@ -82,12 +83,12 @@ public class SecurityValidator {
         for (Transaction tx : block.getTransactions()) {
 
             if (CryptoUtils.verifySignature(tx.getSender(), tx.getDataSign(), tx.getSignature())) {
-                System.err.println("[SECURITY] Invalid transaction signature for TX: " + tx.getTxId());
+                logger.severe("[SECURITY] Invalid transaction signature for TX: " + tx.getTxId());
                 return false;
             }
 
             if (!blockIds.add(tx.getTxId())){
-                System.err.println("[SECURITY] Duplicated transaction ID inside block: " + tx.getTxId());
+                logger.severe("[SECURITY] Duplicated transaction ID inside block: " + tx.getTxId());
                 return false;
             }
         }
