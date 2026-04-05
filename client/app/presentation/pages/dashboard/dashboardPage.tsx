@@ -12,8 +12,15 @@ interface Props {
 }
 
 const LOG_STORAGE_KEY = "@dht-ledger/global-logs";
+const GRAFANA_URL = "http://localhost:3000";
 
-export function Dashboard({ nodes, onSimulateSybil, onSimulateEclipse, onSimulatePoison, onShutdownThisNode }: Props) {
+export function Dashboard({
+  nodes,
+  onSimulateSybil,
+  onSimulateEclipse,
+  onSimulatePoison,
+  onShutdownThisNode,
+}: Props) {
   const [globalLogs, setGlobalLogs] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
       const savedLogs = localStorage.getItem(LOG_STORAGE_KEY);
@@ -32,10 +39,13 @@ export function Dashboard({ nodes, onSimulateSybil, onSimulateEclipse, onSimulat
     localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(globalLogs));
   }, [globalLogs]);
 
-
   const handleClearLogs = () => {
     setGlobalLogs([]);
     localStorage.removeItem(LOG_STORAGE_KEY);
+  };
+
+  const handleOpenGrafana = () => {
+    window.open(GRAFANA_URL, "_blank", "noopener,noreferrer");
   };
 
   const buildSimulationReport = (data: any): string => {
@@ -45,8 +55,10 @@ export function Dashboard({ nodes, onSimulateSybil, onSimulateEclipse, onSimulat
 
     if (data.attack) report += `\n   ----> Vetor de Ataque: ${data.attack}`;
     if (data.status) report += `\n   ---> Estado da Operação: ${data.status}`;
-    if (data.acceptedNodes !== undefined) report += `\n  ----> Nós Infetados/Comprometidos: ${data.acceptedNodes}`;
-    if (data.rejectedNodes !== undefined) report += `\n  ----> Nós Defendidos/Rejeitados: ${data.rejectedNodes}`;
+    if (data.acceptedNodes !== undefined)
+      report += `\n  ----> Nós Infetados/Comprometidos: ${data.acceptedNodes}`;
+    if (data.rejectedNodes !== undefined)
+      report += `\n  ----> Nós Defendidos/Rejeitados: ${data.rejectedNodes}`;
     if (data.message) report += `\n  -> Mensagem do Servidor: ${data.message}`;
 
     return report !== "" ? report : `\n  -> Payload Bruto:\n${JSON.stringify(data, null, 4)}`;
@@ -55,7 +67,10 @@ export function Dashboard({ nodes, onSimulateSybil, onSimulateEclipse, onSimulat
   const handleGlobalAction = async (node: NodeRow, action: NodeAction) => {
     const time = new Date().toLocaleTimeString();
 
-    setGlobalLogs((prev) => [`[${time}] ${node.id} -> Iniciando propagação: ${action.label}...`, ...prev]);
+    setGlobalLogs((prev) => [
+      `[${time}] ${node.id} -> Iniciando propagação: ${action.label}...`,
+      ...prev,
+    ]);
 
     try {
       let result;
@@ -70,7 +85,7 @@ export function Dashboard({ nodes, onSimulateSybil, onSimulateEclipse, onSimulat
         case "CHAOS_POISONED_BLOCK":
           result = await onSimulatePoison(node.httpPort);
           break;
-       case "SHUTDOWN_NODE":
+        case "SHUTDOWN_NODE":
           result = await onShutdownThisNode(node.httpPort);
           break;
         default:
@@ -81,14 +96,13 @@ export function Dashboard({ nodes, onSimulateSybil, onSimulateEclipse, onSimulat
       const successLog = `[${new Date().toLocaleTimeString()}] SUCESSO (${node.id}):${formattedReport}`;
 
       setGlobalLogs((prev) => [successLog, ...prev]);
-
     } catch (err: any) {
       const errorData = err.response?.data;
-      const isTimeout = err.code === 'ECONNABORTED' || err.message.includes('timeout');
+      const isTimeout = err.code === "ECONNABORTED" || err.message.includes("timeout");
 
       const errorMsg = isTimeout
         ? "O navegador abortou a conexão porque o servidor Java demorou demasiado tempo a processar a criptografia."
-        : (errorData?.error || err.message || "Falha catastrófica de infraestrutura.");
+        : errorData?.error || err.message || "Falha catastrófica de infraestrutura.";
 
       const failureLog = `[${new Date().toLocaleTimeString()}] FALHA CRÍTICA (${node.id}):\n  └── Diagnóstico: ${errorMsg}`;
 
@@ -100,12 +114,23 @@ export function Dashboard({ nodes, onSimulateSybil, onSimulateEclipse, onSimulat
     <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="max-w-7xl mx-auto p-6 space-y-10">
         <header className="flex flex-col gap-2">
-          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-            DHT Ledger Dashboard
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-sm max-w-2xl">
-           Monitoring and simulation of distributed events across replicated nodes.
-          </p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+                DHT Ledger Dashboard
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 text-sm max-w-2xl">
+                Monitoring and simulation of distributed events across replicated nodes.
+              </p>
+            </div>
+
+            <button
+              onClick={handleOpenGrafana}
+              className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold text-sm shadow transition"
+            >
+              Open Grafana (localhost:3000)
+            </button>
+          </div>
         </header>
 
         <section className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-6 space-y-6">
@@ -141,7 +166,10 @@ export function Dashboard({ nodes, onSimulateSybil, onSimulateEclipse, onSimulat
           ) : (
             <div className="rounded-xl bg-gray-950 text-green-300 font-mono text-xs p-4 max-h-96 overflow-y-auto shadow-inner border border-gray-800">
               {globalLogs.map((log, idx) => (
-                <div key={idx} className="whitespace-pre-wrap leading-relaxed pb-3 mb-3 border-b border-gray-800 last:border-0 last:mb-0 last:pb-0">
+                <div
+                  key={idx}
+                  className="whitespace-pre-wrap leading-relaxed pb-3 mb-3 border-b border-gray-800 last:border-0 last:mb-0 last:pb-0"
+                >
                   {log}
                 </div>
               ))}

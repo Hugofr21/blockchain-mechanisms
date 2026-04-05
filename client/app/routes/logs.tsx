@@ -1,10 +1,11 @@
 import { useParams } from "react-router";
 import { LogsPage } from "~/presentation/pages/logs";
 import { useLogs } from "../infrastructure/hooks/network/eventNetwork";
+import type { LogPayload } from "~/application/model/log";
 
 export default function LogsRouter() {
   const { targetNodePort } = useParams<{ targetNodePort: string }>();
-
+  
   const { logs, loading, error } = useLogs(targetNodePort || ""); 
 
   if (!targetNodePort) {
@@ -17,14 +18,16 @@ export default function LogsRouter() {
     );
   }
 
-  if (loading) return <p className="p-6 font-mono text-indigo-600 animate-pulse">A extrair fluxo de telemetria do nó alvo...</p>;
-  if (error) return <p className="p-6 font-mono text-red-600">Falha de I/O Remota: {error}</p>;
+  if (error) {
+    return <p className="p-6 font-mono text-red-600">Falha de I/O Remota: {error}</p>;
+  }
 
   return (
     <>
       <LogsPage 
         targetNodePort={targetNodePort}
-        dataLogs={logs ? [logs] : []}
+        dataLogs={logs ? [logs as LogPayload] : []}
+        isSyncing={loading}
       />
     </>
   );

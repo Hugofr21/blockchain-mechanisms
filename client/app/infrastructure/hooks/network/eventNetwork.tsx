@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { NodeRow } from "../../../application/model/node";
 import { fetchMyselfIdentity, fetchAllNeighbors, fetchListOfLogs } from "../../services/network";
 
@@ -78,38 +78,65 @@ export interface ResponseLogs {
   data: string[];
 }
 
-
-export const useLogs = (nodeId: string) => {
-  const [logs, setLogs] = useState<ResponseLogs | null>(null);
+export const useLogs = (nodeId: string, pollIntervalMs: number = 3000) => {
+  const [logData, setLogData] = useState<ResponseLogs | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+
+  const currentOffset = useRef<number>(0);
+
   useEffect(() => {
+    if (!nodeId) return;
+
     const abortController = new AbortController();
 
-    const loadLogs = async () => {
+    const pollLogs = async () => {
       try {
-        setLoading(true);
+        const data = await fetchListOfLogs(
+          nodeId, 
+          currentOffset.current, 
+          abortController.signal
+        );
+
+        if (data.linesReturned > 0) {
+          setLogData((prev) => {
+        
+            if (!prev) return data;
+            
+       
+            return {
+              ...data,
+              data: [...prev.data, ...data.data],
+              linesReturned: prev.linesReturned + data.linesReturned
+            };
+          });
+          
+      
+          currentOffset.current = data.nextOffset;
+        }
+        
         setError(null);
-        const data = await fetchListOfLogs(nodeId, abortController.signal);
-        setLogs(data);
       } catch (err: any) {
         if (err.name !== "AbortError") {
-          setError(err.message || "Ocorreu uma falha sistémica durante a extração do fluxo de logs.");
+          setError(err.message || "Falha na sincronização contínua do fluxo de logs.");
         }
       } finally {
         setLoading(false);
       }
     };
 
-    if (nodeId) {
-      loadLogs();
-    }
+
+    pollLogs();
+
+  
+    const intervalId = setInterval(pollLogs, pollIntervalMs);
 
     return () => {
+      clearInterval(intervalId);
       abortController.abort();
     };
-  }, [nodeId]);
+  }, [nodeId, pollIntervalMs]);
 
-  return { logs, loading, error };
+  return { logs: logData, loading, error };
 };

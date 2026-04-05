@@ -5,7 +5,9 @@ import io.javalin.http.Context;
 import org.graph.domain.entities.node.Node;
 import org.graph.server.Peer;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,22 +40,41 @@ public class NetworkController {
             return;
         }
 
+        long offset = ctx.queryParamAsClass("offset", Long.class).getOrDefault(0L);
         int limit = ctx.queryParamAsClass("limit", Integer.class).getOrDefault(100);
 
-        try (Stream<String> stream = Files.lines(logPath, StandardCharsets.UTF_8)) {
-            Deque<String> buffer = new ArrayDeque<>(limit);
+        try (RandomAccessFile raf = new RandomAccessFile(logPath.toFile(), "r")) {
+            long fileLength = raf.length();
 
-            stream.forEach(line -> {
-                if (buffer.size() == limit) {
-                    buffer.removeFirst();
+            if (offset > fileLength) {
+                offset = 0L;
+            }
+
+            raf.seek(offset);
+
+            List<String> newLines = new ArrayList<>();
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            int currentByte;
+
+            while ((currentByte = raf.read()) != -1) {
+                if (currentByte == '\n') {
+                    newLines.add(buffer.toString(StandardCharsets.UTF_8));
+                    buffer.reset();
+                    if (newLines.size() == limit) {
+                        break;
+                    }
+                } else if (currentByte != '\r') {
+                    buffer.write(currentByte);
                 }
-                buffer.addLast(line);
-            });
+            }
+
+            long nextOffset = raf.getFilePointer();
 
             ctx.status(200).json(Map.of(
                     "fileName", logFileName,
-                    "linesReturned", buffer.size(),
-                    "data", new ArrayList<>(buffer)
+                    "linesReturned", newLines.size(),
+                    "nextOffset", nextOffset,
+                    "data", newLines
             ));
         } catch (IOException e) {
             ctx.status(500).json(Map.of("error", "Input/output failure during log stream extraction: " + e.getMessage()));

@@ -8,9 +8,9 @@ export default function NetworkRouter() {
 
   if (loading) {
     return (
-      <main className="flex items-center justify-center min-h-[50vh] bg-transparent">
-        <p className="text-indigo-600 animate-pulse font-mono tracking-wide">
-          A extrair topologia Kademlia (KBuckets) do contentor {targetNodePort}...
+      <main className="flex items-center justify-center min-h-[50vh] bg-transparent px-6 py-10">
+        <p className="text-indigo-600 animate-pulse font-mono tracking-wide text-center">
+          Extracting Kademlia (KBuckets) topology from container {targetNodePort}...
         </p>
       </main>
     );
@@ -18,14 +18,18 @@ export default function NetworkRouter() {
 
   if (error || !targetNodePort) {
     return (
-      <main className="max-w-7xl mx-auto p-6">
+      <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="bg-red-50 text-red-700 p-6 rounded-lg border border-red-300 shadow-sm font-mono">
-          <h2 className="text-lg font-bold mb-2">Falha de Observabilidade Topológica</h2>
+          <h2 className="text-lg font-bold mb-2">Topological Observability Failure</h2>
           <p>{error || "Anomalia de Roteamento: Nenhum contentor alvo detetado no endereço."}</p>
         </div>
       </main>
     );
   }
 
-  return <NetworkPage nodes={neighbors} myself={myself} loading={loading} />;
+  return (
+    <main className="max-w-7xl mx-auto px-6 py-10">
+      <NetworkPage nodes={neighbors} myself={myself} loading={loading} />
+    </main>
+  );
 }
