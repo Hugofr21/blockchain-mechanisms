@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { LogsList } from "../components/logs/logsList";
+import { LogsList } from "../components/logLayout/logsList";
 import type { LogPayload } from "../../application/model/log";
 import { Link } from "react-router";
 import { Loader2 } from "lucide-react";
