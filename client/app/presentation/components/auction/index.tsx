@@ -42,13 +42,15 @@ export const AuctionCard: React.FC<Props> = ({ data, targetNodePort }) => {
 
       {/* Body */}
       <div className="p-4 space-y-3">
-        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-          <User size={14} className="opacity-70" />
-          <span>
-            <span className="font-medium">Owner:</span>{" "}
-            <span className="font-mono">{data.ownerId}</span>
-          </span>
-        </div>
+          <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400 min-w-0">
+            <User size={14} className="opacity-70 shrink-0 mt-0.5" />
+            <span className="min-w-0">
+              <span className="font-medium">Owner:</span>{" "}
+              <span className="font-mono break-all whitespace-normal">
+                {data.ownerId}
+              </span>
+            </span>
+          </div>
 
         <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
           <DollarSign size={14} className="opacity-70" />

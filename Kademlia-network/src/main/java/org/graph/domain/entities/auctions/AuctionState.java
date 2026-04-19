@@ -1,5 +1,6 @@
 package org.graph.domain.entities.auctions;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.graph.domain.valueobject.utils.HashUtils;
 
 import java.io.Serial;
@@ -13,13 +14,25 @@ import java.util.Set;
 public class AuctionState implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
+
     private final String auctionId;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private final BigInteger ownerId;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private final BigDecimal minPrice;
+
     private final long endTimestamp;
+
     private final Set<Bid> bidHistory;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private BigDecimal currentHighestBid;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private BigInteger currentWinnerId;
+
     private boolean isOpen;
 
 
@@ -43,9 +56,16 @@ public class AuctionState implements Serializable {
     public Set<Bid> getBidHistory() {return bidHistory; }
 
     public void addSuccessfulBid(Bid bid) {
-        if (bid != null && this.bidHistory.add(bid)) {
-            this.currentHighestBid = bid.bidPrice();
-            this.currentWinnerId = bid.newBidderId();
+        if (bid == null) return;
+        if (bid.bidPrice().compareTo(this.currentHighestBid) > 0) {
+            if (this.bidHistory.add(bid)) {
+                this.currentHighestBid = bid.bidPrice();
+                this.currentWinnerId = bid.newBidderId();
+            }
+
+        } else {
+            System.err.println("[AUCTION REJECTED] The bid (" + bid.bidPrice() +
+                    ") is less than or equal to the current high (" + this.currentHighestBid + ").");
         }
     }
 

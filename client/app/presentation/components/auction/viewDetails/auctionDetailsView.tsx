@@ -18,6 +18,9 @@ interface Props {
 
 export function AuctionDetailsView({ auction }: Props) {
   const formattedEnd = new Date(auction.endTimestamp).toLocaleString();
+  const sortedBids = [...(auction.bidHistory || [])].sort(
+    (a, b) => b.throwTimestamp - a.throwTimestamp
+  );
 
   return (
     <div className="space-y-6">
@@ -58,22 +61,22 @@ export function AuctionDetailsView({ auction }: Props) {
           </h2>
         </div>
 
-        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div className="flex items-start gap-2">
-            <User size={16} className="opacity-70 mt-0.5" />
-            <div>
+      <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="flex items-start gap-2 min-w-0">
+            <User size={16} className="opacity-70 mt-0.5 shrink-0" />
+            <div className="min-w-0">
               <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 Owner ID
               </p>
-              <p className="font-mono text-gray-800 dark:text-gray-200">
+              <p className="font-mono text-gray-800 dark:text-gray-200 break-all whitespace-normal">
                 {auction.ownerId}
               </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-2">
-            <DollarSign size={16} className="opacity-70 mt-0.5" />
-            <div>
+          <div className="flex items-start gap-2 min-w-0">
+            <DollarSign size={16} className="opacity-70 mt-0.5 shrink-0" />
+            <div className="min-w-0">
               <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 Min Price
               </p>
@@ -83,21 +86,21 @@ export function AuctionDetailsView({ auction }: Props) {
             </div>
           </div>
 
-          <div className="flex items-start gap-2">
-            <Trophy size={16} className="opacity-70 mt-0.5" />
-            <div>
+          <div className="flex items-start gap-2 min-w-0">
+            <Trophy size={16} className="opacity-70 mt-0.5 shrink-0" />
+            <div className="min-w-0">
               <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 Current Winner
               </p>
-              <p className="font-mono text-gray-800 dark:text-gray-200">
+              <p className="font-mono text-gray-800 dark:text-gray-200 break-all whitespace-normal">
                 {auction.currentWinnerId || "N/A"}
               </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-2">
-            <DollarSign size={16} className="opacity-70 mt-0.5" />
-            <div>
+          <div className="flex items-start gap-2 min-w-0">
+            <DollarSign size={16} className="opacity-70 mt-0.5 shrink-0" />
+            <div className="min-w-0">
               <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 Highest Bid
               </p>
@@ -107,26 +110,26 @@ export function AuctionDetailsView({ auction }: Props) {
             </div>
           </div>
 
-          <div className="flex items-start gap-2">
-            <Clock size={16} className="opacity-70 mt-0.5" />
-            <div>
+          <div className="flex items-start gap-2 min-w-0">
+            <Clock size={16} className="opacity-70 mt-0.5 shrink-0" />
+            <div className="min-w-0">
               <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 End Timestamp
               </p>
-              <p className="text-gray-800 dark:text-gray-200">
+              <p className="text-gray-800 dark:text-gray-200 break-words whitespace-normal">
                 {formattedEnd}
               </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-2">
-            <FileText size={16} className="opacity-70 mt-0.5" />
-            <div>
+          <div className="flex items-start gap-2 min-w-0">
+            <FileText size={16} className="opacity-70 mt-0.5 shrink-0" />
+            <div className="min-w-0">
               <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 Bid History
               </p>
               <p className="font-mono text-gray-800 dark:text-gray-200">
-                {auction.bidHistory.length} bids
+                {sortedBids.length} bids
               </p>
             </div>
           </div>
@@ -142,15 +145,15 @@ export function AuctionDetailsView({ auction }: Props) {
         </div>
 
         <div className="p-5">
-          {auction.bidHistory.length === 0 ? (
+          {sortedBids.length === 0 ? (
             <p className="text-sm text-gray-500 dark:text-gray-400">
               No bids registered for this auction.
             </p>
           ) : (
             <div className="space-y-3">
-              {auction.bidHistory.map((bid: BidRow, idx: number) => (
+              {sortedBids.map((bid: BidRow) => (
                 <div
-                  key={idx}
+                  key={`${bid.auctionId}-${bid.newBidderId}-${bid.throwTimestamp}-${bid.bidPrice}`}
                   className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 p-4"
                 >
                   <div className="flex items-center justify-between">
