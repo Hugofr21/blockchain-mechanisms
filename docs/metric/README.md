@@ -56,3 +56,17 @@ A tabela abaixo resume cada métrica, seu objetivo e como interpretá‑la em um
 2. **Thresholds Dinâmicos** – Use *persistence* na fila do broker para decidir sobre back‑pressure automático. Se `broker_event_queue_size_messages` > 90% da capacidade, reduza a taxa de gravação de logs.
 3. **Segurança em Layer 1** – Unifique as métricas de *Malicious Activities* com logs de rede para correlacionar taxa de injeções falsas com variações de `skademlia_peer_trust_score`.
 4. **Visão Holística** – Combine métricas de “Chain Height” com `blockchain_mempool_size_transactions` para detectar “stale blocks”; se a altura escalar não acompanha o backlog de mempool, a rede está estagnada.
+
+## 5. Normas NIS e MITRE ATT&CK
+
+Na análise de controlo de comportamento de sistemas, considera-se relevante a utilização de métricas operacionais e de segurança que permitam avaliar a eficácia da deteção, resposta e recuperação perante incidentes de cibersegurança. Neste contexto, referenciais normativos como a Diretiva NIS (Network and Information Security) e o framework MITRE ATT&CK fornecem uma base estruturada para a identificação de padrões de ataque, correlação de eventos e melhoria contínua dos mecanismos de defesa. Estes referenciais contribuem para uma melhor capacidade de resposta a incidentes, particularmente em cenários associados a vetores de ataque comuns, incluindo ataques de negação de serviço (DoS), exploração de vulnerabilidades e movimentos laterais em redes comprometidas.
+
+$$MTTD = \frac{\text{Soma de todos os tempos de deteção}}{\text{Número total de incidentes}}$$
+
+$$MTTR = \frac{\text{Soma de todos os tempos de resposta/reparação}}{\text{Número total de incidentes}}$$
+
+$$MTBF = \frac{\text{Tempo total de operação ininterrupta (uptime)}}{\text{Número de falhas}}$$
+
+$$\text{Disponibilidade (\%)} = \frac{MTBF}{MTBF + MTTR} \times 100$$
+
+
