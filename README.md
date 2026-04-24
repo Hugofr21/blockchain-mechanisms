@@ -120,6 +120,7 @@ A camada de gateway desempenha um papel crítico na fronteira do sistema, sendo 
 ---
 
 ## 3. Modelo de ameaças (Threat Model)
+A modelagem de ameaças fundamenta-se na metodologia STRIDE durante as fases de engenharia e concepção de software (Security by Design), o que permite a avaliação da arquitetura do sistema antes da sua implementação. Para garantir a resiliência sistêmica, o framework MITRE ATT&CK (via Navigator) é utilizado para mapear vetores de ataque reais e possíveis. Essa abordagem permite que, durante a construção da rede e do software, possamos analisar e mitigar potenciais vulnerabilidades de forma antecipada. 
 
 | Vetor de ataque                                   | Impacto potencial                                                            | Contramedida implementada                                                                                                                                                                |
 | ------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
