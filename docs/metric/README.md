@@ -70,3 +70,29 @@ $$MTBF = \frac{\text{Tempo total de operação ininterrupta (uptime)}}{\text{Nú
 $$\text{Disponibilidade (\%)} = \frac{MTBF}{MTBF + MTTR} \times 100$$
 
 
+## Mean Time to Detection
+A minimização do Mean Time to Detection (MTTD) requer a monitorização exaustiva dos seguintes Service Level Indicators (SLIs), fundamentais para a proteção do Error Budget:
+
+1. Latência:
+
+Métrica: Medição do tempo de resposta das operações do sistema.
+
+Aplicação SRE: Atua como o SLI primário de performance. A análise contínua de percentis (ex: p95, p99) é crítica, pois desvios padrão acentuados ou picos de latência constituem sintomas precoces de estrangulamentos (bottlenecks) na infraestrutura. Identificar esta latência latente permite mitigar a degradação antes que resulte numa falha total e na violação do SLA de tempo de resposta.
+
+2. Débito (Throughput):
+
+Métrica: Quantificação do volume de transações ou dados processados por unidade de tempo.
+
+Aplicação SRE: A correlação desta métrica com a latência é obrigatória para aferir a elasticidade da arquitetura. Permite identificar de forma empírica se o sistema está a degradar a sua performance sob cargas normais de operação ou estritamente durante picos de utilização, informando decisões estruturais sobre provisionamento de recursos.
+
+3. Tráfego de Entrada (Inbound):
+
+Métrica: Monitorização do volume absoluto de pedidos HTTP recebidos e da respetiva taxa de sucesso operacional.
+
+Aplicação SRE: Exige a análise rigorosa do rácio entre mensagens de sucesso (HTTP 2xx/3xx) e mensagens de erro (HTTP 4xx/5xx). Um aumento súbito na taxa de erros inbound consome o Error Budget do SLO de disponibilidade de forma acelerada, apontando de imediato para anomalias nos serviços expostos ou em processos de validação de dados.
+
+4. Tráfego de Saída (Outbound):
+
+Métrica: Monitorização do volume, taxa de sucesso e taxa de erro dos pedidos HTTP originados pelo sistema em direção a dependências externas (bases de dados, APIs de terceiros, microsserviços adjacentes).
+
+Aplicação SRE: Métrica vital para o isolamento determinístico de falhas (Fault Isolation). Permite determinar de forma inequívoca se o incidente e a consequente degradação do SLO têm origem na sua própria arquitetura ou na infraestrutura de um fornecedor externo, protegendo os seus indicadores internos contra falhas de terceiros.
