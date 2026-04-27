@@ -287,3 +287,6 @@ Descrever e organizar os casos de teste implementados para validar as principais
 - [X] **Simulação de licitações duplicadas e rejeição de valores baixos em leilão**: Validar que transações duplicadas são detectadas e rejeitadas, e que lances abaixo do valor mínimo configurado são descartados, garantindo a integridade dos dados no ledger.
 - [X] **Simulação de concorrência de licitações**: Validar que múltiplas licitações num leilão enviadas sequencialmente em todas as máquinas são lidas pela mesma ordem e rejeitadas caso não cumpram com as regras de negócio.
 - [X] **Simulação de condições de corrida em leilões**: Criar vários leilões simultaneamente e enviar licitações com pedidos concorrentes de dados para verificar integridade e consistência.
+
+### Referências
+1. Blockchain Attack Vectors & Vulnerabilities to Smart Contracts, https://cryptodeeptech.ru/blockchain-attack-vectors/
