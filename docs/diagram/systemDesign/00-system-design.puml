@@ -1,68 +1,87 @@
-@startuml architecture
-title Private DHT Ledger Network with API Gateway and Bootstrap Node
+@startuml architecture_bff_gateway_opt
+
+title Distributed Ledger Network (BFF / Gateway Auth Pattern) & Telemetria
 
 skinparam shadowing false
 skinparam componentStyle rectangle
 skinparam defaultTextAlignment center
+skinparam linetype ortho
+skinparam nodesep 50
+skinparam ranksep 60
+skinparam pad 20
 
-node "Client Network\n(External)" as clientNet {
-  actor "User / Client" as client
+
+node "Ambiente Externo (Internet)" as public {
+  component "Single Page Application\n(React SPA)" as react
+}
+
+node "Identity Provider" as idp {
+  component "Keycloak Server\n(OIDC / OAuth2)" as keycloak
 }
 
 node "DMZ / Public Zone" as dmz {
-  node "API Gateway\n(Reverse Proxy)" as apigw {
-    component "1. Rate Limiter\n& Logging" as ratelimit
-    component "2. Auth Module\n(Keycloak / JWT)" as auth
-    component "3. API Router\n(REST / RPC)" as api
+  node "API Gateway\n(Reverse Proxy & BFF)" as apigw {
+    component "OIDC Client Module\n(Confidential Client)" as oidc
+    component "Rate Limiter & Logging" as ratelimit
+    component "Session Translator\n(Cookie -> JWT Bearer)" as auth
+    component "API Router\n(REST / RPC)" as api
+    
+    oidc -[hidden]down-> ratelimit
+    ratelimit -[hidden]down-> auth
+    auth -[hidden]down-> api
   }
 }
 
 node "Private Network\n(Isolated Subnet)" as privNet {
-
   node "Bootstrap Node\n(Seed Peer)" as bootstrap {
     component "DHT Service\n(Kademlia Routing)" as bootDHT
-    component "Ledger Core\n(Block Validation)" as bootLedger
-    database "Local Chain Storage" as bootStorage
+    component "Ledger Core" as bootLedger
   }
 
   node "Peer Node A\n(Validator)" as peerA {
     component "DHT Service\n(Kademlia Routing)" as dhtA
-    component "Ledger Core\n(Mining / Consensus)" as ledgerA
-    database "Local Chain Storage" as storeA
+    component "Ledger Core" as ledgerA
   }
 
   node "Peer Node B\n(Validator)" as peerB {
     component "DHT Service\n(Kademlia Routing)" as dhtB
-    component "Ledger Core\n(Mining / Consensus)" as ledgerB
-    database "Local Chain Storage" as storeB
+    component "Ledger Core" as ledgerB
   }
-
-  node "Peer Node C\n(Validator)" as peerC {
-    component "DHT Service\n(Kademlia Routing)" as dhtC
-    component "Ledger Core\n(Mining / Consensus)" as ledgerC
-    database "Local Chain Storage" as storeC
-  }
+  
+  
+  bootstrap -[hidden]right-> peerA
+  peerA -[hidden]right-> peerB
 }
 
-client --> ratelimit : HTTPS Requests
-ratelimit --> auth : Tráfego Permitido
-auth --> api : Token Validado
+node "Observability Stack" as obs {
+  component "OpenTelemetry\nCollector" as otel
+  database "Prometheus\nServer" as prometheus
+  component "Grafana\nDashboard" as grafana
+}
 
-api --> peerA : Private RPC\n(Submit Tx / Read)
-api --> peerB : Private RPC\n(Submit Tx / Read)
-api --> peerC : Private RPC\n(Submit Tx / Read)
 
-bootDHT <--> dhtA : Kademlia RPC (Discovery)
-bootDHT <--> dhtB : Kademlia RPC (Discovery)
-bootDHT <--> dhtC : Kademlia RPC (Discovery)
+react -right-> oidc : 1, 5. Inicia Login / Sessão Cookie
+oidc -right-> keycloak : 2, 3, 4. Backchannel OIDC Flow
 
-dhtA <--> dhtB : Routing Table Sync
-dhtB <--> dhtC : Routing Table Sync
-dhtA <--> dhtC : Routing Table Sync
 
-bootLedger --> bootStorage : Persist Blocks
-ledgerA --> storeA : Persist Blocks
-ledgerB --> storeB : Persist Blocks
-ledgerC --> storeC : Persist Blocks
+react -down-> ratelimit : 6. Requisição HTTP (Cookie)
+ratelimit -down-> auth : Permite Tráfego
+auth -down-> api : 7. Tradução JWT -> Bearer
 
+
+api -down-> peerA : 8. RPC (Submit Tx)
+api -down-> peerB : 8. RPC (Submit Tx)
+
+
+bootDHT <-down-> dhtA : Kademlia RPC
+bootDHT <-down-> dhtB : Kademlia RPC
+dhtA <-right-> dhtB : Sync Routing Table
+
+apigw .down.> otel : Export OTLP
+bootstrap .down.> otel : Export OTLP
+peerA .down.> otel : Export OTLP
+peerB .down.> otel : Export OTLP
+
+otel -right-> prometheus : Scrape Metrics
+prometheus -right-> grafana : Consultas PromQL
 @enduml

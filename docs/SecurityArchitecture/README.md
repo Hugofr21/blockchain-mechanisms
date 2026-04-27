@@ -19,16 +19,16 @@ A garantia de que o histórico da cadeia nunca pode ser alterado **não** depend
 
 ---
 
-## 2.Concorrência, Forks e Ordenação Definitiva das Transações
+## 2. Concorrência, Forks e Ordenação Definitiva das Transações
 
 Num ambiente sem relógio global, transações e blocos chegam de forma **assíncrona** e podem colidir.
 
-### 2.1Gestão da Mem‑Pool
+### 2.1 Gestão da Mem‑Pool
 
 * Todas as transações válidas são armazenadas numa **mem‑pool** (fila de espera).
 * A ordem de chegada ao *network* é irrelevante; a única ordem **definitiva** é estabelecida quando um minerador as inclui num bloco, as organiza numa **Árvore de Merkle** e sela o bloco.
 
-### 2.2Resolução de Forks (Ramos concorrentes)
+### 2.2 Resolução de Forks (Ramos concorrentes)
 
 1. **Deteção da bifurcação** – quando dois blocos diferentes são aceites como filhos do mesmo bloco‑pai.
 2. **Regra da cadeia mais longa/pesada** – o ramo que acumular mais blocos (ou maior peso de PoW) torna‑se a cadeia oficial.

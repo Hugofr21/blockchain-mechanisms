@@ -7,7 +7,6 @@ O *MetricsLogger* expõe métricas de três camadas críticas do seu nó:
 3. **Topologia P2P e Roteamento DHT** – eficiência da sobre‑posição K‑ademlia.
 
 ![System Mteric](./diagram/Metric_Kamdelia_Network.png)
-
 A tabela abaixo resume cada métrica, seu objetivo e como interpretá‑la em um cenário de “pico” ou anomalia.
 
 ---
