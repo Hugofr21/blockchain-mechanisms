@@ -290,3 +290,5 @@ Descrever e organizar os casos de teste implementados para validar as principais
 
 ### Referências
 1. Blockchain Attack Vectors & Vulnerabilities to Smart Contracts, https://cryptodeeptech.ru/blockchain-attack-vectors/
+
+2. Blockchain Variables and Possible Attacks: A Technical Survey, https://www.mdpi.com/2073-431X/14/12/567

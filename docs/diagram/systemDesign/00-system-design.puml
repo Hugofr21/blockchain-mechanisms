@@ -1,87 +1,101 @@
-@startuml architecture_bff_gateway_opt
+@startuml architecture_spa_direct_auth
 
-title Distributed Ledger Network (BFF / Gateway Auth Pattern) & Telemetria
+title Distributed Ledger Network (SPA Direct Auth Pattern) & Telemetria
 
 skinparam shadowing false
 skinparam componentStyle rectangle
 skinparam defaultTextAlignment center
 skinparam linetype ortho
-skinparam nodesep 50
-skinparam ranksep 60
+skinparam nodesep 60
+skinparam ranksep 80
 skinparam pad 20
 
+skinparam node {
+  BackgroundColor<<public>> #FFFFFF
+  BackgroundColor<<gateway>> #B3E5FC
+  BackgroundColor<<security>> #D1C4E9
+  BackgroundColor<<adapter>> #FFEB3B
+  BackgroundColor<<app>> #C8E6C9
+  BackgroundColor<<infra>> #CFD8DC
+  BackgroundColor<<storage>> #FFCDD2
+  BackgroundColor<<metrics>> #B2EBF2
+  FontColor Black
+}
+
+skinparam component {
+  BackgroundColor<<public>> #FFFFFF
+  BackgroundColor<<gateway>> #B3E5FC
+  BackgroundColor<<security>> #D1C4E9
+  BackgroundColor<<adapter>> #FFEB3B
+  BackgroundColor<<app>> #C8E6C9
+  BackgroundColor<<infra>> #CFD8DC
+  BackgroundColor<<storage>> #FFCDD2
+  BackgroundColor<<metrics>> #B2EBF2
+  FontColor Black
+}
+
+skinparam database {
+  BackgroundColor<<storage>> #FFCDD2
+  FontColor Black
+}
 
 node "Ambiente Externo (Internet)" as public {
-  component "Single Page Application\n(React SPA)" as react
+  component "Single Page Application\n(React SPA)" <<app>> as react
 }
 
 node "Identity Provider" as idp {
-  component "Keycloak Server\n(OIDC / OAuth2)" as keycloak
+  component "Keycloak Server\n(OIDC / OAuth2)" <<security>> as keycloak
 }
 
-node "DMZ / Public Zone" as dmz {
-  node "API Gateway\n(Reverse Proxy & BFF)" as apigw {
-    component "OIDC Client Module\n(Confidential Client)" as oidc
-    component "Rate Limiter & Logging" as ratelimit
-    component "Session Translator\n(Cookie -> JWT Bearer)" as auth
-    component "API Router\n(REST / RPC)" as api
-    
-    oidc -[hidden]down-> ratelimit
-    ratelimit -[hidden]down-> auth
-    auth -[hidden]down-> api
+node "DMZ / Public Zone" <<gateway>> as dmz {
+  node "API Gateway\n(Reverse Proxy & Ingress)" <<gateway>> as apigw {
+    component "Rate Limiter & Logging" <<adapter>> as ratelimit
+    component "JWT Validator\n(Resource Server)" <<security>> as auth
+    component "API Router\n(REST / RPC)" <<gateway>> as api
   }
 }
 
-node "Private Network\n(Isolated Subnet)" as privNet {
-  node "Bootstrap Node\n(Seed Peer)" as bootstrap {
-    component "DHT Service\n(Kademlia Routing)" as bootDHT
-    component "Ledger Core" as bootLedger
+node "Private Network\n(Isolated Subnet)" <<infra>> as privNet {
+  node "Bootstrap Node\n(Seed Peer)" <<infra>> as bootstrap {
+    component "DHT Service\n(Kademlia Routing)" <<app>> as bootDHT
+    component "Ledger Core" <<storage>> as bootLedger
   }
 
-  node "Peer Node A\n(Validator)" as peerA {
-    component "DHT Service\n(Kademlia Routing)" as dhtA
-    component "Ledger Core" as ledgerA
+  node "Peer Node A\n(Validator)" <<infra>> as peerA {
+    component "DHT Service\n(Kademlia Routing)" <<app>> as dhtA
+    component "Ledger Core" <<storage>> as ledgerA
   }
 
-  node "Peer Node B\n(Validator)" as peerB {
-    component "DHT Service\n(Kademlia Routing)" as dhtB
-    component "Ledger Core" as ledgerB
+  node "Peer Node B\n(Validator)" <<infra>> as peerB {
+    component "DHT Service\n(Kademlia Routing)" <<app>> as dhtB
+    component "Ledger Core" <<storage>> as ledgerB
   }
-  
-  
-  bootstrap -[hidden]right-> peerA
-  peerA -[hidden]right-> peerB
 }
 
-node "Observability Stack" as obs {
-  component "OpenTelemetry\nCollector" as otel
-  database "Prometheus\nServer" as prometheus
-  component "Grafana\nDashboard" as grafana
+node "Observability Stack" <<metrics>> as obs {
+  component "OpenTelemetry\nCollector" <<metrics>> as otel
+  database "Prometheus\nServer" <<storage>> as prometheus
+  component "Grafana\nDashboard" <<metrics>> as grafana
 }
 
+react <--> keycloak : 1. Autenticação OIDC (SPA PKCE Flow)\nRetorna JWT Access Token
+react --> ratelimit : 2. Requisição HTTP API\n(Injeta JWT Bearer Header)
+ratelimit --> auth : 3. Validação de Tráfego
+auth --> api : 4. Verificação de Assinatura e Claims (JWT)
 
-react -right-> oidc : 1, 5. Inicia Login / Sessão Cookie
-oidc -right-> keycloak : 2, 3, 4. Backchannel OIDC Flow
+api --> peerA : 5. RPC Autorizado (Submit Tx)
+api --> peerB : 5. RPC Autorizado (Submit Tx)
 
-
-react -down-> ratelimit : 6. Requisição HTTP (Cookie)
-ratelimit -down-> auth : Permite Tráfego
-auth -down-> api : 7. Tradução JWT -> Bearer
-
-
-api -down-> peerA : 8. RPC (Submit Tx)
-api -down-> peerB : 8. RPC (Submit Tx)
-
-
-bootDHT <-down-> dhtA : Kademlia RPC
-bootDHT <-down-> dhtB : Kademlia RPC
+bootDHT <-right-> dhtA : Kademlia RPC
+bootDHT <-right-> dhtB : Kademlia RPC
 dhtA <-right-> dhtB : Sync Routing Table
 
-apigw .down.> otel : Export OTLP
-bootstrap .down.> otel : Export OTLP
-peerA .down.> otel : Export OTLP
-peerB .down.> otel : Export OTLP
+apigw .....> otel : Export OTLP
+bootstrap .....> otel : Export OTLP
+peerA .....> otel : Export OTLP
+peerB .....> otel : Export OTLP
 
-otel -right-> prometheus : Scrape Metrics
-prometheus -right-> grafana : Consultas PromQL
+otel --> prometheus : Scrape Metrics
+prometheus --> grafana : Consultas PromQL
+
 @enduml
