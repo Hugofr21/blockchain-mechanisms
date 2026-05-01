@@ -93,7 +93,7 @@ A solução foi desenvolvida em **Java 21** (compatível com versões anteriores
 
 ---
 
-## 2. Vião geral do system design
+## 2. Visão geral do system design
 
 O projeto assenta numa topologia de segregação de redes rigorosa, estabelecendo uma Zona Desmilitarizada (DMZ) para isolar a infraestrutura primária de acessos externos. No perímetro desta zona, opera uma Web Application Firewall (WAF) posicionada estrategicamente à frente do API Gateway. Esta fronteira de inspeção profunda (Camada 7) analisa todo o tráfego originado pela aplicação cliente (React SPA), atuando como a primeira linha de defesa contra injeções maliciosas e anomalias de protocolo. O fluxo validado é então roteado para o API Gateway, que funciona como reverse proxy e centraliza mecanismos críticos de segurança. Este componente assegura a autenticação federada, delegada a um Identity Provider (Keycloak) para a emissão e validação de tokens de sessão, a limitação de taxa de pedidos (rate limiting) e a auditoria centralizada. O gateway impõe ainda políticas estritas de hardening, nomeadamente a sanitização de cabeçalhos HTTP, a gestão de ligações persistentes (TCP keep-alive) e a mitigação de vetores de exaustão de sessões.
 
