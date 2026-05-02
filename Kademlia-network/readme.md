@@ -350,6 +350,7 @@ O objetivo arquitetural desta vista é mostrar que o sistema depende de um ambie
 
 Esta vista também explicita a fronteira de responsabilidade: tudo o que ocorre fora do nó (rede, peers, utilizador) é externo, e tudo o que ocorre dentro é responsabilidade do sistema.
 
+![Domain Model c1](../docs/diagram/component/c1.png)
 ---
 
 ### Diagrama de Containers – Container Diagram (C2)
@@ -368,6 +369,7 @@ Finalmente, o container **Infrastructure** agrega implementações concretas de 
 
 A relevância desta vista é demonstrar como o sistema mantém modularidade, permitindo substituição de mecanismos como armazenamento DHT, providers criptográficos ou regras de consenso sem reescrever o núcleo.
 
+![Domain Model c2](../docs/diagram/component/c2.png)
 ---
 
 ### Diagrama de Componentes – Component Diagram (C3)
@@ -384,6 +386,7 @@ No container **Infrastructure**, os componentes como `StorageDHT`, `LRU`, `Secur
 
 Esta vista é particularmente importante porque evidencia que o consenso e a rede não são módulos isolados: o consenso depende diretamente do pipeline de receção, validação, sincronização e persistência. O fluxo típico observado é: mensagem recebida → validada → encaminhada por estratégia → processada por caso de uso → persistida/propagada.
 
+![Domain Model c3](../docs/diagram/component/c3.png)
 ---
 
 ### Modelo de Domínio – Domain Model (C4)
@@ -403,6 +406,8 @@ Os value objects criptográficos (`KeyPairPeer`, `PublicKeyPeer`) representam a 
 As políticas (`ProofOfReputationPolicy`, `EventTypePolicy`) representam regras que devem ser consistentes em todos os nós. Se estas políticas forem divergentes entre participantes, o consenso quebra. Assim, a presença destas classes no domínio é arquiteturalmente correta, porque garante que regras críticas são parte do núcleo e não detalhes configuráveis em infraestrutura.
 
 Esta vista conclui a decomposição do sistema ao explicitar que o software depende de um conjunto reduzido de conceitos fundamentais: bloco, transação, nó, árvore Merkle, estado de leilão e políticas de validação.
+
+![Domain Model c4](../docs/diagram/component/c4.png)
 ---
 
 ## Referências Técnicas
