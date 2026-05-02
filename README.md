@@ -74,12 +74,13 @@ Ao iniciar cada processo, ao executar o comando `docker attach peer-8010`, press
 
 # Table of contents
 
-1. [Tolerance Mechanism](./docs/toleranceMechanism/README.md)
-2. [Replication](./docs/replication/README.md)
-3. [Handshake de Autenticação Mútua a 3 Vias (3-Way Mutual Authentication))](./docs/proofofPossession/README.MD)
-4. [Metric](./docs/metric/README.md)
-5. [Security Architecture of a Distributed P2P Network for Auctions](./docs/SecurityArchitecture/README.md)
-6. [Docker Security](./docs/docker/securityDocker.md)
+1. [Architecture Software](./Kademlia-network/readme.md)
+2. [Tolerance Mechanism](./docs/toleranceMechanism/README.md)
+3. [Replication](./docs/replication/README.md)
+4. [Handshake de Autenticação Mútua a 3 Vias (3-Way Mutual Authentication))](./docs/proofofPossession/README.MD)
+5. [Metric](./docs/metric/README.md)
+6. [Security Architecture of a Distributed P2P Network for Auctions](./docs/SecurityArchitecture/README.md)
+7. [Docker Security](./docs/docker/securityDocker.md)
 
 ## 1. Introdução
 
@@ -252,28 +253,6 @@ Devido à latência da rede e à ausência de um coordenador central, dois ou ma
 | **Escalabilidade da DHT**              | Buckets Kademlia são mantidos com tamanho máximo de 20; limpeza automática de nós inativos a cada 5 min.                                         |
 
 ---
-
-## Diagrma compoemntes
-
-### Visão de Sistema – System Context
-
-Principais atores / sistemas externos
-![DIagrma do conecto system](./docs/diagram/component/c1.png)
-
-## Diagrama de Containers – Container Diagram
-
-Containers (camadas lógicas)
-![DIagrma do conecto system](./docs/diagram/component/c2.png)
-
-## Diagrama de Componentes – Component Diagram
-
-Principais componentes (por container)
-![DIagrma do conecto system](./docs/diagram/component/c3.png)
-
-## Modelo de Domínio – Domain Model
-
-Entidades & Value Objects
-![DIagrma do conecto system](./docs/diagram/component/c4.png)
 
 # Testing Phase
 
