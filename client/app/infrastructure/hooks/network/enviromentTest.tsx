@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useState, useCallback} from "react";
 import { 
     fetchSimulateSybilAttack, 
     fetchSimulateEclipseAttack,
     fetchSimulateDuplicateBids,
     fetchSimulateRollbackAttack,
     fetchSimulateStressBids,
-    fetchSimulatePoisonedBlock,
+    fetchSimulatePoisonedBlock
 } from "../../services/enviroment";
 
-import { fetchShutdowThisNode } from "~/infrastructure/services/network";
+import { fetchShutdowThisNode, fetchPeerAdd } from "~/infrastructure/services/network";
 
 export interface ChaosSimulationResponse {
     attack: string;
@@ -209,4 +209,19 @@ export function useSimulateShutDownThisNode() {
     };
 
     return { execute, result, isLoading, error };
-}
+}
+
+
+export function useSimulateAddPeer() {
+  const execute = useCallback(async () => {
+    try {
+      const data = await fetchPeerAdd();
+      return data;
+    } catch (error: any) {
+
+      throw error; 
+    }
+  }, []);
+
+  return { execute };
+}

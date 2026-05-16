@@ -1,0 +1,22 @@
+services:
+  infrastructure-agent:
+    build:
+      context: ../../agent
+      dockerfile: Dockerfile
+    container_name: infrastructure-agent
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.5 
+    restart: unless-stopped
+    environment:
+      - VAULT_SECRET_PASS=${VAULT_SECRET_PASS}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - infra_agent_logs:/app/logs
+    ports:
+      - '4000:4000'
+    depends_on:
+      - bootstrap-node
+
+volumes:
+  infra_agent_logs:

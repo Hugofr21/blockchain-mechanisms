@@ -1,6 +1,6 @@
 import { data } from "react-router";
 import type { NodeRow } from "../../application/model/node";
-import { apiClient } from "../lib/api"; 
+import { apiClient, apiAgentClient } from "../lib/api"; 
 
 export const fetchAllNeighbors = async (
     nodeId: string, 
@@ -82,4 +82,14 @@ export const fetchListOfLogs = async (
   });
   
   return response.data;
+};
+
+export const fetchPeerAdd = async (): Promise<{ status: string; message: string; metadata: any }> => {
+    const response = await apiAgentClient.post("/api/infra/scale");
+    return response.data;
+};
+
+export const fetchActivePeers = async (signal?: AbortSignal): Promise<string[]> => {
+  const response = await apiAgentClient.get("/api/infra/peers", { signal });
+  return response.data.targets;
 };

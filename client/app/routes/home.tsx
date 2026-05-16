@@ -7,7 +7,8 @@ import {
   useSimulateSybilAttack,
   useSimulateEclipseAttack,
   useSimulatePoisonedBlock,
-  useSimulateShutDownThisNode
+  useSimulateShutDownThisNode,
+  useSimulateAddPeer
 
 } from "../infrastructure/hooks/network/enviromentTest";
 
@@ -23,12 +24,14 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   const { isAuthenticated, isInitializing, token } = useAuth();
-  const { nodes, loading, error } = useGlobalNetworkData();
+ const { nodes, loading, error, refetch } = useGlobalNetworkData();
   
   const sybil = useSimulateSybilAttack();
   const eclipse = useSimulateEclipseAttack();
   const poison = useSimulatePoisonedBlock();
   const shutdown = useSimulateShutDownThisNode();
+  const addPeer = useSimulateAddPeer();
+
 
   if (isInitializing) {
     return (
@@ -74,6 +77,13 @@ export default function Home() {
           onSimulateEclipse={(nodeId) => eclipse.execute(nodeId)}
           onSimulatePoison={(nodeId) => poison.execute(nodeId)}
           onShutdownThisNode={(nodeId) => shutdown.execute(nodeId)}
+        onAddPeer={async () => {
+            const result = await addPeer.execute();
+            if (refetch) {
+               setTimeout(() => refetch(), 3000); 
+            }
+            return result;
+          }}
       />
     </>
 

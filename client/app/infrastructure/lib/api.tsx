@@ -9,6 +9,16 @@ export const apiClient = axios.create({
     timeout: 10000,
 });
 
+
+export const apiAgentClient = axios.create({
+    baseURL: env.agentApiUrl, 
+    headers: {
+        'Content-Type': 'application/json',
+    },
+
+    timeout: 20000, 
+});
+
 apiClient.interceptors.request.use(
     (config) => {
         let targetNode = 'bootstrap';

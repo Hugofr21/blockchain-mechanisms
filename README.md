@@ -81,6 +81,7 @@ Ao iniciar cada processo, ao executar o comando `docker attach peer-8010`, press
 5. [Metric](./docs/metric/README.md)
 6. [Security Architecture of a Distributed P2P Network for Auctions](./docs/SecurityArchitecture/README.md)
 7. [Docker Security](./docs/docker/securityDocker.md)
+8. [Agent](./agent/README.md)
 
 ## 1. Introdução
 

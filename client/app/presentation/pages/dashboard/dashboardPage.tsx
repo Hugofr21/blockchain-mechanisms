@@ -9,6 +9,7 @@ interface Props {
   onSimulateEclipse: (nodeId: string) => Promise<any>;
   onSimulatePoison: (nodeId: string) => Promise<any>;
   onShutdownThisNode: (nodeId: string) => Promise<any>;
+  onAddPeer: () => Promise<any>;
 }
 
 const LOG_STORAGE_KEY = "@dht-ledger/global-logs";
@@ -20,7 +21,9 @@ export function Dashboard({
   onSimulateEclipse,
   onSimulatePoison,
   onShutdownThisNode,
+  onAddPeer,
 }: Props) {
+  const [isDeploying, setIsDeploying] = useState<boolean>(false);
   const [globalLogs, setGlobalLogs] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
       const savedLogs = localStorage.getItem(LOG_STORAGE_KEY);
@@ -42,6 +45,44 @@ export function Dashboard({
   const handleClearLogs = () => {
     setGlobalLogs([]);
     localStorage.removeItem(LOG_STORAGE_KEY);
+  };
+
+
+  const handleAddPeer = async () => {
+    const time = new Date().toLocaleTimeString();
+    
+    setGlobalLogs((prev) => [
+      `[${time}] ORQUESTRADOR -> A instanciar nova réplica P2P na infraestrutura...`,
+      ...prev,
+    ]);
+
+    setIsDeploying(true);
+
+    try {
+      const result = await onAddPeer();
+      
+      const successLog = `[${new Date().toLocaleTimeString()}] SUCESSO (ORQUESTRADOR):
+          -> Estado: ${result.status}
+          -> Mensagem: ${result.message}
+          -> Contentor: ${result.metadata?.container}
+          -> IP Atribuído: ${result.metadata?.ip}
+          -> Portas: HTTP ${result.metadata?.httpPort} | RPC ${result.metadata?.rpcPort}`;
+      
+      setGlobalLogs((prev) => [successLog, ...prev]);
+    } catch (err: any) {
+      const errorData = err.response?.data;
+      const errorMsg = errorData 
+        ? `${errorData.message} | Detalhe: ${errorData.error}`
+        : err.message || "Falha catastrófica de rede ou infraestrutura.";
+
+      const failureLog = `[${new Date().toLocaleTimeString()}] FALHA CRÍTICA (ORQUESTRADOR):
+        └── Diagnóstico: ${errorMsg}`
+      
+      setGlobalLogs((prev) => [failureLog, ...prev]);
+       
+    } finally {
+      setIsDeploying(false);
+    }
   };
 
   const handleOpenGrafana = () => {
@@ -113,23 +154,48 @@ export function Dashboard({
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="max-w-7xl mx-auto p-6 space-y-10">
-        <header className="flex flex-col gap-2">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <header className="flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div>
               <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
                 DHT Ledger Dashboard
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 text-sm max-w-2xl">
-                Monitoring and simulation of distributed events across replicated nodes.
+              <p className="text-gray-600 dark:text-gray-400 text-sm max-w-2xl mt-1">
+                Monitoring, infrastructure orchestration, and security simulation across replicated nodes.
               </p>
             </div>
 
-            <button
-              onClick={handleOpenGrafana}
-              className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold text-sm shadow transition"
-            >
-              Open Grafana (localhost:3000)
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleAddPeer}
+                disabled={isDeploying}
+                className={`px-4 py-2.5 rounded-xl font-semibold text-sm shadow transition flex items-center justify-center min-w-[160px]
+                  ${
+                    isDeploying
+                      ? "bg-indigo-400 cursor-not-allowed text-white"
+                      : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  }`}
+              >
+                {isDeploying ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    A instanciar...
+                  </span>
+                ) : (
+                  "+ Adicionar Nó P2P"
+                )}
+              </button>
+
+              <button
+                onClick={handleOpenGrafana}
+                className="px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold text-sm shadow transition"
+              >
+                Abrir Grafana
+              </button>
+            </div>
           </div>
         </header>
 
