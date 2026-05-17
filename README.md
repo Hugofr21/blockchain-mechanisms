@@ -40,6 +40,7 @@ VITE_API_GATEWAY_URL=http://localhost:8080
 VITE_KEYCLOAK_URL=http://localhost:8020
 VITE_KEYCLOAK_REALM=dht-ledger
 VITE_KEYCLOAK_CLIENT=react-app
+VITE_AGENT_API_URL=http://localhost:4000/
 ```
 
 Para simular uma rede privada utilizando os algoritmos Kademlia, vamos iniciar o projeto com Docker.
