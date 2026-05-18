@@ -52,6 +52,11 @@ router.post("/infra/scale", async (req, res) => {
       Image: "observability-stack-peer-base",
       name: containerName,
       Env: [`VAULT_SECRET_PASS=${config.VAULT_SECRET_PASS || ""}`],
+      Labels: {
+        "com.docker.compose.project": "observability-stack",
+        "com.docker.compose.service": "dynamic-peer",
+        "com.docker.compose.oneoff": "False",
+      },
       HostConfig: {
         NetworkMode: "observability-stack_monitoring",
         CapDrop: ["ALL"],
@@ -89,6 +94,35 @@ router.post("/infra/scale", async (req, res) => {
     res.status(500).json({
       status: "ERROR",
       message: "Failed to scale the infrastructure",
+      error: err.message,
+    });
+  }
+});
+
+router.post("/infra/peers/:name/restart", async (req, res) => {
+  const containerName = req.params.name;
+  try {
+    const container = docker.getContainer(containerName);
+
+    await container.restart();
+
+    res.status(200).json({
+      status: "RESTARTED",
+      message: `A instância ${containerName} foi reiniciada com sucesso na infraestrutura.`,
+      metadata: { container: containerName },
+    });
+  } catch (err) {
+    console.error(`[INFRA RESTART] Falha ao processar ${containerName}: `, err);
+
+    const statusCode = err.statusCode === 404 ? 404 : 500;
+    const errorMessage =
+      err.statusCode === 404
+        ? "Contentor inexistente ou previamente destruído."
+        : "O motor Docker recusou a alteração de estado do contentor.";
+
+    res.status(statusCode).json({
+      status: "ERROR",
+      message: errorMessage,
       error: err.message,
     });
   }

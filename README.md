@@ -27,7 +27,6 @@ DEFAULT_USER_PASSWORD=password
 VAULT_SECRET_PASS=admin
 ```
 
-
 Configuração do .env (diretório client)
 
 Crie um ficheiro `.env` dentro do diretório client:
@@ -67,10 +66,14 @@ docker attach peer-8010 # peer 10
 
 Ao iniciar cada processo, ao executar o comando `docker attach peer-8010`, pressione as teclas de 1 a 5 — o menu de opções deve aparecer.
 
+
+Desligar o serviço no docker compose:
+
+```bash
+docker compose down -v --rmi local
+```
+
 ---
-
-
-
 
 # Table of contents
 
@@ -124,29 +127,30 @@ A camada de gateway desempenha um papel crítico na fronteira do sistema, sendo 
 ---
 
 ## 3. Modelo de ameaças (Threat Model)
-A modelagem de ameaças fundamenta-se na metodologia STRIDE durante as fases de engenharia e concepção de software (Security by Design), o que permite a avaliação da arquitetura do sistema antes da sua implementação. Para garantir a resiliência sistêmica, o framework MITRE ATT&CK (via Navigator) é utilizado para mapear vetores de ataque reais e possíveis. Essa abordagem permite que, durante a construção da rede e do software, possamos analisar e mitigar potenciais vulnerabilidades de forma antecipada. 
 
-| Vetor de ataque | Impacto potencial | Contramedida implementada |
-| :--- | :--- | :--- |
-| **Replay / replay‑nonce** | Mensagens reutilizadas para pular etapas de handshake ou de sincronização. | Cada mensagem inclui *nonce* e *timestamp*; o `SecurityValidator` rejeita mensagens fora da janela de tempo (±5 s). |
-| **Sybil / identidade falsa** | Criação de múltiplas identidades para manipular o consenso. | `NodeId` gerado a partir de *proof‑of‑work* ligado ao par de chaves (PK). O PoW impede a criação massiva de identidades. |
-| **Double‑spend (transação duplicada)** | Uma licitação é incluída em dois blocos diferentes. | `BlockProcessor` verifica se o *txId* já existe no *ledger* ou no *orphan pool*. |
-| **DDoS / flood de mensagens** | Sobrecarga de recursos e perda de mensagens. | Limitação de taxa (`Rate‑limit`) no `SecurityValidator`, e *back‑pressure* nas filas internas do `ConnectionHandler`. |
-| **Man‑in‑the‑middle (MITM)** | Interceptação dos canais de troca de chaves. | As chaves públicas são trocadas apenas dentro da mensagem `HELLO`, que já está assinada e inclui a PoW; qualquer alteração invalida a assinatura. |
-| **Eavesdropping (escuta passiva)** | Leitura de mensagens não‑confidenciais. | Tráfego de controle (`HELLO`, `GET_STATUS`, `FIND_NODE`) é criptografado usando **ECDH** → AES‑GCM. |
-| **Corrupt payload (buffer overflow)** | Dados danificados que podem travar o nó. | Cada mensagem tem um **campo de tamanho** fixo; o `MessageUtils` descarta pacotes cujo tamanho exceda o limite configurado (default 2 MiB). |
-| **Identidade falsificada / Bid injection** | Lances criados por atores que não detêm a chave do licitante. | **Proof‑of‑Possession (PoP)**: cada lance inclui assinatura ECDSA verificável; transações sem PoP são rejeitadas. |
-| **Eclipse attack (Rede P2P)** | Vizinhos mal‑intencionados isolam o nó. | Kademlia garante **k = 20** contactos aleatórios por bucket; políticas de *refresh* evitam concentração de vizinhos. |
-| **Selfish mining** | Minerar em segredo para ganhar vantagem. | Diferença de dificuldade reajustada a cada **N** blocos; penalização reduz recompensa de nós que atrasam a propagação (`BLOCK_LATENCY`). |
-| **Routing table poisoning** | Inserção de pares falsos. | Cada entrada da tabela tem que ser verificada por `SecurityValidator` (PoW + assinatura `HELLO`). |
-| **Replay de blocos antigos** | Re‑inserção de blocos já confirmados. | Cada bloco possui `height`; blocos com `height < currentHeight‑5` são rejeitados. |
-| **DoS de mensagens INV** | Flood de anúncios de blocos. | Rate‑limit de `INV` a **10 msg/s** por vizinho. |
-| **Race conditions em Pub/Sub** | Publicações simultâneas podem gerar estados conflitantes. | Operações de subscrição tornam‑se **Read‑Modify‑Write** com *merge* e *TTL*; o `SubscriptionScheduler` garante renovação periódica e purga de entradas expiradas. |
-| **Maleabilidade de transações** | Alteração do *hash* da transação antes da confirmação, sem invalidar a assinatura, gerando inconsistências no rastreamento. | Normalização estrita de assinaturas criptográficas (ex: forçar valor *S* baixo em ECDSA) e segregação dos dados da assinatura no cálculo do *txId*. |
-| **Timejacking (Manipulação de tempo)** | Dessincronização do relógio do nó através de *timestamps* forjados, causando rejeição de blocos válidos e fragmentação do *ledger*. | O tempo de aceitação é validado usando a mediana dos *timestamps* dos pares, com rejeição de nós cujo desvio exceda a tolerância de rede do sistema. |
-| **Ataques de roteamento (BGP Hijacking)** | Particionamento da rede ou atraso na propagação manipulando a infraestrutura da internet (ISPs), isolando conjuntos de nós. | Diversificação da tabela de roteamento exigindo pares de diferentes prefixos de rede (/24) e validação criptográfica ponta a ponta irrestrita nas rotas. |
-| **Sybil em Misturadores (Mixers)** | Desanonimização de transações e bloqueio de protocolo através do preenchimento de *pools* com identidades controladas pelo atacante. | Exigência estrita de colateral financeiro (taxa) e validação do PoW do `NodeId` antes de admitir pares em rondas conjuntas de transação. |
-| **Eclipse Attack (Topologia de Consenso)** | Saturação das conexões de entrada/saída de um nó para monopolizar a sua visão da *blockchain* e facilitar *double-spend*. | Restrição do número de conexões aceites da mesma sub-rede IP e manutenção de uma base de dados local de pares fidedignos e historicamente estáveis (*anchor peers*). |
+A modelagem de ameaças fundamenta-se na metodologia STRIDE durante as fases de engenharia e concepção de software (Security by Design), o que permite a avaliação da arquitetura do sistema antes da sua implementação. Para garantir a resiliência sistêmica, o framework MITRE ATT&CK (via Navigator) é utilizado para mapear vetores de ataque reais e possíveis. Essa abordagem permite que, durante a construção da rede e do software, possamos analisar e mitigar potenciais vulnerabilidades de forma antecipada.
+
+| Vetor de ataque                                   | Impacto potencial                                                                                                                                | Contramedida implementada                                                                                                                                                              |
+| :------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Replay / replay‑nonce**                  | Mensagens reutilizadas para pular etapas de handshake ou de sincronização.                                                                     | Cada mensagem inclui*nonce* e *timestamp*; o `SecurityValidator` rejeita mensagens fora da janela de tempo (±5 s).                                                             |
+| **Sybil / identidade falsa**                | Criação de múltiplas identidades para manipular o consenso.                                                                                   | `NodeId` gerado a partir de *proof‑of‑work* ligado ao par de chaves (PK). O PoW impede a criação massiva de identidades.                                                       |
+| **Double‑spend (transação duplicada)**   | Uma licitação é incluída em dois blocos diferentes.                                                                                          | `BlockProcessor` verifica se o *txId* já existe no *ledger* ou no *orphan pool*.                                                                                              |
+| **DDoS / flood de mensagens**               | Sobrecarga de recursos e perda de mensagens.                                                                                                     | Limitação de taxa (`Rate‑limit`) no `SecurityValidator`, e *back‑pressure* nas filas internas do `ConnectionHandler`.                                                      |
+| **Man‑in‑the‑middle (MITM)**             | Interceptação dos canais de troca de chaves.                                                                                                   | As chaves públicas são trocadas apenas dentro da mensagem `HELLO`, que já está assinada e inclui a PoW; qualquer alteração invalida a assinatura.                              |
+| **Eavesdropping (escuta passiva)**          | Leitura de mensagens não‑confidenciais.                                                                                                        | Tráfego de controle (`HELLO`, `GET_STATUS`, `FIND_NODE`) é criptografado usando **ECDH** → AES‑GCM.                                                                    |
+| **Corrupt payload (buffer overflow)**       | Dados danificados que podem travar o nó.                                                                                                        | Cada mensagem tem um**campo de tamanho** fixo; o `MessageUtils` descarta pacotes cujo tamanho exceda o limite configurado (default 2 MiB).                                    |
+| **Identidade falsificada / Bid injection** | Lances criados por atores que não detêm a chave do licitante.                                                                                  | **Proof‑of‑Possession (PoP)**: cada lance inclui assinatura ECDSA verificável; transações sem PoP são rejeitadas.                                                          |
+| **Eclipse attack (Rede P2P)**               | Vizinhos mal‑intencionados isolam o nó.                                                                                                        | Kademlia garante**k = 20** contactos aleatórios por bucket; políticas de *refresh* evitam concentração de vizinhos.                                                        |
+| **Selfish mining**                          | Minerar em segredo para ganhar vantagem.                                                                                                         | Diferença de dificuldade reajustada a cada**N** blocos; penalização reduz recompensa de nós que atrasam a propagação (`BLOCK_LATENCY`).                                  |
+| **Routing table poisoning**                 | Inserção de pares falsos.                                                                                                                      | Cada entrada da tabela tem que ser verificada por `SecurityValidator` (PoW + assinatura `HELLO`).                                                                                  |
+| **Replay de blocos antigos**                | Re‑inserção de blocos já confirmados.                                                                                                        | Cada bloco possui `height`; blocos com `height < currentHeight‑5` são rejeitados.                                                                                                |
+| **DoS de mensagens INV**                    | Flood de anúncios de blocos.                                                                                                                    | Rate‑limit de `INV` a **10 msg/s** por vizinho.                                                                                                                              |
+| **Race conditions em Pub/Sub**              | Publicações simultâneas podem gerar estados conflitantes.                                                                                     | Operações de subscrição tornam‑se**Read‑Modify‑Write** com *merge* e *TTL*; o `SubscriptionScheduler` garante renovação periódica e purga de entradas expiradas. |
+| **Maleabilidade de transações**           | Alteração do*hash* da transação antes da confirmação, sem invalidar a assinatura, gerando inconsistências no rastreamento.              | Normalização estrita de assinaturas criptográficas (ex: forçar valor*S* baixo em ECDSA) e segregação dos dados da assinatura no cálculo do *txId*.                          |
+| **Timejacking (Manipulação de tempo)**    | Dessincronização do relógio do nó através de*timestamps* forjados, causando rejeição de blocos válidos e fragmentação do *ledger*. | O tempo de aceitação é validado usando a mediana dos*timestamps* dos pares, com rejeição de nós cujo desvio exceda a tolerância de rede do sistema.                           |
+| **Ataques de roteamento (BGP Hijacking)**   | Particionamento da rede ou atraso na propagação manipulando a infraestrutura da internet (ISPs), isolando conjuntos de nós.                   | Diversificação da tabela de roteamento exigindo pares de diferentes prefixos de rede (/24) e validação criptográfica ponta a ponta irrestrita nas rotas.                          |
+| **Sybil em Misturadores (Mixers)**          | Desanonimização de transações e bloqueio de protocolo através do preenchimento de*pools* com identidades controladas pelo atacante.       | Exigência estrita de colateral financeiro (taxa) e validação do PoW do `NodeId` antes de admitir pares em rondas conjuntas de transação.                                        |
+| **Eclipse Attack (Topologia de Consenso)**  | Saturação das conexões de entrada/saída de um nó para monopolizar a sua visão da*blockchain* e facilitar *double-spend*.               | Restrição do número de conexões aceites da mesma sub-rede IP e manutenção de uma base de dados local de pares fidedignos e historicamente estáveis (*anchor peers*).          |
 
 ## Estratégia de testes
 
@@ -276,6 +280,6 @@ Descrever e organizar os casos de teste implementados para validar as principais
 - [X] **Simulação de condições de corrida em leilões**: Criar vários leilões simultaneamente e enviar licitações com pedidos concorrentes de dados para verificar integridade e consistência.
 
 ### Referências
-1. Blockchain Attack Vectors & Vulnerabilities to Smart Contracts, https://cryptodeeptech.ru/blockchain-attack-vectors/
 
+1. Blockchain Attack Vectors & Vulnerabilities to Smart Contracts, https://cryptodeeptech.ru/blockchain-attack-vectors/
 2. Blockchain Variables and Possible Attacks: A Technical Survey, https://www.mdpi.com/2073-431X/14/12/567
