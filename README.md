@@ -39,7 +39,7 @@ VITE_API_GATEWAY_URL=http://localhost:8080
 VITE_KEYCLOAK_URL=http://localhost:8020
 VITE_KEYCLOAK_REALM=dht-ledger
 VITE_KEYCLOAK_CLIENT=react-app
-VITE_AGENT_API_URL=http://localhost:4000/
+VITE_AGENT_API_URL=http://localhost:4000
 ```
 
 Para simular uma rede privada utilizando os algoritmos Kademlia, vamos iniciar o projeto com Docker.
@@ -66,7 +66,6 @@ docker attach peer-8010 # peer 10
 ```
 
 Ao iniciar cada processo, ao executar o comando `docker attach peer-8010`, pressione as teclas de 1 a 5 — o menu de opções deve aparecer.
-
 
 Desligar o serviço no docker compose:
 

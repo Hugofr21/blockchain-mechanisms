@@ -8,7 +8,8 @@ import {
   useSimulateEclipseAttack,
   useSimulatePoisonedBlock,
   useSimulateShutDownThisNode,
-  useSimulateAddPeer
+  useSimulateAddPeer,
+  useSimulateRestartNode
 
 } from "../infrastructure/hooks/network/enviromentTest";
 
@@ -24,13 +25,15 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   const { isAuthenticated, isInitializing, token } = useAuth();
- const { nodes, loading, error, refetch } = useGlobalNetworkData();
+  const { nodes, loading, error, refetch } = useGlobalNetworkData();
   
   const sybil = useSimulateSybilAttack();
   const eclipse = useSimulateEclipseAttack();
   const poison = useSimulatePoisonedBlock();
   const shutdown = useSimulateShutDownThisNode();
   const addPeer = useSimulateAddPeer();
+  const restartNode = useSimulateRestartNode();
+
 
 
   if (isInitializing) {
@@ -51,7 +54,7 @@ export default function Home() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950">
         <p className="text-indigo-600 animate-pulse font-mono font-semibold tracking-wide">
-            Sweeping up infrastructure and laying telemetry tunnels...
+          Sweeping up infrastructure and laying telemetry tunnels...
         </p>
       </div>
     );
@@ -70,22 +73,27 @@ export default function Home() {
 
   return (
     <>
-    
-      <Dashboard 
-          nodes={nodes} 
-          onSimulateSybil={(nodeId) => sybil.execute(nodeId)}
-          onSimulateEclipse={(nodeId) => eclipse.execute(nodeId)}
-          onSimulatePoison={(nodeId) => poison.execute(nodeId)}
-          onShutdownThisNode={(nodeId) => shutdown.execute(nodeId)}
+      <Dashboard
+        nodes={nodes}
+        onSimulateSybil={(nodeId) => sybil.execute(nodeId)}
+        onSimulateEclipse={(nodeId) => eclipse.execute(nodeId)}
+        onSimulatePoison={(nodeId) => poison.execute(nodeId)}
+        onShutdownThisNode={(nodeId) => shutdown.execute(nodeId)}
+        onRestartNode={async (containerName) => {
+          const result = await restartNode.execute(containerName);
+          if (refetch) {
+            setTimeout(() => refetch(), 3000);
+          }
+          return result;
+        }}
         onAddPeer={async () => {
-            const result = await addPeer.execute();
-            if (refetch) {
-               setTimeout(() => refetch(), 3000); 
-            }
-            return result;
-          }}
+          const result = await addPeer.execute();
+          if (refetch) {
+            setTimeout(() => refetch(), 3000);
+          }
+          return result;
+        }}
       />
     </>
-
   );
 }

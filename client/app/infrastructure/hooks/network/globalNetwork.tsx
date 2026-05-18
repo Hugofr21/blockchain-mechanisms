@@ -54,9 +54,21 @@ export function useGlobalNetworkData() {
               difficulty: rawData.difficulty || 0,
               httpPort: targetPort,
             });
-
-
+          } else {
+            console.warn(
+              `Node offline shutdown ${targetPort}: ${
+                result.status === "rejected" ? result.reason : "Resposta inválida"
+              }`,
+            );
+            activeNodes.push({
+              id: `[OFFLINE] peer-${targetPort}`,
+              host: "Desconhecido",
+              port: "N/A",
+              difficulty: 0,
+              httpPort: targetPort,
+            });
           }
+
         });
 
         setState({

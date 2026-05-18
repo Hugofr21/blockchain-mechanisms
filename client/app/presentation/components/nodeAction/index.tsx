@@ -36,6 +36,7 @@ function getActionIcon(actionId: string) {
     case "CHAOS_POISONED_BLOCK":
       return <Bug size={16} className="opacity-80" />;
     case "SHUTDOWN_NODE":
+    case "RESTART_NODE":
       return <Power size={16} className="opacity-80" />;
     case "LOGS_FILE":
        return <Logs size={16} className="opacity-80" />;
@@ -49,7 +50,8 @@ function isDangerAction(actionId: string) {
     actionId === "CHAOS_SYBIL" ||
     actionId === "CHAOS_ECLIPSE" ||
     actionId === "CHAOS_POISONED_BLOCK" ||
-    actionId === "SHUTDOWN_NODE"
+    actionId === "SHUTDOWN_NODE" ||
+    actionId === "RESTART_NODE"
   );
 }
 
@@ -106,7 +108,7 @@ export function NodeActionsDashboard({ nodes, onActionClick }: Props) {
             Nodes Dashboard
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-           Monitoring and operational actions per node.
+            Monitoring and operational actions per node.
           </p>
         </div>
 
@@ -118,28 +120,32 @@ export function NodeActionsDashboard({ nodes, onActionClick }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
         {nodes.map((node) => {
           const isExpanded = expandedNode === node.id;
+          const isOffline = node.id.includes("[OFFLINE]");
+          const displayName = isOffline ? node.id.replace("[OFFLINE] ", "") : node.id;
 
           return (
             <div
               key={node.id}
-              className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition overflow-hidden"
+              className={`rounded-2xl border transition overflow-hidden shadow-sm hover:shadow-md 
+                ${isOffline 
+                  ? "border-red-200 dark:border-red-900 bg-red-50/30 dark:bg-red-950/10 opacity-90" 
+                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"}`
+              }
             >
               {/* Header */}
               <div className="p-4 border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Node ID
+                    <p className={`text-xs uppercase tracking-wide font-bold ${isOffline ? "text-red-500" : "text-gray-500 dark:text-gray-400"}`}>
+                      {isOffline ? "⚠️ NÓ INOPERACIONAL" : "Node ID"}
                     </p>
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                      {node.id}
+                    <h3 className={`text-sm font-semibold truncate ${isOffline ? "text-gray-500 line-through" : "text-gray-900 dark:text-white"}`}>
+                      {displayName}
                     </h3>
                   </div>
 
                   <button
-                    onClick={() =>
-                      setExpandedNode(isExpanded ? null : node.id)
-                    }
+                    onClick={() => setExpandedNode(isExpanded ? null : node.id)}
                     className="text-xs px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
                   >
                     {isExpanded ? "Ocultar" : "Detalhes"}
@@ -161,60 +167,81 @@ export function NodeActionsDashboard({ nodes, onActionClick }: Props) {
                   </div>
                 </div>
               </div>
-
-              {/* Actions */}
               <div className="p-4 space-y-4">
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                    Observability
-                  </p>
-
-                  <div className="space-y-2">
-                    {safeActions.map((action) => (
-                      <button
-                        key={action.id}
-                        onClick={() => handleClick(node, action)}
-                        className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-sm text-gray-900 dark:text-white"
-                      >
-                        <span className="flex items-center gap-2 text-left">
-                          {getActionIcon(action.id)}
-                          {action.label}
-                        </span>
-
-                        <ChevronRight size={16} className="opacity-60" />
-                      </button>
-                    ))}
+                
+                {isOffline ? (
+               
+                  <div>
+                    <p className="text-xs font-semibold text-orange-600 uppercase tracking-wide mb-2">
+                      Recovery Options
+                    </p>
+                    <button
+                      onClick={() => handleClick(node, { id: "RESTART_NODE", label: "Restart / Recover Node" })}
+                      className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-orange-200 dark:border-orange-900 bg-orange-500 hover:bg-orange-600 transition text-sm text-white font-semibold shadow-sm"
+                    >
+                      <span className="flex items-center gap-2 text-left">
+                        <Power size={16} />
+                         Restart / Recover Node 
+                      </span>
+                      <ChevronRight size={16} className="opacity-80" />
+                    </button>
                   </div>
-                </div>
+                ) : (
+            
+                  <>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                        Observability
+                      </p>
 
-                <div>
-                  <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-2">
-                    Attack / Dangerous
-                  </p>
+                      <div className="space-y-2">
+                        {safeActions.map((action) => (
+                          <button
+                            key={action.id}
+                            onClick={() => handleClick(node, action)}
+                            className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-sm text-gray-900 dark:text-white"
+                          >
+                            <span className="flex items-center gap-2 text-left">
+                              {getActionIcon(action.id)}
+                              {action.label}
+                            </span>
+                            <ChevronRight size={16} className="opacity-60" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                  <div className="space-y-2">
-                    {dangerActions.map((action) => (
-                      <button
-                        key={action.id}
-                        onClick={() => handleClick(node, action)}
-                        className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50 transition text-sm text-red-700 dark:text-red-300"
-                      >
-                        <span className="flex items-center gap-2 text-left">
-                          {getActionIcon(action.id)}
-                          {action.label}
-                        </span>
+                    <div>
+                      <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-2">
+                        Attack / Dangerous
+                      </p>
 
-                        <ChevronRight size={16} className="opacity-60" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                      <div className="space-y-2">
+                        {dangerActions.map((action) => (
+                          action.id !== "RESTART_NODE" && (
+                            <button
+                              key={action.id}
+                              onClick={() => handleClick(node, action)}
+                              className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50 transition text-sm text-red-700 dark:text-red-300"
+                            >
+                              <span className="flex items-center gap-2 text-left">
+                                {getActionIcon(action.id)}
+                                {action.label}
+                              </span>
+                              <ChevronRight size={16} className="opacity-60" />
+                            </button>
+                          )
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Logs */}
                 {logs[node.id]?.length > 0 && isExpanded && (
                   <div className="mt-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-3 text-xs">
                     <p className="font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                      Logs
+                      Logs Locais da Interface
                     </p>
                     <ul className="space-y-1 text-gray-600 dark:text-gray-400 max-h-40 overflow-y-auto">
                       {logs[node.id].slice().reverse().map((log, idx) => (

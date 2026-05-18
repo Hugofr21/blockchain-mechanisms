@@ -8,7 +8,7 @@ const docker = new Docker({ socketPath: "/var/run/docker.sock" });
 router.get("/infra/peers", async (req, res) => {
   try {
     const containers = await docker.listContainers({
-      all: false,
+      all: true, // variable false send only running containers, true sends all containers
       filters: { name: ["peer-"] },
     });
 

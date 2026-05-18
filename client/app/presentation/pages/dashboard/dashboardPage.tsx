@@ -9,6 +9,7 @@ interface Props {
   onSimulateEclipse: (nodeId: string) => Promise<any>;
   onSimulatePoison: (nodeId: string) => Promise<any>;
   onShutdownThisNode: (nodeId: string) => Promise<any>;
+  onRestartNode: (nodeId: string) => Promise<any>;
   onAddPeer: () => Promise<any>;
 }
 
@@ -21,6 +22,7 @@ export function Dashboard({
   onSimulateEclipse,
   onSimulatePoison,
   onShutdownThisNode,
+  onRestartNode,
   onAddPeer,
 }: Props) {
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
@@ -128,6 +130,13 @@ export function Dashboard({
           break;
         case "SHUTDOWN_NODE":
           result = await onShutdownThisNode(node.httpPort);
+          break;
+        case "RESTART_NODE":  
+         const targetContainer = node.httpPort === "bootstrap" 
+            ? "bootstrap-node" 
+            : `peer-${node.httpPort}`;
+            
+          result = await onRestartNode(targetContainer);
           break;
         default:
           return;

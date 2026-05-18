@@ -93,3 +93,8 @@ export const fetchActivePeers = async (signal?: AbortSignal): Promise<string[]> 
   const response = await apiAgentClient.get("/api/infra/peers", { signal });
   return response.data.targets;
 };
+
+export const fetchRestartPeer = async (containerName: string): Promise<any> => {
+  const response = await apiAgentClient.post(`/api/infra/peers/${containerName}/restart`);
+  return response.data;
+};

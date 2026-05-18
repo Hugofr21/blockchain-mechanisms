@@ -5,10 +5,10 @@ import {
     fetchSimulateDuplicateBids,
     fetchSimulateRollbackAttack,
     fetchSimulateStressBids,
-    fetchSimulatePoisonedBlock
+    fetchSimulatePoisonedBlock,
 } from "../../services/enviroment";
 
-import { fetchShutdowThisNode, fetchPeerAdd } from "~/infrastructure/services/network";
+import { fetchShutdowThisNode, fetchPeerAdd,  fetchRestartPeer } from "~/infrastructure/services/network";
 
 export interface ChaosSimulationResponse {
     attack: string;
@@ -220,6 +220,20 @@ export function useSimulateAddPeer() {
     } catch (error: any) {
 
       throw error; 
+    }
+  }, []);
+
+  return { execute };
+}
+
+
+export function useSimulateRestartNode() {
+  const execute = useCallback(async (containerName: string) => {
+    try {
+      const data = await fetchRestartPeer(containerName);
+      return data;
+    } catch (error: any) {
+      throw error;
     }
   }, []);
 
