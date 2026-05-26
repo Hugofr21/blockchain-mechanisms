@@ -4,11 +4,11 @@ pub fn check_waf_violations(uri: &http::Uri) -> bool {
     let path = uri.path();
     let query = uri.query().unwrap_or("");
 
-    // 1. Vetores de Traversal de Diretórios e Exposição de Arquivos Sensíveis
+    // 1. File sensitive path traversal
     if path.contains("../") || path.contains("%2e%2e") || path.contains(".env") {
         return true;
     }
-    // 2. Vetores de Injeção SQL e XSS
+    // 2. Injection  SQL e XSS
     if query.contains("<script>")
         || query.contains("%3Cscript%3E")
         || query.contains("SELECT")
