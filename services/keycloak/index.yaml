@@ -8,10 +8,17 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     env_file:
       - ../../.env
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.79 
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   keycloak:
     build:
@@ -28,16 +35,18 @@ services:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HOSTNAME: ${KC_HOSTNAME}
-      KC_HOSTNAME_PORT: "${KC_HOSTNAME_PORT}"
-      KC_HOSTNAME_STRICT: "false"
-      KC_HOSTNAME_STRICT_HTTPS: "false"
-      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_PORT: '${KC_HOSTNAME_PORT}'
+      KC_HOSTNAME_STRICT: 'false'
+      KC_HOSTNAME_STRICT_HTTPS: 'false'
+      KC_HTTP_ENABLED: 'true'
       REACT_CLIENT_URL: ${FRONTEND_URL}
       REALM_PASSWORD_USER: ${DEFAULT_USER_PASSWORD}
-    ports:
-      - "8020:8080"
+      KC_HTTP_RELATIVE_PATH: ${KC_HTTP_RELATIVE_PATH}
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.80 
     depends_on:
-      - postgres
-
+      postgres:
+        condition: service_healthy 
 volumes:
   postgres_data:

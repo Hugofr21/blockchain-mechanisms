@@ -13,8 +13,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - infra_agent_logs:/app/logs
-    ports:
-      - '4000:4000'
     depends_on:
       - bootstrap-node
 

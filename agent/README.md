@@ -58,15 +58,14 @@ flowchart TD
    ```
 2. Exemplo mínimo (`.env`):
 
-   ```
-   NODE_ENV=development
-   PORT=4000
-   CORS_ORIGIN=http://localhost:3001          # origem do front‑end
-   LOG_LEVEL=info
-   AUDIT_LOG_PATH=logs/audit.log
-   VAULT_SECRET_PASS=admin                    # secret usado pelos peers
-   AUDIT_API_KEY=super-secret-admin-key       # chave para ler /audit
-   ```
+```bash
+NODE_ENV=development
+PORT=4000
+CORS_ORIGIN=http://localhost:3001
+LOG_LEVEL=info
+AUDIT_LOG_PATH=logs/audit.log
+VAULT_SECRET_PASS=admin
+```
 
 ---
 

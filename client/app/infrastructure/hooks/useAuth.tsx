@@ -1,4 +1,4 @@
-"use client"; 
+"use client";
 
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import Keycloak from 'keycloak-js';
@@ -17,11 +17,16 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
   const [kcInstance, setKcInstance] = useState<Keycloak | null>(null);
   const isRun = useRef(false);
 
   useEffect(() => {
-    if (typeof window === "undefined" || isRun.current) return;
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted || isRun.current) return;
     isRun.current = true;
 
     const kc = new Keycloak({
@@ -31,30 +36,52 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     kc.init({
-      onLoad: 'check-sso',
+      onLoad: 'login-required',
+      responseMode: 'fragment',
       checkLoginIframe: false
     })
     .then((auth) => {
       setIsAuthenticated(auth);
       setKcInstance(kc);
+      
+      if (auth && kc.token) {
+        window.localStorage.setItem('auth_token', kc.token);
+        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
     })
-    .catch((err) => console.error('Falha de ligação ao Keycloak:', err))
-    .finally(() => setIsInitializing(false));
+    .catch((err) => {
+      console.error('Fail critical the negotiation of tokens via WAF:', err);
+    })
+    .finally(() => {
+      setIsInitializing(false);
+    });
 
-  }, []);
+  }, [isMounted]);
 
   const login = () => kcInstance?.login();
-  const logout = () => kcInstance?.logout({ redirectUri: window.location.origin });
+  const logout = () => {
+    window.localStorage.removeItem('auth_token');
+    kcInstance?.logout({ redirectUri: window.location.origin });
+  };
+
+  if (!isMounted) return null;
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, token: kcInstance?.token, login, logout, keycloak: kcInstance, isInitializing }}>
-      {children}
+      {isInitializing ? (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif' }}>
+          <strong>Establishing secure session through the perimeter...</strong>
+        </div>
+      ) : (
+        isAuthenticated && children
+      )}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth tem de ser invocado dentro do AuthProvider.");
+  if (!context) throw new Error("Problem with authentication context");
   return context;
 };

@@ -19,7 +19,8 @@ POSTGRES_PASSWORD=keycloak_password
 KEYCLOAK_ADMIN=admin
 KEYCLOAK_ADMIN_PASSWORD=admin_password
 KC_HOSTNAME=localhost
-KC_HOSTNAME_PORT=8020
+KC_HOSTNAME_PORT=8080
+KC_HTTP_RELATIVE_PATH=/auth
 
 FRONTEND_URL=http://localhost:3001
 DEFAULT_USER_PASSWORD=password
@@ -35,11 +36,10 @@ Crie um ficheiro `.env` dentro do diretório client:
 VITE_PORT=3001
 VITE_NODE_ENV=development
 VITE_API_GATEWAY_URL=http://localhost:8080
-
-VITE_KEYCLOAK_URL=http://localhost:8020
+VITE_KEYCLOAK_URL=http://localhost:8080/auth
 VITE_KEYCLOAK_REALM=dht-ledger
 VITE_KEYCLOAK_CLIENT=react-app
-VITE_AGENT_API_URL=http://localhost:4000
+VITE_AGENT_API_URL=http://localhost:8080/agent
 ```
 
 Para simular uma rede privada utilizando os algoritmos Kademlia, vamos iniciar o projeto com Docker.
