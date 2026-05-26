@@ -85,6 +85,7 @@ docker compose down -v --rmi local
 6. [Security Architecture of a Distributed P2P Network for Auctions](./docs/SecurityArchitecture/README.md)
 7. [Docker Security](./docs/docker/securityDocker.md)
 8. [Agent](./agent/README.md)
+9. [Web Aplication Firewall](./waf/README.MD)
 
 ## 1. Introdução
 
