@@ -1,0 +1,14 @@
+[package]
+name = "waf"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+async-trait = "0.1"
+pingora = "0.8"
+pingora-core = "0.8.0"
+pingora-http = "0.8.0"
+pingora-proxy = "0.8.0"
+tokio = { version = "1", features = ["full"] }
+regex = "1.10"
+lazy_static = "1.4

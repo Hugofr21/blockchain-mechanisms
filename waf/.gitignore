@@ -1,0 +1,38 @@
+# Rust build artifacts
+/target
+
+# Cargo lock
+Cargo.lock
+
+# Backup files
+**/*.rs.bk
+
+# macOS
+.DS_Store
+
+# Linux
+*~
+
+# Windows
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Environment files
+.env
+.env.local
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+*.profraw
+
+# Rust analyzer
+.rust-analyzer/
+
+# JetBrains
+*.iml
