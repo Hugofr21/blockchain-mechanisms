@@ -10,7 +10,6 @@ Os tópicos a cobrir são:
 * Detecção de robôs (bots)
 * Prevenção de path‑traversal e de divulgação de ficheiros sensíveis (.env, /etc/passwd
 
-
 ## 2. Diagrama de fluxo do WAF
 
 ```mermaid
@@ -38,10 +37,7 @@ A seguir estão alguns *curl* que simulam ataques típicos. Cada um tem uma brev
 ### 3.1. Preflight CORS (OPTIONS)
 
 ```
-curl-i-XOPTIONShttp://localhost:8080/api/bootstrap/\
--H"Origin: http://localhost:3000"\
--H"Access-Control-Request-Method: POST"\
--H"Access-Control-Request-Headers: Content-Type,Authorization"
+curl -i -X OPTIONS "http://localhost:8080/api/bootstrap/" -H "Origin: http://localhost:3001" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: Content-Type, Authorization"
 ```
 
 * **Esperado:** `200 OK` (ou `204 No Content`) com cabeçalhos `Access-Control-Allow-*`.
@@ -52,7 +48,7 @@ curl-i-XOPTIONShttp://localhost:8080/api/bootstrap/\
 ### 3.2. Injeção XSS na query string
 
 ```
-curl-i"http://localhost:8080/api/peer-8002/auction?query=<script>alert(1)</script>"
+curl -i "http://localhost:8080/api/peer-8002/auction?query=<script>alert(1)</script>"
 ```
 
 * **Esperado:** `403 Forbidden` (regra XSS).
@@ -63,7 +59,7 @@ curl-i"http://localhost:8080/api/peer-8002/auction?query=<script>alert(1)</scrip
 ### 3.3. Tentativa de acesso a ficheiro confidencial
 
 ```
-curl-i"http://localhost:8080/api/bootstrap/.env"
+curl -i "http://localhost:8080/api/bootstrap/.env"
 ```
 
 * **Esperado:** `403 Forbidden` (regra de divulgação de ficheiros).
@@ -74,7 +70,7 @@ curl-i"http://localhost:8080/api/bootstrap/.env"
 ### 3.4. Path‑traversal
 
 ```
-curl-i"http://localhost:8080/api/peer-8005/../../../etc/passwd"
+curl -i "http://localhost:8080/api/peer-8005/../../../etc/passwd"
 ```
 
 * **Esperado:** `403 Forbidden` (regra de path traversal).
@@ -85,7 +81,7 @@ curl-i"http://localhost:8080/api/peer-8005/../../../etc/passwd"
 ### 3.5. Injeção SQL na query string
 
 ```
-curl-i"http://localhost:8080/api/peer-8002/auction?id=1' OR '1'='1"
+curl -i "http://localhost:8080/api/peer-8002/auction?id=1' OR '1'='1"
 ```
 
 * **Esperado:** `403 Forbidden` (regra SQLi).
@@ -96,8 +92,26 @@ curl-i"http://localhost:8080/api/peer-8002/auction?id=1' OR '1'='1"
 ### 3.6. Requisição legítima (conta‑registo)
 
 ```
-curl-i"http://localhost:8080/api/peer-8005/kademlia/routing-table"
+curl -i "http://localhost:8080/api/peer-8005/kademlia/routing-table"
 ```
 
 * **Esperado:** `200 OK` com o payload normal.
 * **Regra aplicada:** Nenhuma das regras acima deve acionar.
+
+---
+
+
+
+## Conclusão
+
+*Um Web Application Firewall bem configurado protege a camada de aplicação contra as ameaças mais comuns – XSS, injeção SQL, path‑traversal, divulgação de ficheiros e bots – ao mesmo tempo que assegura a disponibilidade através de rate‑limiting. O diagrama acima resume o fluxo de inspeção, enquanto as regras exemplificadas (ModSecurity 3 + OWASP CRS) mostram como concretizar essa proteção num ambiente Nginx. Depois de validar os testes com `curl` (exemplos fornecidos) e de monitorizar os logs e métricas, a solução está pronta para produção.*
+
+---
+
+### Referências
+
+1. **OWASP Core Rule Set (CRS)** – [https://github.com/coreruleset/coreruleset](https://github.com/coreruleset/coreruleset)
+2. **ModSecurity 3 – Guia do utilizador** – [https://github.com/SpiderLabs/ModSecurity](https://github.com/SpiderLabs/ModSecurity)
+3. **Nginx – Module ngx_http_modsecurity_module** – [https://nginx.org/en/docs/http/ngx_http_modsecurity_module.html](https://nginx.org/en/docs/http/ngx_http_modsecurity_module.html)
+4. **gRPC‑Web – Documentação** – [https://grpc.io/docs/platforms/web/](https://grpc.io/docs/platforms/web/)
+5. **CORS – MDN** – [https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
