@@ -80,7 +80,7 @@ router.post("/infra/scale", async (req, res) => {
 
     res.status(202).json({
       status: "DEPLOYING",
-      message: `Replica ${containerName} created – Kademlia will start the JoinNetwork`,
+      message: `Replication ${containerName} created. Kademlia will start the JoinNetwork`,
       metadata: {
         container: containerName,
         ip: peerIp,
@@ -108,17 +108,17 @@ router.post("/infra/peers/:name/restart", async (req, res) => {
 
     res.status(200).json({
       status: "RESTARTED",
-      message: `A instância ${containerName} foi reiniciada com sucesso na infraestrutura.`,
+      message: `The instance ${containerName} was restarted successfully on the infrastructure.`,
       metadata: { container: containerName },
     });
   } catch (err) {
-    console.error(`[INFRA RESTART] Falha ao processar ${containerName}: `, err);
+    console.error(`[INFRA RESTART] Failed to process ${containerName}: `, err);
 
     const statusCode = err.statusCode === 404 ? 404 : 500;
     const errorMessage =
       err.statusCode === 404
-        ? "Contentor inexistente ou previamente destruído."
-        : "O motor Docker recusou a alteração de estado do contentor.";
+        ? "The container does not exist or has been destroyed."
+        : "The Docker engine refused the state change of the container.";
 
     res.status(statusCode).json({
       status: "ERROR",

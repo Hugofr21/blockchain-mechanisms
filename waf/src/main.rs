@@ -23,23 +23,17 @@ impl ProxyHttp for EdgeWafGateway {
 
     async fn request_filter(&self, session: &mut Session, _ctx: &mut Self::CTX) -> Result<bool> {
         let path = session.req_header().uri.path();
-
-        // 1. Regras WAF de Defesa Perimetral
         if check_waf_violations(path) {
-            // CORREÇÃO: Removido o 'mut' aqui (a variável não sofre mutação)
             let resp = ResponseHeader::build(403, Some(3)).unwrap();
-
             session.write_response_header(Box::new(resp), false).await?;
             session
-                .write_response_body(Some("Acesso Intercetado.".into()), true)
+                .write_response_body(Some("Access Denied.".into()), true)
                 .await?;
 
             return Ok(true);
         }
 
-        // 2. Interceção de Preflight CORS (OPTIONS)
         if session.req_header().method.as_str() == "OPTIONS" {
-            // Aqui o 'mut' MANTÉM-SE, pois a função handle_cors_preflight injeta dados
             let mut resp = ResponseHeader::build(204, None).unwrap();
             handle_cors_preflight(session.req_header(), &mut resp);
 
@@ -76,6 +70,9 @@ impl ProxyHttp for EdgeWafGateway {
         upstream_response: &mut ResponseHeader,
         _ctx: &mut Self::CTX,
     ) -> Result<()> {
+        upstream_response.remove_header("Access-Control-Allow-Origin");
+        upstream_response.remove_header("Access-Control-Allow-Methods");
+        upstream_response.remove_header("Access-Control-Allow-Headers");
         handle_cors_preflight(session.req_header(), upstream_response);
         inject_security_headers(upstream_response);
         Ok(())

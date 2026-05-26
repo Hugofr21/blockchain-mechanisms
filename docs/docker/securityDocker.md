@@ -9,6 +9,7 @@ A resiliência contra adulterações e a rastreabilidade do fluxo de entrega sã
 Por fim, a transição empírica para o estado operacional em ambientes de homologação ou produção ocorre mediante a execução isolada da instrução docker `compose up -d`. Neste estágio terminal do ciclo de vida, a diretiva de construção local é estritamente omitida, forçando o orquestrador a atuar unicamente como um consumidor que processa a imagem assinada. Durante esta inicialização assíncrona em segundo plano, o motor de contêineres valida a atestação do Sigstore e, mediante confirmação da integridade do hash criptográfico, aloca os serviços restritamente em uma sub-rede do tipo bridge, assegurando isolamento e comunicação privada.
 
 ## A arquitetura de segurança do ecossistema de containers
+
 1. Imagem Docker configurada para execução com utilizador não privilegiado (USER definido, sem root; sem relação com PID)
 2. Cache de camadas de build utilizado para otimização e reutilização de dependências (sem impacto direto em segurança)
 3. Aplicação de práticas de supply chain security com artefactos imutáveis e assinaturas digitais via Sigstore (ex.: cosign, SHA-256 digest)

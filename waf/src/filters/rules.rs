@@ -11,6 +11,7 @@ pub fn handle_cors_preflight(req: &RequestHeader, resp: &mut ResponseHeader) {
                 .unwrap();
         }
     }
+
     resp.insert_header(
         "Access-Control-Allow-Methods",
         "GET, POST, PUT, DELETE, OPTIONS",
@@ -18,12 +19,13 @@ pub fn handle_cors_preflight(req: &RequestHeader, resp: &mut ResponseHeader) {
     .unwrap();
     resp.insert_header(
         "Access-Control-Allow-Headers",
-        "Authorization, Content-Type, X-Target-Node",
+        "Authorization, Content-Type, X-Target-Node, Accept",
     )
     .unwrap();
 }
 
 pub fn inject_security_headers(resp: &mut ResponseHeader) {
+    resp.remove_header("Server");
     resp.insert_header(
         "Content-Security-Policy",
         "default-src 'self'; frame-ancestors 'none';",
@@ -39,7 +41,11 @@ pub fn inject_security_headers(resp: &mut ResponseHeader) {
         "max-age=31536000; includeSubDomains",
     )
     .unwrap();
-    resp.insert_header("Cache-Control", "no-store, no-cache, must-revalidate")
-        .unwrap();
+
+    resp.insert_header(
+        "Cache-Control",
+        "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+    )
+    .unwrap();
     resp.insert_header("Pragma", "no-cache").unwrap();
 }

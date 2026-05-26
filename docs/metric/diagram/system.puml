@@ -10,6 +10,7 @@ skinparam component {
     BorderColor   #777777
     BackgroundColor #F5F5F5
     FontColor       Black
+    
 }
 
 skinparam ArrowColor          #005B96

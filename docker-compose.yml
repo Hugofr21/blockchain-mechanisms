@@ -18,6 +18,7 @@ include:
   - services/frontend/index.yaml
   - services/keycloak/index.yaml
   - services/agent/index.yaml
+  - services/waf/index.yaml
 
 x-peer-common: &peer-common
   build:

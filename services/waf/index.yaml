@@ -1,0 +1,13 @@
+services:
+  web-application-firewall:
+    build:
+      context: ../../waf
+      dockerfile: Dockerfile
+    container_name: web-application-firewall
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.250
+    ports:
+      - '8060:8060'
+    depends_on:
+      - api-gateway
