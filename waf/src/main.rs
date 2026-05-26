@@ -22,23 +22,21 @@ impl ProxyHttp for EdgeWafGateway {
     }
 
     async fn request_filter(&self, session: &mut Session, _ctx: &mut Self::CTX) -> Result<bool> {
-        let path = session.req_header().uri.path();
-        if check_waf_violations(path) {
+        let uri = &session.req_header().uri;
+
+        if check_waf_violations(uri) {
             let resp = ResponseHeader::build(403, Some(3)).unwrap();
             session.write_response_header(Box::new(resp), false).await?;
             session
                 .write_response_body(Some("Access Denied.".into()), true)
                 .await?;
-
             return Ok(true);
         }
 
         if session.req_header().method.as_str() == "OPTIONS" {
             let mut resp = ResponseHeader::build(204, None).unwrap();
             handle_cors_preflight(session.req_header(), &mut resp);
-
             session.write_response_header(Box::new(resp), true).await?;
-
             return Ok(true);
         }
 
@@ -73,6 +71,7 @@ impl ProxyHttp for EdgeWafGateway {
         upstream_response.remove_header("Access-Control-Allow-Origin");
         upstream_response.remove_header("Access-Control-Allow-Methods");
         upstream_response.remove_header("Access-Control-Allow-Headers");
+
         handle_cors_preflight(session.req_header(), upstream_response);
         inject_security_headers(upstream_response);
         Ok(())
@@ -82,9 +81,8 @@ impl ProxyHttp for EdgeWafGateway {
 fn main() {
     let mut server = Server::new(None).unwrap();
     server.bootstrap();
-
     let mut edge_proxy = pingora_proxy::http_proxy_service(&server.configuration, EdgeWafGateway);
-    edge_proxy.add_tcp("0.0.0.0:80");
+    edge_proxy.add_tcp("0.0.0.0:8080");
 
     server.add_service(edge_proxy);
     server.run_forever();

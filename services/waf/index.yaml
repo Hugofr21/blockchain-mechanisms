@@ -6,8 +6,8 @@ services:
     container_name: web-application-firewall
     networks:
       monitoring:
-        ipv4_address: 172.23.0.250
+        ipv4_address: 172.23.0.254
     ports:
-      - '8060:8060'
+      - '8080:8080'
     depends_on:
       - api-gateway

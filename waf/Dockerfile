@@ -10,5 +10,5 @@ RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/
 RUN useradd -m -s /bin/bash waf_user
 USER waf_user
 COPY --from=builder /app/target/release/waf /usr/local/bin/waf
-EXPOSE 8060
+EXPOSE 8080
 CMD ["waf"]

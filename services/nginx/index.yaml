@@ -5,8 +5,9 @@ services:
       dockerfile: Dockerfile.nginx
     container_name: api-gateway
     networks:
-      - monitoring
-    ports:
-      - "8080:80" 
+      monitoring:
+          ipv4_address: 172.23.0.99
+    # ports:
+    #   - "8080:80" 
     depends_on:
       - bootstrap-node

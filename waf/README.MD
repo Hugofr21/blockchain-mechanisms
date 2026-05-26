@@ -38,6 +38,10 @@ A seguir estão alguns *curl* que simulam ataques típicos. Cada um tem uma brev
 
 ```
 curl -i -X OPTIONS "http://localhost:8080/api/bootstrap/" -H "Origin: http://localhost:3001" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: Content-Type, Authorization"
+
+curl -i -X OPTIONS "http://localhost:8080/api/peer-8003/api/network/identity" \
+     -H "Origin: http://site-malicioso.com" \
+     -H "Access-Control-Request-Method: GET"
 ```
 
 * **Esperado:** `200 OK` (ou `204 No Content`) com cabeçalhos `Access-Control-Allow-*`.
