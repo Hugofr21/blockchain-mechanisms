@@ -53,6 +53,13 @@ curl -i -X OPTIONS "http://localhost:8080/api/peer-8003/api/network/identity" \
 
 ```
 curl -i "http://localhost:8080/api/peer-8002/auction?query=<script>alert(1)</script>"
+
+curl -i "http://localhost:8080/api/peer-8002/auction?query=<img onerror=alert(1)>"
+
+curl -i "http://localhost:8080/api/peer-8002/auction?url=javascript:alert(1)"
+
+curl -i -X POST "http://localhost:8080/api/peer-8002/auction" \ <br> -H "Content-Type: application/json" \ <br> -d '{"comment":"<script>alert(1)</script>"}'
+
 ```
 
 * **Esperado:** `403 Forbidden` (regra XSS).
@@ -75,6 +82,8 @@ curl -i "http://localhost:8080/api/bootstrap/.env"
 
 ```
 curl -i "http://localhost:8080/api/peer-8005/../../../etc/passwd"
+
+curl -i "http://localhost:8080/api/bootstrap/%2e%2e%2f%2e%2e%2fetc%2fpasswd"
 ```
 
 * **Esperado:** `403 Forbidden` (regra de path traversal).
@@ -86,6 +95,8 @@ curl -i "http://localhost:8080/api/peer-8005/../../../etc/passwd"
 
 ```
 curl -i "http://localhost:8080/api/peer-8002/auction?id=1' OR '1'='1"
+
+curl -i -X POST "http://localhost:8080/api/peer-8002/auction" \ <br> -H "Content-Type: application/json" \ <br> -d '{"id":"1\" OR \"1\"=\"1"}'
 ```
 
 * **Esperado:** `403 Forbidden` (regra SQLi).
@@ -103,8 +114,11 @@ curl -i "http://localhost:8080/api/peer-8005/kademlia/routing-table"
 * **Regra aplicada:** Nenhuma das regras acima deve acionar.
 
 ---
+### 3.7. Body SIZE Limit
 
-
+```
+curl -s -H 'Content-lenght: 1000000000' -X POST "http://localhost:8080/api/peer-8005/kademlia/routing-table"
+```
 
 ## Conclusão
 
