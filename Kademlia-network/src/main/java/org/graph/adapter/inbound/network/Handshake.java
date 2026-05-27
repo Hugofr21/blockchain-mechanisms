@@ -1,5 +1,6 @@
 package org.graph.adapter.inbound.network;
 
+import org.graph.adapter.utils.Base64Utils;
 import org.graph.infrastructure.network.ConnectionHandler;
 import org.graph.adapter.utils.MessageUtils;
 import org.graph.domain.policy.EventTypePolicy;
@@ -135,7 +136,10 @@ public final class Handshake {
         handler.enableSecureTransport(sharedSecret);
 
 
-        String challengeToSign = remoteNode.getNodeId().value().toString() + ":" + remotePayload.timestamp();
+        String challengeToSign = remoteNode.getNodeId().value().toString()
+                + ":" + remotePayload.nonce()
+                + ":" + Base64Utils.encode(remotePayload.ephemeralPublicKey());
+
         byte[] mySignature = myself.getIsKeysInfrastructure().signMessage(challengeToSign);
 
         Message ackMessage = new Message(MessageType.HELLO_ACK, mySignature, myself.getHybridLogicalClock().next());
@@ -155,7 +159,9 @@ public final class Handshake {
 
         byte[] remoteSignature = MessageUtils.extractSignature(finalConfirm.getPayload(), logger);
 
-        String remoteChallengeToVerify = myself.getMyself().getNodeId().value().toString() + ":" + initPayload.timestamp();
+        String remoteChallengeToVerify = myself.getMyself().getNodeId().value().toString()
+                + ":" + initPayload.nonce()
+                + ":" + Base64Utils.encode(initPayload.ephemeralPublicKey());
 
         if (!validateRemoteIdentity(remoteNode, remotePayload.publicKey(), remoteChallengeToVerify, remoteSignature)) {
             logger.severe("Mutual authentication validation failed. Connection aborted.");
