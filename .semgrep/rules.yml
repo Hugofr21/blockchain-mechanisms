@@ -1,0 +1,37 @@
+rules:
+  - id: ensure-header-sanitization-rust
+    message: 'Validate and sanitize untrusted header values to prevent HTTP header injection vulnerabilities.'
+    languages: [rust]
+    severity: ERROR
+    patterns:
+      - pattern: |
+          $REQ.headers.insert($KEY, $VAL)
+      - metavariable-regex:
+          metavariable: $KEY
+          regex: (?i)(X-Forwarded-For|X-Authenticated-User|X-Target-Peer-ID)
+      - pattern-not-inside: |
+          $REQ.headers.remove($KEY);
+          ...
+          $REQ.headers.insert($KEY, $VAL)
+
+  - id: prevent-disk-keystore-java
+    message: 'Validate and sanitize untrusted keystore values to prevent insecure key storage vulnerabilities.'
+    languages: [java]
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: KeyStore.getInstance("JKS")
+          - pattern: KeyStore.getInstance("PKCS12")
+          - pattern: new FileInputStream(...)
+    pattern-not-inside: |
+      KeyStore.getInstance("PKCS11", ...)
+
+  - id: prevent-token-exposure-react
+    message: 'Validate and sanitize untrusted token values to prevent credential exposure vulnerabilities.'
+    languages: [javascript, typescript]
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: localStorage.setItem("access_token", $TOKEN)
+          - pattern: sessionStorage.setItem("id_token", $TOKEN)
+          - pattern: localStorage.setItem("code_verifier", $SECRET)

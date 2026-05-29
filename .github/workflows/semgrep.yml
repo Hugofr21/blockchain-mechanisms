@@ -15,19 +15,17 @@ permissions:
 
 jobs:
     semgrep-sast-audit:
-        name: Execução de Regras Proprietárias
+        name: Execute semgrep SAST audit
         runs-on: ubuntu-latest
         container:
             image: semgrep/semgrep
 
         steps:
-            - name: Clonar Repositório
+            - name: Repository Checkout
               uses: actions/checkout@v4
-
-            - name: Auditoria Sintática (Semgrep Scan)
+            - name: Analisys with Semgrep and generate SARIF report
               run: semgrep scan --config=.semgrep/rules.yml --sarif --output=semgrep.sarif --error
-
-            - name: Injeção de Relatório no GitHub Security
+            - name: Injection the SARIF file into the GitHub Security tab
               if: always()
               uses: github/codeql-action/upload-sarif@v3
               with:
