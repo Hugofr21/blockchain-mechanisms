@@ -8,7 +8,7 @@ Os tópicos a cobrir são:
 * Detecção de injeção SQL
 * Limitação de taxa (rate‑limiting)
 * Detecção de robôs (bots)
-* Prevenção de path‑traversal e de divulgação de ficheiros sensíveis (.env, /etc/passwd
+* Prevenção de path‑traversal e de divulgação de ficheiros sensíveis (.env, /etc/passwd)
 
 ## 2. Diagrama de fluxo do WAF
 
@@ -114,6 +114,7 @@ curl -i "http://localhost:8080/api/peer-8005/kademlia/routing-table"
 * **Regra aplicada:** Nenhuma das regras acima deve acionar.
 
 ---
+
 ### 3.7. Body SIZE Limit
 
 ```

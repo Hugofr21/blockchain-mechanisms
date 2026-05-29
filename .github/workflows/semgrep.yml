@@ -1,0 +1,35 @@
+name: Semgrep SAST
+
+on:
+    pull_request:
+        branches: ["main", "master"]
+    workflow_dispatch: {}
+    push:
+        branches: ["main", "master"]
+    schedule:
+        - cron: "20 17 * * *" # Executa diariamente às 17:20 UTC
+
+permissions:
+    contents: read
+    security-events: write
+
+jobs:
+    semgrep-sast-audit:
+        name: Execução de Regras Proprietárias
+        runs-on: ubuntu-latest
+        container:
+            image: semgrep/semgrep
+
+        steps:
+            - name: Clonar Repositório
+              uses: actions/checkout@v4
+
+            - name: Auditoria Sintática (Semgrep Scan)
+              run: semgrep scan --config=.semgrep/rules.yml --sarif --output=semgrep.sarif --error
+
+            - name: Injeção de Relatório no GitHub Security
+              if: always()
+              uses: github/codeql-action/upload-sarif@v3
+              with:
+                  sarif_file: semgrep.sarif
+                  category: semgrep-custom-rules

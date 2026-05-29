@@ -81,7 +81,9 @@ impl ProxyHttp for EdgeWafGateway {
 fn main() {
     let mut server = Server::new(None).unwrap();
     server.bootstrap();
-    let mut edge_proxy = pingora_proxy::http_proxy_service(&server.configuration, EdgeWafGateway);
+    let mut edge_proxy: pingora::services::listening::Service<
+        pingora_proxy::HttpProxy<EdgeWafGateway>,
+    > = pingora_proxy::http_proxy_service(&server.configuration, EdgeWafGateway);
     edge_proxy.add_tcp("0.0.0.0:8080");
 
     server.add_service(edge_proxy);

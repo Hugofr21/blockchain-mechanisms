@@ -54,7 +54,7 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        console.error('[AXIOS] Falha de comunicação com a infraestrutura:', error.response?.data || error.message);
+        console.error('[AXIOS] Fail the communication:', error.response?.data || error.message);
         return Promise.reject(error);
     }
 );

@@ -28,3 +28,5 @@ Thumbs.db
 
 # Ignore dependency directories
 node_modules/
+
+summary.md
