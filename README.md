@@ -107,7 +107,122 @@ A imposição deste afunilamento estrutural garante que a malha descentralizada 
 
 Na rede privada, o diagnóstico e a saúde do sistema são garantidos por uma Camada de Observabilidade intrinsecamente isolada. A arquitetura implementa um agente OpenTelemetry em cada nó peer-to-peer, responsável por extrair a telemetria a partir do contexto local e das ligações TCP de cada servidor virtualizado.  O Prometheus opera como o motor de agregação, executando a recolha (pull) periódica destas métricas temporais expostas pelos agentes. A análise visual e correlacional deste acervo de dados é delegada ao Grafana, cujo acesso ao painel de administração exige integração com o sistema de autenticação central do Keycloak, assegurando que os relatórios topológicos e o estado da infraestrutura sejam estritamente acedidos por administradores credenciados.
 
-![System Design](./docs/diagram/systemDesign/system-design.png)
+```mermaid 
+flowchart TD
+    classDef public fill:#FFFFFF,stroke:#333,color:#000
+    classDef gateway fill:#B3E5FC,stroke:#333,color:#000
+    classDef security fill:#D1C4E9,stroke:#333,color:#000
+    classDef adapter fill:#FFEB3B,stroke:#333,color:#000
+    classDef app fill:#C8E6C9,stroke:#333,color:#000
+    classDef infra fill:#CFD8DC,stroke:#333,color:#000
+    classDef storage fill:#FFCDD2,stroke:#333,color:#000
+    classDef metrics fill:#B2EBF2,stroke:#333,color:#000
+
+    subgraph Ext [Ambiente Externo / Internet]
+        SPA[Single Page Application\nReact SPA]:::app
+    end
+
+    subgraph IDP [Identity Provider]
+        KC[Keycloak Server\nOIDC / OAuth2]:::security
+    end
+
+    subgraph DMZ_Zone [DMZ / Public Zone]
+        subgraph APIGW [API Gateway - Reverse Proxy & Ingress]
+            RL[Rate Limiter & Logging]:::adapter
+            AUTH[JWT Validator\nResource Server]:::security
+            API[API Router\nREST / RPC]:::gateway
+        end
+        DAgent[Docker Agent\nMonitorização DMZ]:::infra
+    end
+
+    subgraph PrivNet [Private Network - Isolated Subnet]
+        subgraph Boot [Bootstrap Node - Seed Peer]
+            Boot_APP[Auction Application\nBusiness Logic]:::app
+            Boot_LED[DHT Ledger\nState & Persistence]:::storage
+            Boot_KAD[Secure Kademlia\nRouting & Discovery]:::infra
+            
+            Boot_APP <--> Boot_LED
+            Boot_LED <--> Boot_KAD
+        end
+        
+        subgraph NodeA [Peer Node A - Validator]
+            PA_APP[Auction Application]:::app
+            PA_LED[DHT Ledger]:::storage
+            PA_KAD[Secure Kademlia]:::infra
+            
+            PA_APP <--> PA_LED
+            PA_LED <--> PA_KAD
+        end
+        
+        subgraph NodeB [Peer Node B - Validator]
+            PB_APP[Auction Application]:::app
+            PB_LED[DHT Ledger]:::storage
+            PB_KAD[Secure Kademlia]:::infra
+            
+            PB_APP <--> PB_LED
+            PB_LED <--> PB_KAD
+        end
+
+        subgraph NodeC [Peer Node C - Validator]
+            PC_APP[Auction Application]:::app
+            PC_LED[DHT Ledger]:::storage
+            PC_KAD[Secure Kademlia]:::infra
+            
+            PC_APP <--> PC_LED
+            PC_LED <--> PC_KAD
+        end
+
+        subgraph NodeD [Peer Node D - Validator]
+            PD_APP[Auction Application]:::app
+            PD_LED[DHT Ledger]:::storage
+            PD_KAD[Secure Kademlia]:::infra
+            
+            PD_APP <--> PD_LED
+            PD_LED <--> PD_KAD
+        end
+    end
+
+    subgraph Obs [Observability Stack]
+        OTEL[OpenTelemetry Collector]:::metrics
+        PROM[(Prometheus Server)]:::storage
+        GRAF[Grafana Dashboard]:::metrics
+    end
+
+
+    SPA <-->|1. Autenticação OIDC PKCE| KC
+    SPA -->|2. Requisição HTTP API| RL
+    
+
+    SPA -.->|Req. Telemetria/Status Admin| RL
+    API -.->|Proxy Seguro de Métricas| DAgent
+
+    RL -->|3. Validação| AUTH
+    AUTH -->|4. Verificação Claims| API
+
+
+    API ==>|5. Submissão Transação| Boot_APP
+    API ==>|5. Submissão Transação| PA_APP
+    API ==>|5. Submissão Transação| PB_APP
+
+
+    Boot_KAD <-->|S/Kademlia RPC| PA_KAD
+    Boot_KAD <-->|S/Kademlia RPC| PB_KAD
+    PA_KAD <-->|Sync| PB_KAD
+    PB_KAD <-->|Sync| PC_KAD
+    PC_KAD <-->|Sync| PD_KAD
+    PA_KAD <-->|Sync| PD_KAD
+
+
+    APIGW -.->|Export OTLP| OTEL
+    DAgent -.->|Export Container Metrics| OTEL
+    Boot_KAD -.->|Export OTLP| OTEL
+    PA_KAD -.->|Export OTLP| OTEL
+    PB_KAD -.->|Export OTLP| OTEL
+    
+
+    OTEL -->|Scrape| PROM
+    PROM -->|PromQL| GRAF
+```
 
 ## 2. Visão geral da arquitectura software
 
