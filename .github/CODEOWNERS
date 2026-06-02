@@ -1,0 +1,43 @@
+# ==============================================================================
+# MATRIZ DE CONTROLO DE ACESSO E GOVERNANÇA DO REPOSITÓRIO (CODEOWNERS)
+# Implementação de bloqueio determinístico para OpenSSF Scorecard e SLSA L3
+# ==============================================================================
+
+# 1. Regra Global (Fallback)
+# Define o proprietário supletivo. Garante que nenhuma mutação em ficheiros 
+# recém-criados ou não mapeados na raiz escapa à revisão arquitetónica.
+* @p2p-security-blockchain
+
+
+# 2. Perímetro de Segurança, CI/CD e Infraestrutura de Automação
+/.github/                     @p2p-security-blockchain
+/.semgrep/                    @p2p-security-blockchain
+/SECURITY.md                  @p2p-security-blockchain
+/scorecards.yaml              @p2p-security-blockchain
+
+
+# 3. Blindagem Criptográfica da Cadeia de Fornecimento
+/package-lock.json            @p2p-security-blockchain
+/Cargo.lock                   @p2p-security-blockchain
+/package-lock.json            @p2p-security-blockchain @security-data
+/Cargo.lock                   @p2p-security-blockchain @security-data
+/infra-agent/package.json     @p2p-security-blockchain
+/infra_rust/Cargo.toml        @p2p-security-blockchain
+
+# 4. Motor de Roteamento P2P e Livro-Razão (Ecossistema Java)
+# Protege a máquina de estados, o consenso e a integração com o módulo PKCS#11.
+/Kademlia-network/            @p2p-security-blockchain@java-backend
+/blockchain-mechanisms/       @p2p-security-blockchain@java-backend
+
+# 5. Fronteira de Rede / WAF (Ecossistema Rust)
+# Validação da lógica do gateway Pingora e sanitização da Camada 7.
+/infra_rust/                  @p2p-security-blockchain@engenheiros-redes
+
+# 6. Observabilidade e Agente DMZ (Ecossistema Node.js)
+# Isolamento da exportação de métricas OTLP e interceção do Docker daemon.
+/infra-agent/                 @p2p-security-blockchain@engenheiros-infraestrutura
+
+# 7. Identidade Digital e Clientes Móveis/SPA (Kotlin / React)
+# Protege o parser de MRZ (ICAO 9303) e os fluxos PKCE do Keycloak.
+/mobile_kotlin/               @p2p-security-blockchain@engenheiros-mobile
+/spa_react/                   @p2p-security-blockchain@engenheiros-frontend
