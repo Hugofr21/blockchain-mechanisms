@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: Repository Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Inicialização do Motor CodeQL
         uses: github/codeql-action/init@v4
