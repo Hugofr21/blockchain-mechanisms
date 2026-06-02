@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "maven"
+    directory: "/Kademlia-network"
+    schedule:
+      interval: "weekly"
+      day: "monday" 
+  - package-ecosystem: "maven"
+    directory: "/blockchain-mechanisms"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+
+  - package-ecosystem: "npm"
+    directory: "/infra-agent"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+
+  - package-ecosystem: "cargo"
+    directory: "/infra_rust"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
