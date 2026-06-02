@@ -1,0 +1,42 @@
+name: NodeJS with Webpack
+
+on:
+  push:
+    branches:
+      - "main"
+    branches-ignore:
+      - "dependabot/**"
+  pull_request:
+    branches:
+      - "main"
+    branches-ignore:
+      - "dependabot/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Upgrade npm
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Build
+        run: npx webpack
