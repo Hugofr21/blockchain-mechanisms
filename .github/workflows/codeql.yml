@@ -2,11 +2,11 @@ name: "CodeQL Advanced SAST"
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   schedule:
-    - cron: '15 2 * * 6' # Execução noturna aos sábados
+    - cron: "15 2 * * 6"
 
 jobs:
   analyze:
@@ -22,43 +22,42 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - language: actions
-          build-mode: none
-        
-        # O modo autobuild é estritamente exigido para extrair a semântica do código Kotlin
-        # em simultâneo com o motor de leilões em Java.
-        - language: java-kotlin
-          build-mode: autobuild 
-        
-        # A SPA em React é analisada diretamente a partir da Árvore de Sintaxe (sem compilação)
-        - language: javascript-typescript
-          build-mode: none
-          
-        # Rust foi sumariamente removido desta matriz para delegar a sua auditoria ao Semgrep/Clippy.
+          - language: actions
+            build-mode: none
+          # Transição obrigatória para o modo manual devido à topologia multi-diretório.
+          - language: java
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+          # O bloco de Rust foi removido. A sua avaliação é delegada ao Semgrep e Cargo Clippy.
 
     steps:
-    - name: Checkout do Repositório
-      uses: actions/checkout@v4
+      - name: Repository Checkout
+        uses: actions/checkout@v4
 
-    - name: Inicialização do Motor CodeQL
-      uses: github/codeql-action/init@v4
-      with:
-        languages: ${{ matrix.language }}
-        build-mode: ${{ matrix.build-mode }}
-        # Elevação do rigor analítico com as suites de segurança avançadas
-        queries: security-extended,security-and-quality
+      - name: Inicialização do Motor CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended,security-and-quality
 
-    # Se o Gradle/Maven exigir parâmetros não convencionais, o 'autobuild' falhará.
-    # Nesse cenário, o 'build-mode' deve passar a 'manual' e este passo deve 
-    # invocar o script de construção exato do seu projeto.
-    - name: Compilação Manual (Fallback)
-      if: matrix.build-mode == 'manual'
-      shell: bash
-      run: |
-        echo "Inserir comandos de compilação determinísticos aqui (ex: ./gradlew assembleDebug)"
-        exit 1
+      - name: Compilação Manual Direcionada (Monorepo)
+        if: matrix.build-mode == 'manual'
+        shell: bash
+        run: |
+          # Devido à estrutura monorepo, a compilação manual é necessária para garantir que o CodeQL capture adequadamente os artefatos de construção e as dependências.
+          # por "./gradlew assemble".
 
-    - name: Execução das Consultas Relacionais e Exportação SARIF
-      uses: github/codeql-action/analyze@v4
-      with:
-        category: "/language:${{matrix.language}}"
+          echo "A compilar a máquina de estados Kademlia..."
+          cd Kademlia-network
+          mvn clean package -DskipTests
+
+          echo "A compilar os mecanismos do livro-razão e leilão..."
+          cd ../blockchain-mechanisms
+          mvn clean package -DskipTests
+
+      - name: Execução das Consultas Relacionais e Exportação SARIF
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{matrix.language}}"
