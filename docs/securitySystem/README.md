@@ -21,16 +21,34 @@ A aplicação combina:
 | **Obs. Stack**        | Telemetria OpenTelemetry, dashboards Grafana com Auth via Keycloak                                                          |
 | **Vault**             | Armazenamento de chaves privadas (JCEKS) encriptadas, controle de acesso com policies                                       |
 
-## Acotes & Assets
+## Escopo & Ativos (Assets)
 
-## ATTACQUES
+| Tipo de Ativo                                                   | Descrição                                                | Classificação de Impacto* |
+| --------------------------------------------------------------- | ---------------------------------------------------------- | --------------------------- |
+| **Identidades de Usuário** (Keycloak)                    | Credenciais, MFA, atributos de papel.                      | **Alto**              |
+| **Tokens JWT**                                            | Access / Refresh com escopos.                            | **Alto**              |
+| **Chaves Privadas dos Peer‑Nodes** (Vault)               | Keystore JCEKS, usados para assinatura PoP e TLS mTLS.    | **Alto**              |
+| **Ledger (Blockchain)**                                   | Cadeia de blocos imutável contendo todas as licitações. | **Crítico**          |
+| **Dados de Licitação** (valor, participante, timestamp) | Informações de negócio sensíveis.                      | **Alto**              |
+| **Segredos de Infraestrutura** (DB passwords, API keys)   | Credenciais de PostgreSQL, Vault, etc.                     | **Alto**              |
+| **Código da Aplicação**                                | Repositório Git, pipelines CI/CD.                         | **Alto**              |
+| **Métricas / Telemetria**                                | Dados de performance e saúde dos nós.                    | **Médio**            |
+| **Logs de Auditoria**                                     | JSON‑structured logs de eventos críticos.                | **Alto**              |
 
-CSRF
-XSS
-SYBIL
-ELECPSE
-REPLAY ATTACK
-Buffer Overlow
+## Vetores de Ataque Identificados
+
+| Vetor                                                 | Descrição                                                                                         | Controle Atual                                                               | Gap / Observação                                                                |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| **CSRF**                                        | Ataque de*Cross‑Site Request Forgery* contra endpoints do API‑Gateway.                          | SameSite = Strict + anti‑CSRF token nos formulários web.                 | Tokens ainda transmitidos em query‑string em alguns endpoints legados.           |
+| **XSS**                                         | Injeção de scripts via campos de descrição de leilão.                                          | WAF com regras OWASP CRS, sanitização no front‑end.                      | Falta de*Content‑Security‑Policy* (CSP) forte.                                |
+| **Sybil**                                       | Criação de múltiplas identidades de nó para influenciar consenso.                               | PoW‑tied NodeId, Proof‑of‑Authority bootstrap token.                     | PoW pode ser evitado com hardware dedicado; necessidade de*Stake* adicional.    |
+| **Replay Attack**                               | Reenvio de mensagens válidas (ex.:`HELLO`, `BID`) para contornar *nonce* ou  *timestamp* . | Nonce + timestamp + janela de ±5 s, HLC.                                 | Não há verificação de*replay‑counter* em algumas mensagens  *GET_DATA* . |
+| **Buffer Overflow**                             | Mensagens com payload > 2 MiB podem overflow buffers C‑style.                                    | Header `payloadLength` limitado a 2 MiB, validação no `MessageUtils`. | Código antigo em C‑bindings (para libs de crypto) ainda não revisado.          |
+| **Man‑in‑the‑Middle (MITM)**                 | Interceptação de comunicação P2P ou API‑Gateway.                                               | TLS 1.3 opcional, assinatura de mensagens, HMAC.                            | TLS opcional → ainda aceito conexões sem criptografia.                          |
+| **Eclipse**                                     | Conquista de todos os buckets de routing de um peer.                                                | Kademlia*k*= 20, refresh de buckets a cada 5 min.                        | Não há verificação de diversidade de rede (sub‑net).                         |
+| **Double‑Spend**                               | Envio da mesma licitação em blocos diferentes.                                                    | Verificação de `txId` no ledger, orfan‑pool.                            | Risco aumentado se o quorum for 2‑of‑3 (menor que 3).                           |
+| **DDoS/Rate‑Limiting**                         | Flood de mensagens `INV`, `GET_BLOCK`.                                                          | Rate‑limit no API‑Gateway; limit na camada P2P (token‑bucket, 10 msg/s). | Falta de*burst* control para mensagens de  *heartbeat* .                      |
+| **SQL/NoSQL Injection** (Back‑end do Keycloak) | Injeção via parâmetros de login.                                                                 | Keycloak usa prepared statements.                                            | Não testado com fuzzer de parâmetros avançado.                                 |
 
 ## OWASP Top 10 ↔ STRIDE ↔ Mitigações
 
