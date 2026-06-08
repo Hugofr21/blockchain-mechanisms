@@ -60,14 +60,19 @@
               "width": 720,
               "height": 340
             },
+            "attrs": {
+              "label": {
+                "text": "Private Network"
+              }
+            },
             "visible": true,
             "shape": "trust-boundary-box",
-            "id": "ec7a6568-2e15-4984-91ef-02e0da31dd69",
             "zIndex": -1,
+            "id": "ec7a6568-2e15-4984-91ef-02e0da31dd69",
             "data": {
               "type": "tm.BoundaryBox",
-              "name": "Trust Boundary",
-              "description": "",
+              "name": "Private Network",
+              "description": "Communication between entities with procolo mTLS",
               "isTrustBoundary": true,
               "hasOpenThreats": false,
               "crossingFlows": [
@@ -129,6 +134,7 @@
             },
             "visible": true,
             "shape": "actor",
+            "zIndex": 1,
             "ports": {
               "groups": {
                 "top": {
@@ -212,7 +218,6 @@
               ]
             },
             "id": "4ab37c5f-5240-4309-85bd-a5e5c6ff1483",
-            "zIndex": 1,
             "data": {
               "type": "tm.Actor",
               "name": "Cliant",
@@ -264,6 +269,7 @@
             },
             "visible": true,
             "shape": "process",
+            "zIndex": 2,
             "ports": {
               "groups": {
                 "top": {
@@ -347,7 +353,6 @@
               ]
             },
             "id": "35a4c2eb-be15-478a-a95b-c0f54f569f5a",
-            "zIndex": 2,
             "data": {
               "type": "tm.Process",
               "name": "Web Application",
@@ -785,6 +790,7 @@
             },
             "visible": true,
             "shape": "store",
+            "zIndex": 11,
             "ports": {
               "groups": {
                 "top": {
@@ -868,7 +874,6 @@
               ]
             },
             "id": "b3ea4b15-6c8f-4e18-89c4-488bc214c925",
-            "zIndex": 11,
             "data": {
               "type": "tm.Store",
               "name": "Data Base",
@@ -939,6 +944,7 @@
             },
             "visible": true,
             "shape": "process",
+            "zIndex": 12,
             "ports": {
               "groups": {
                 "top": {
@@ -1022,7 +1028,6 @@
               ]
             },
             "id": "35f5a9f0-2e28-494b-80dd-35bb39e4fa2e",
-            "zIndex": 12,
             "data": {
               "type": "tm.Process",
               "name": "WAF",
@@ -1081,6 +1086,7 @@
             },
             "visible": true,
             "shape": "process",
+            "zIndex": 13,
             "ports": {
               "groups": {
                 "top": {
@@ -1164,7 +1170,6 @@
               ]
             },
             "id": "b46d8e34-6fdc-47f1-898d-1e7eded416e4",
-            "zIndex": 13,
             "data": {
               "type": "tm.Process",
               "name": "Api Gateway",
@@ -1236,6 +1241,7 @@
             },
             "visible": true,
             "shape": "process",
+            "zIndex": 14,
             "ports": {
               "groups": {
                 "top": {
@@ -1319,7 +1325,6 @@
               ]
             },
             "id": "ec253934-e4c0-434c-9d92-4d9fe9082057",
-            "zIndex": 14,
             "data": {
               "type": "tm.Process",
               "name": "P2P Secure",
@@ -1404,6 +1409,7 @@
             },
             "visible": true,
             "shape": "process",
+            "zIndex": 15,
             "ports": {
               "groups": {
                 "top": {
@@ -1487,7 +1493,6 @@
               ]
             },
             "id": "ebbe0afc-df09-4bdf-9958-0f5e1c13658a",
-            "zIndex": 15,
             "data": {
               "type": "tm.Process",
               "name": "Blockchain DHT",
