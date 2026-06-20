@@ -43,7 +43,7 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-prometheus</artifactId>
-            <version>1.36.0-alpha</version>
+            <version>1.62.0-alpha</version>
         </dependency>
         <dependency>
             <groupId>io.javalin</groupId>
