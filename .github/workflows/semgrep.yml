@@ -27,7 +27,7 @@ jobs:
               run: semgrep scan --config=.semgrep/rules.yml --sarif --output=semgrep.sarif --error
             - name: Injection the SARIF file into the GitHub Security tab
               if: always()
-              uses: github/codeql-action/upload-sarif@v3
+              uses: github/codeql-action/upload-sarif@v4
               with:
                   sarif_file: semgrep.sarif
                   category: semgrep-custom-rules
