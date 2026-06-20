@@ -22,7 +22,7 @@ jobs:
 
         steps:
             - name: Repository Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
             - name: Analisys with Semgrep and generate SARIF report
               run: semgrep scan --config=.semgrep/rules.yml --sarif --output=semgrep.sarif --error
             - name: Injection the SARIF file into the GitHub Security tab
